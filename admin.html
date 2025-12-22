@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>シフト調整システム</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --sat: #007bff; --sun: #dc3545; --bg: #f4f7f9; --tag-bg: #e2e8f0; --danger: #e53e3e; --success: #38a169; --pdf: #6366f1; }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 0; color: #2d3748; }
+        
+        /* 土日の色分け */
+        .txt-sat { color: var(--sat) !important; }
+        .txt-sun { color: var(--sun) !important; }
+
+        .header-content { background: white; padding: 15px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 2000; }
+        h2 { margin: 0 0 10px 0; font-size: 1.4rem; border-left: 5px solid #4a5568; padding-left: 15px; }
+        .how-to { font-size: 0.85rem; color: #4a5568; margin-bottom: 15px; background: #fffaf0; border: 1px solid #feebc8; padding: 12px; border-radius: 6px; line-height: 1.6; }
+        .caution { color: var(--danger); font-weight: bold; }
+        
+        .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .spacer { flex-grow: 1; }
+        button { padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; border: 1px solid #cbd5e0; background: white; }
+        .btn-pdf { background: var(--pdf); color: white; border: none; }
+        .btn-save { background: var(--success); color: white; border: none; }
+
+        /* 編集画面：日付行と左列を固定 */
+        .table-area { padding: 20px; overflow: auto; height: calc(100vh - 240px); }
+        .main-table { border-collapse: collapse; background: white; table-layout: fixed; width: max-content; }
+        .main-table th, .main-table td { 
+            border: 1px solid #cbd5e0; 
+            padding: 2px 4px; /* 1名時に高すぎない設定 */
+            text-align: center; 
+            vertical-align: top; 
+            width: 115px; 
+            min-width: 115px; 
+        }
+        .main-table thead th { 
+            background: #f7fafc; 
+            position: sticky; 
+            top: 0; 
+            z-index: 150; 
+            border-bottom: 2px solid #a0aec0; 
+            padding: 8px 4px; 
+        }
+        .shift-name-col { 
+            background: #edf2f7 !important; 
+            font-weight: bold; 
+            position: sticky; 
+            left: 0; 
+            z-index: 160; 
+            text-align: left !important; 
+            width: 140px !important; 
+            min-width: 140px !important; 
+            vertical-align: middle; 
+        }
+        .main-table thead th.shift-name-col { z-index: 170; }
+
+        .name-tag { 
+            background: var(--tag-bg); 
+            border: 1px solid #cbd5e0; 
+            border-radius: 4px; 
+            padding: 2px 4px; 
+            margin: 1px 0; 
+            font-size: 12px; 
+            white-space: nowrap; 
+            display: block; 
+            cursor: grab; 
+        }
+
+        /* PDF設定：9px・分割・枠なし文字 */
+        #print-container { display: none; }
+        #print-loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 3000; align-items: center; justify-content: center; font-size: 1.5rem; }
+
+        @media print {
+            @page { size: A4 landscape; margin: 5mm; }
+            .header-content, .table-area, #print-loading { display: none !important; }
+            #print-container { display: block !important; }
+            .print-page { page-break-after: always; }
+            .print-table { border-collapse: collapse; width: 100%; table-layout: fixed; border: 2.2px solid #000; }
+            .print-table th, .print-table td { border: 1px solid #000; padding: 4px 2px; text-align: center; vertical-align: middle; }
+            .print-table th { font-size: 9.5px; height: 28px; background: #eee !important; }
+            .p-shift-col { width: 100px; font-size: 10px; font-weight: bold; background: #eee !important; text-align: left; }
+            .p-name { display: block; font-size: 9px; letter-spacing: -0.3px; white-space: nowrap; line-height: 1.2; margin: 1px 0; }
+            h3 { font-size: 13px; margin: 5px 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="print-loading">PDFを作成しています...</div>
+
+<div class="header-content">
+    <h2>シフト調整システム</h2>
+    <div class="how-to">
+        【操作】移動：ドラッグ＆ドロップ ／ 削除：名前をクリック<br>
+        <span class="caution">【注意】「変更を保存」を押すとデータベースが上書きされ、それ以前の状態には戻せません。</span><br>
+        保存前に「エクセル用にコピー」でバックアップを取っておくことを推奨します。
+    </div>
+    <div class="actions">
+        <div id="month-display" style="font-weight: bold; font-size: 1.1rem; margin-right: 10px;"></div>
+        <button onclick="copyTableForExcel()">エクセル用にコピー</button>
+        <button class="btn-pdf" onclick="generateSplitPDF()">PDF作成（前後半2枚）</button>
+        <div class="spacer"></div>
+        <button onclick="undoLastAction()">1つ前に戻る</button>
+        <button onclick="resetToInitial()">全て元に戻す</button>
+        <button class="btn-save" onclick="saveToDatabase()">変更を保存</button>
+    </div>
+</div>
+
+<div class="table-area">
+    <table class="main-table">
+        <thead id="h-row"></thead>
+        <tbody id="b-rows"></tbody>
+    </table>
+</div>
+
+<div id="print-container"></div>
+
+<script>
+    const S_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
+    const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
+    const P_ID  = 'cabb1760-a320-4d61-82c8-c2c069768d35';
+    const client = supabase.createClient(S_URL, S_KEY);
+
+    let _MASTER_DATA = [], _INITIAL_DATA = [], _HISTORY = [], _SHIFT_TYPES = [], _CAL_DATES = [];
+
+    async function startApp() {
+        const now = new Date();
+        const target = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        document.getElementById('month-display').textContent = `${target.getFullYear()}年 ${target.getMonth()+1}月`;
+        const { data: t } = await client.from('shift_types').select('*').eq('project_id', P_ID).order('sort_order');
+        const { data: s } = await client.from('submissions').select('*').eq('project_id', P_ID);
+        _SHIFT_TYPES = t || [];
+        _INITIAL_DATA = JSON.parse(JSON.stringify(s || []));
+        _MASTER_DATA = JSON.parse(JSON.stringify(_INITIAL_DATA));
+        const last = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+        _CAL_DATES = Array.from({length: last}, (_, i) => `${target.getFullYear()}-${String(target.getMonth()+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
+        renderAll();
+    }
+
+    function renderAll() {
+        const h = document.getElementById('h-row'), b = document.getElementById('b-rows'), w = ["日","月","火","水","木","金","土"];
+        h.innerHTML = `<tr><th class="shift-name-col">シフト枠</th>${_CAL_DATES.map(d => {
+            const dt = new Date(d), dayIdx = dt.getDay(), cl = dayIdx === 0 ? 'txt-sun' : (dayIdx === 6 ? 'txt-sat' : '');
+            return `<th><span class="${cl}">${dt.getMonth()+1}/${dt.getDate()}(${w[dayIdx]})</span></th>`;
+        }).join('')}</tr>`;
+        b.innerHTML = '';
+        _SHIFT_TYPES.forEach(type => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td class="shift-name-col">${type.name}</td>`;
+            _CAL_DATES.forEach(date => {
+                const td = document.createElement('td');
+                td.ondragover = e => e.preventDefault();
+                td.ondrop = e => { e.preventDefault(); handleMove(JSON.parse(e.dataTransfer.getData("text/plain")), date, type.name); };
+                _MASTER_DATA.forEach(staff => {
+                    if ((staff.shift_data[date] || []).includes(type.name)) {
+                        const tag = document.createElement('div');
+                        tag.className = 'name-tag'; tag.textContent = staff.staff_name; tag.draggable = true;
+                        tag.onclick = () => handleDelete(staff.id, date, type.name, staff.staff_name);
+                        tag.ondragstart = e => { e.dataTransfer.setData("text/plain", JSON.stringify({ id: staff.id, d: date, t: type.name })); };
+                        td.appendChild(tag);
+                    }
+                });
+                row.appendChild(td);
+            });
+            b.appendChild(row);
+        });
+    }
+
+    function generateSplitPDF() {
+        const loading = document.getElementById('print-loading');
+        const container = document.getElementById('print-container');
+        loading.style.display = 'flex';
+        container.innerHTML = '';
+        const w = ["日","月","火","水","木","金","土"];
+        const monthTitle = document.getElementById('month-display').textContent;
+        const chunks = [{ title: "前半(1-15日)", dates: _CAL_DATES.slice(0, 15) }, { title: "後半(16日-末)", dates: _CAL_DATES.slice(15) }];
+        chunks.forEach(chunk => {
+            let html = `<div class="print-page"><h3>${monthTitle} ${chunk.title}</h3><table class="print-table"><thead><tr><th class="p-shift-col">シフト枠</th>`;
+            chunk.dates.forEach(d => {
+                const dt = new Date(d), dayIdx = dt.getDay(), cl = dayIdx === 0 ? 'txt-sun' : (dayIdx === 6 ? 'txt-sat' : '');
+                html += `<th><span class="${cl}">${dt.getMonth()+1}/${dt.getDate()}(${w[dayIdx]})</span></th>`;
+            });
+            html += `</tr></thead><tbody>`;
+            _SHIFT_TYPES.forEach(type => {
+                html += `<tr><td class="p-shift-col">${type.name}</td>`;
+                chunk.dates.forEach(date => {
+                    html += `<td>`;
+                    _MASTER_DATA.forEach(staff => {
+                        if ((staff.shift_data[date] || []).includes(type.name)) {
+                            html += `<span class="p-name">${staff.staff_name}</span>`;
+                        }
+                    });
+                    html += `</td>`;
+                });
+                html += `</tr>`;
+            });
+            html += `</tbody></table></div>`;
+            container.innerHTML += html;
+        });
+        setTimeout(() => { loading.style.display = 'none'; window.print(); }, 800);
+    }
+
+    function pushHistory() { _HISTORY.push(JSON.parse(JSON.stringify(_MASTER_DATA))); }
+    function undoLastAction() { if (_HISTORY.length > 0) { _MASTER_DATA = _HISTORY.pop(); renderAll(); } }
+    function resetToInitial() { if (confirm("全て元に戻しますか？")) { _MASTER_DATA = JSON.parse(JSON.stringify(_INITIAL_DATA)); _HISTORY = []; renderAll(); } }
+    function handleMove(info, toDate, toType) { pushHistory(); const s = _MASTER_DATA.find(st => String(st.id) === String(info.id)); if (s) { s.shift_data[info.d] = s.shift_data[info.d].filter(v => v !== info.t); if (!s.shift_data[toDate]) s.shift_data[toDate] = []; s.shift_data[toDate].push(toType); renderAll(); } }
+    function handleDelete(staffId, date, typeName, name) { if (confirm(`${name}さんを削除しますか？`)) { pushHistory(); const s = _MASTER_DATA.find(st => String(st.id) === String(staffId)); if (s && s.shift_data[date]) { s.shift_data[date] = s.shift_data[date].filter(v => v !== typeName); renderAll(); } } }
+    async function saveToDatabase() { if(!confirm("変更を保存しますか？")) return; try { for (const s of _MASTER_DATA) { await client.from('submissions').update({ shift_data: s.shift_data }).eq('id', s.id); } alert("保存完了しました。"); _INITIAL_DATA = JSON.parse(JSON.stringify(_MASTER_DATA)); _HISTORY = []; } catch (err) { alert(err.message); } }
+    function copyTableForExcel() {
+        const table = document.querySelector('.main-table');
+        let text = "";
+        const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.innerText.trim());
+        text += headers.join("\t") + "\n";
+        table.querySelectorAll('tbody tr').forEach(row => {
+            const cells = Array.from(row.querySelectorAll('td')).map(td => {
+                const tags = Array.from(td.querySelectorAll('.name-tag')).map(tag => tag.innerText);
+                return td.classList.contains('shift-name-col') ? td.innerText.trim() : tags.join(", ");
+            });
+            text += cells.join("\t") + "\n";
+        });
+        navigator.clipboard.writeText(text).then(() => alert("エクセル用にコピーしました。"));
+    }
+    window.onload = startApp;
+</script>
+</body>
+</html>

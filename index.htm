@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>読み込み中...</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f9; --sat: #007bff; --sun: #dc3545; --error-bg: #ffebeb; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #333; font-size: 18px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); box-sizing: border-box; }
+        h1 { text-align: center; font-size: 1.6rem; color: #222; margin-bottom: 20px; }
+        .msg-box { background: #f0f7ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 1rem; white-space: pre-wrap; border-left: 5px solid var(--primary); }
+        input[type="text"], textarea { width: 100%; padding: 15px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 20px; font-size: 18px; }
+        .calendar-wrapper { border: 1px solid #eee; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+        .weekday-header { display: grid; grid-template-columns: repeat(7, 1fr); background: #eee; text-align: center; font-weight: bold; font-size: 0.9rem; padding: 10px 0; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #eee; max-height: 400px; overflow-y: auto; }
+        .day-cell { background: #fff; aspect-ratio: 1/1.4; display: flex; flex-direction: column; align-items: center; padding-top: 8px; cursor: pointer; font-size: 1rem; transition: background 0.3s; }
+        .day-cell span { font-weight: bold; }
+        /* 未入力時のハイライト用クラス */
+        .day-cell.is-error { background: var(--error-bg); border: 2px solid var(--danger); box-sizing: border-box; }
+        
+        .weekday-header div:nth-child(7), .day-cell:nth-child(7n) span { color: var(--sat); }
+        .weekday-header div:nth-child(1), .day-cell:nth-child(7n+1) span { color: var(--sun); }
+        .shift-display { display: flex; flex-direction: column; width: 100%; align-items: center; margin-top: 4px; }
+        .shift-tag { font-size: 0.75rem; color: var(--primary); font-weight: bold; line-height: 1.2; }
+        .shift-tag.is-off { color: var(--danger); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; width: 95%; max-width: 450px; border-radius: 15px; padding: 25px; box-sizing: border-box; }
+        .shift-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 25px 0; }
+        .shift-btn { padding: 18px 5px; border: 2px solid var(--primary); background: white; color: var(--primary); border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: bold; }
+        .shift-btn.active { background: var(--primary); color: white; }
+        .shift-btn.is-off-btn { border-color: var(--danger); color: var(--danger); }
+        .shift-btn.is-off-btn.active { background: var(--danger); color: white; }
+        .modal-footer { display: flex; gap: 10px; }
+        .btn { border: none; border-radius: 10px; font-weight: bold; cursor: pointer; padding: 18px; font-size: 1.1rem; }
+        .btn-confirm { background: var(--success); color: white; flex: 2; }
+        .btn-clear { background: var(--danger); color: white; flex: 1; }
+        #confirm-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; padding: 20px; overflow-y: auto; box-sizing: border-box; }
+        .summary-item { padding: 12px 0; border-bottom: 1px solid #eee; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="input-screen">
+    <h1 id="h1-title">読み込み中...</h1>
+    <div id="msg-top" class="msg-box"></div>
+    
+    <label>氏名（必須）</label>
+    <input type="text" id="staff-name" placeholder="お名前を入力">
+
+    <div id="msg-calendar" class="msg-box"></div>
+
+    <div class="calendar-wrapper">
+        <div class="weekday-header">
+            <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
+        </div>
+        <div id="calendar" class="calendar-grid"></div>
+    </div>
+    
+    <div id="msg-bottom" class="msg-box"></div> 
+    <label>備考・その他希望</label>
+    <textarea id="free-text" rows="3" placeholder="特記事項があれば入力"></textarea>
+    
+    <button class="btn btn-confirm" style="width:100%;" onclick="showSummary()">内容確認ボタン</button>
+</div>
+
+<div id="shift-modal" class="modal">
+    <div class="modal-content">
+        <h3 id="modal-date-display" style="text-align:center; margin-top:0; font-size:1.3rem;">日付</h3>
+        <div id="shift-options" class="shift-options"></div>
+        <div class="modal-footer">
+            <button class="btn btn-clear" onclick="clearTemp()">クリア</button>
+            <button class="btn btn-confirm" onclick="applyShift()">決定</button>
+        </div>
+        <button onclick="closeModal()" style="display:block; width:100%; margin-top:20px; font-size:1rem; border:none; background:none; color:gray;">閉じる</button>
+    </div>
+</div>
+
+<div id="confirm-screen">
+    <h2 style="text-align:center;">入力内容の確認</h2>
+    <div id="msg-confirm" class="msg-box"></div> 
+    <div id="summary-content"></div>
+    <div style="margin: 20px 0; display: flex; flex-direction: column; gap: 15px;">
+        <button class="btn" style="background:var(--primary); color:white;" onclick="copyToClipboard()">シフト希望内容をコピーする</button>
+        <button class="btn" style="background:#666; color:white;" onclick="hideSummary()">戻って選択し直す</button>
+        <button class="btn btn-confirm" onclick="submitFinal()">送信ボタン</button>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+        // 1. 設定情報（あなたの情報に書き換えてください）
+        // ==========================================
+        // 左メニュー「設定」→「Date API」→「Project URL」をコピー
+        const SUBAPASE_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
+
+　　　　// 左メニュー「設定」→「API Keys」→「Publishable key」をコピー
+        const SUPABASE_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
+　　　　
+　　　　//テーブルエディタのIDのUUIDをコピー
+        const PROJECT_ID   = 'cabb1760-a320-4d61-82c8-c2c069768d35';
+
+    const db = supabase.createClient(SUBAPASE_URL, SUPABASE_KEY);
+    const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
+    let shiftTypes = [];
+    let selectedShifts = {}; 
+    let tempSelected = [];
+    let targetDate = "";
+    let totalDays = 0; 
+    let currentFullDates = []; // カレンダーに存在する全日付リスト
+
+    async function init() {
+        const now = new Date();
+        const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        const urlParam = window.location.search;
+        const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${nextMonthDate.getMonth() + 1}_${urlParam}`;
+        
+        if (localStorage.getItem(nextMonthKey)) {
+            document.body.innerHTML = `
+                <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
+                    <h2 style="font-size:2rem;">提出済み</h2>
+                    <p style="color:#666;">来月分のシフト希望は送信済みです。<br>変更がある場合は管理者に連絡してください。</p>
+                </div>`;
+            return;
+        }
+
+        try {
+            const [pRes, sRes] = await Promise.all([
+                db.from('projects').select('*').eq('id', PROJECT_ID).single(),
+                db.from('shift_types').select('*').eq('project_id', PROJECT_ID).order('sort_order')
+            ]);
+            if (pRes.error || sRes.error) throw (pRes.error || sRes.error);
+
+            const proj = pRes.data;
+            shiftTypes = sRes.data;
+            const m = nextMonthDate.getMonth() + 1;
+
+            document.title = proj.title_tag || "シフト提出";
+            document.getElementById('h1-title').textContent = proj.title_tag ? proj.title_tag.replace('◯', m) : `${m}月のシフト希望`;
+            
+            document.getElementById('msg-top').textContent = proj.msg_top || ""; 
+            document.getElementById('msg-calendar').textContent = proj.msg_calendar || "";
+            document.getElementById('msg-bottom').textContent = proj.msg_bottom || "";
+            document.getElementById('msg-confirm').textContent = proj.msg_confirm || "";
+
+            renderCalendar(nextMonthDate);
+        } catch (e) { console.error(e); alert("読み込み失敗"); }
+    }
+
+    function renderCalendar(baseDate) {
+        const container = document.getElementById('calendar');
+        container.innerHTML = '';
+        const y = baseDate.getFullYear(), m = baseDate.getMonth();
+        const firstDay = new Date(y, m, 1).getDay();
+        const lastDate = new Date(y, m + 1, 0).getDate();
+        totalDays = lastDate;
+        currentFullDates = []; // リセット
+
+        for (let i = 0; i < firstDay; i++) {
+            const empty = document.createElement('div');
+            empty.className = 'day-cell';
+            container.appendChild(empty);
+        }
+
+        for (let d = 1; d <= lastDate; d++) {
+            const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            currentFullDates.push(dateStr); // 日付リストに追加
+            
+            const cell = document.createElement('div');
+            cell.className = 'day-cell';
+            cell.id = `cell-${dateStr}`;
+            const weekDay = weekDays[new Date(y, m, d).getDay()];
+            cell.innerHTML = `<span>${d}</span><div class="shift-display"></div>`;
+            cell.onclick = () => {
+                // クリックされたら赤色を消す
+                cell.classList.remove('is-error');
+                openModal(dateStr, d, weekDay);
+            };
+            container.appendChild(cell);
+        }
+    }
+
+    // --- モーダル制御 ---
+    function openModal(date, day, weekDay) {
+        targetDate = date;
+        document.getElementById('modal-date-display').textContent = `${date.split('-')[1]}月${day}日(${weekDay})の希望`;
+        tempSelected = selectedShifts[date] ? [...selectedShifts[date]] : [];
+        renderOptions();
+        document.getElementById('shift-modal').style.display = 'flex';
+    }
+
+    function renderOptions() {
+        const div = document.getElementById('shift-options');
+        div.innerHTML = '';
+        shiftTypes.forEach(t => {
+            const b = document.createElement('button');
+            b.className = `shift-btn ${tempSelected.includes(t.name) ? 'active' : ''}`;
+            if (t.name === '休み') b.classList.add('is-off-btn');
+            b.textContent = t.name;
+            b.onclick = () => {
+                if (tempSelected.includes(t.name)) tempSelected = tempSelected.filter(x => x !== t.name);
+                else tempSelected.push(t.name);
+                renderOptions();
+            };
+            div.appendChild(b);
+        });
+    }
+
+    function applyShift() {
+        if (tempSelected.length > 0) selectedShifts[targetDate] = [...tempSelected];
+        else delete selectedShifts[targetDate];
+        updateCell(targetDate);
+        closeModal();
+    }
+
+    function updateCell(date) {
+        const display = document.getElementById(`cell-${date}`).querySelector('.shift-display');
+        display.innerHTML = (selectedShifts[date] || []).map(s => `<div class="shift-tag ${s==='休み'?'is-off':''}">${s}</div>`).join('');
+    }
+
+    function clearTemp() { tempSelected = []; renderOptions(); }
+    function closeModal() { document.getElementById('shift-modal').style.display = 'none'; }
+
+    // --- 確認・送信処理 ---
+    function showSummary() {
+        const name = document.getElementById('staff-name').value;
+        if (!name) return alert("氏名を入力してください");
+        
+        // 全日チェック & 未入力日を赤くする
+        let missingDates = [];
+        currentFullDates.forEach(date => {
+            const cell = document.getElementById(`cell-${date}`);
+            if (!selectedShifts[date]) {
+                cell.classList.add('is-error'); // 未入力セルを赤く
+                missingDates.push(date);
+            } else {
+                cell.classList.remove('is-error');
+            }
+        });
+
+        if (missingDates.length > 0) {
+            return alert(`未入力の日があります（赤色のセル）。\n全${totalDays}日分の選択をお願いします。`);
+        }
+        
+        const summary = document.getElementById('summary-content');
+        summary.innerHTML = `<div class="summary-item"><strong>提出者:</strong> ${name} 様</div>`;
+        
+        Object.keys(selectedShifts).sort().forEach(date => {
+            const dObj = new Date(date);
+            const formattedDate = `${dObj.getMonth()+1}/${dObj.getDate()}(${weekDays[dObj.getDay()]})`;
+            summary.innerHTML += `<div class="summary-item"><strong>${formattedDate}:</strong> ${selectedShifts[date].join(', ')}</div>`;
+        });
+
+        const freeText = document.getElementById('free-text').value;
+        if (freeText) {
+            summary.innerHTML += `<div class="summary-item" style="background:#f9f9f9; padding:10px; margin-top:10px;"><strong>備考:</strong><br>${freeText.replace(/\n/g, '<br>')}</div>`;
+        }
+        document.getElementById('confirm-screen').style.display = 'block';
+    }
+
+    function hideSummary() { document.getElementById('confirm-screen').style.display = 'none'; }
+
+    async function submitFinal() {
+        if (!confirm("送信しますか？")) return;
+        try {
+            const { error } = await db.from('submissions').insert([{
+                project_id: PROJECT_ID,
+                staff_name: document.getElementById('staff-name').value,
+                shift_data: selectedShifts,
+                memo: document.getElementById('free-text').value
+            }]);
+            if (error) throw error;
+
+            const nextMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
+            const urlParam = window.location.search;
+            const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${nextMonthDate.getMonth() + 1}_${urlParam}`;
+            localStorage.setItem(nextMonthKey, "true");
+
+            alert("送信完了しました！");
+            location.reload(); 
+        } catch (e) { alert("送信エラー: " + JSON.stringify(e)); }
+    }
+
+    function copyToClipboard() {
+        const text = document.getElementById('summary-content').innerText;
+        navigator.clipboard.writeText(text).then(() => alert("コピーしました"));
+    }
+
+    init();
+</script>
+</body>
+</html>
