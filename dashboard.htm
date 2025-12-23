@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>シフト管理ダッシュボード</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root { --primary: #4f46e5; --bg: #f9fafb; --text: #111827; }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; }
+        
+        /* ログイン画面 */
+        #auth-container { position: fixed; inset: 0; background: white; display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .auth-box { width: 350px; padding: 30px; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .auth-box input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+        
+        /* メインレイアウト */
+        #sidebar { width: 240px; background: #1f2937; color: white; padding: 20px; flex-shrink: 0; }
+        #main-content { flex-grow: 1; overflow-y: auto; padding: 30px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        
+        h1, h2 { margin-top: 0; }
+        .nav-item { padding: 12px; cursor: pointer; border-radius: 6px; margin-bottom: 5px; }
+        .nav-item:hover { background: #374151; }
+        .nav-active { background: var(--primary); }
+
+        button { padding: 8px 16px; border-radius: 6px; cursor: pointer; border: none; font-weight: bold; }
+        .btn-primary { background: var(--primary); color: white; }
+        
+        /* フォーム */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        
+        #qrcode { margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div id="auth-container">
+    <div class="auth-box">
+        <h2>管理者ログイン</h2>
+        <input type="email" id="email" placeholder="メールアドレス">
+        <input type="password" id="password" placeholder="パスワード">
+        <button class="btn-primary" style="width:100%" onclick="login()">ログイン</button>
+    </div>
+</div>
+
+<div id="sidebar">
+    <h3>管理者メニュー</h3>
+    <div class="nav-item nav-active" onclick="showSection('projects')">案件一覧・作成</div>
+    <div class="nav-item" onclick="showSection('edit-content')">ページ内容編集</div>
+    <div class="nav-item" onclick="showSection('shift-types')">シフト枠管理</div>
+    <div class="nav-item" onclick="showSection('qr-gen')">URL・QR作成</div>
+    <div style="margin-top: 50px;">
+        <button onclick="logout()" style="background:transparent; color:#9ca3af; border:1px solid #4b5563;">ログアウト</button>
+    </div>
+</div>
+
+<div id="main-content">
+    
+    <section id="sec-projects">
+        <h1>案件一覧</h1>
+        <div class="card">
+            <button class="btn-primary" onclick="alert('新規案件作成機能を実装します')">+ 新規案件を作成</button>
+            <p style="color:#666; margin-top:20px;">※ここに作成済みの案件リストが表示されます。</p>
+        </div>
+    </section>
+
+    <section id="sec-edit-content" style="display:none;">
+        <h1>ページ内容の編集（index.html用）</h1>
+        <div class="card">
+            <div class="form-group">
+                <label>希望ページのタイトル（H1）</label>
+                <input type="text" id="page-title" placeholder="例：2024年1月度 シフト希望入力">
+            </div>
+            <div class="form-group">
+                <label>メッセージ欄</label>
+                <textarea id="page-msg" rows="4" placeholder="例：提出期限は20日までです。"></textarea>
+            </div>
+            <button class="btn-primary" onclick="saveProjectSettings()">設定を保存</button>
+        </div>
+    </section>
+
+    <section id="sec-qr-gen" style="display:none;">
+        <h1>QRコード生成</h1>
+        <div class="card">
+            <div class="form-group">
+                <label>希望ページのURL</label>
+                <input type="text" id="target-url" value="https://masarion.github.io/shift-app/index.html" readonly>
+            </div>
+            <button onclick="generateQR()">QRコードを生成</button>
+            <div id="qrcode"></div>
+        </div>
+    </section>
+
+</div>
+
+<script>
+    const S_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
+    const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m'; // 後ほど制限をかけましょう
+    const client = supabase.createClient(S_URL, S_KEY);
+
+    // --- 認証機能 ---
+    async function login() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const { data, error } = await client.auth.signInWithPassword({ email, password });
+        
+        if (error) {
+            alert("ログイン失敗: " + error.message);
+        } else {
+            document.getElementById('auth-container').style.display = 'none';
+            loadProjectData();
+        }
+    }
+
+    async function logout() {
+        await client.auth.signOut();
+        location.reload();
+    }
+
+    // --- 画面切り替え ---
+    function showSection(id) {
+        document.querySelectorAll('section').forEach(s => s.style.display = 'none');
+        document.getElementById('sec-' + id).style.display = 'block';
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('nav-active'));
+        event.target.classList.add('nav-active');
+    }
+
+    // --- 設定保存（仮） ---
+    async function saveProjectSettings() {
+        const title = document.getElementById('page-title').value;
+        const msg = document.getElementById('page-msg').value;
+        alert(`保存しました！\nタイトル: ${title}\nメッセージ: ${msg}`);
+        // ここでSupabaseのprojectsテーブルをupdateする処理を追加します
+    }
+
+    // --- QRコード生成 ---
+    function generateQR() {
+        const url = document.getElementById('target-url').value;
+        document.getElementById('qrcode').innerHTML = "";
+        new QRCode(document.getElementById("qrcode"), url);
+    }
+
+    // セッションチェック（自動ログイン）
+    window.onload = async () => {
+        const { data: { session } } = await client.auth.getSession();
+        if (session) document.getElementById('auth-container').style.display = 'none';
+    };
+</script>
+</body>
+</html>
