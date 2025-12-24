@@ -178,20 +178,15 @@
 
         // --- selectProject 関数内の URL生成部分をこれに差し替え ---
 
-// 1. 現在のURLから「ファイル名より前の部分」を切り出す
-const currentUrl = window.location.href.split('?')[0].split('#')[0];
-const pathArray = currentUrl.split('/');
-pathArray.pop(); // dashboard.htm を取り除く
-const baseUrl = pathArray.join('/'); // フォルダまでのパスを再構築
+// --- 【修正版】URL生成ロジック（Lなしの .htm に固定） ---
+    let currentUrl = window.location.href.split('?')[0].split('#')[0];
+    let baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/'));
+    
+    // ここを index.html から index.htm に変更しました
+    const finalPreviewUrl = baseUrl + '/index.htm?id=' + id;
 
-// 2. index.html と index.htm の両方を試せるように、まず index.htm で組み立てる
-// ※ もしあなたのファイル名が index.htm なら、ここを 'index.html' に書き換えてください
-const targetFile = 'index.htm'; 
-const finalPreviewUrl = `${baseUrl}/${targetFile}?id=${id}`;
-
-// 3. 反映
-document.getElementById('preview-link').href = finalPreviewUrl;
-document.getElementById('target-url').value = finalPreviewUrl;
+    document.getElementById('preview-link').href = finalPreviewUrl;
+    document.getElementById('target-url').value = finalPreviewUrl;
 
         // シフト枠
         const { data: shifts } = await client.from('shift_types').select('*').eq('project_id', id).order('display_order');
@@ -265,5 +260,6 @@ document.getElementById('target-url').value = finalPreviewUrl;
 </script>
 </body>
 </html>
+
 
 
