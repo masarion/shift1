@@ -96,11 +96,11 @@
         <div style="display: flex; gap: 30px; align-items: flex-start;">
             <div class="card" style="flex: 1.2;">
                 <h3>1. 表示テキストの設定</h3>
-                <div class="form-group"><label>管理用名称（URL作成時に使用）</label><input type="text" id="field-title_tag"></div>
-                <div class="form-group"><label>画面トップの見出し（◯月は自動置換されます）</label><input type="text" id="field-h1_title"></div>
+                <div class="form-group"><label>管理用名称</label><input type="text" id="field-title_tag"></div>
+                <div class="form-group"><label>画面トップの見出し</label><input type="text" id="field-h1_title"></div>
                 <div class="form-group"><label>冒頭メッセージ</label><textarea id="field-msg_top" rows="3"></textarea></div>
                 <div class="form-group"><label>カレンダー操作説明</label><textarea id="field-msg_calendar" rows="3"></textarea></div>
-                <div class="form-group"><label>フォーム説明（氏名入力の下）</label><textarea id="field-msg_bottom" rows="3"></textarea></div>
+                <div class="form-group"><label>フォーム説明</label><textarea id="field-msg_bottom" rows="3"></textarea></div>
                 <div class="form-group"><label>確認画面の注意書き</label><textarea id="field-msg_confirm" rows="3"></textarea></div>
                 <div style="display:none;"><textarea id="field-form_config"></textarea></div>
             </div>
@@ -134,12 +134,13 @@
     let currentProjectId = null;
     let sortableInstance = null;
 
+    // --- 認証 ---
     async function login() {
-        const { error } = await client.auth.signInWithPassword({
-            email: document.getElementById('email').value,
-            password: document.getElementById('password').value
-        });
-        if (error) alert("失敗: " + error.message); else location.reload();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const { error } = await client.auth.signInWithPassword({ email, password });
+        if (error) alert("ログイン失敗: " + error.message); 
+        else location.reload();
     }
     async function logout() { await client.auth.signOut(); location.reload(); }
 
@@ -149,8 +150,10 @@
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('nav-active'));
     }
 
+    // --- データ読み込み ---
     async function loadProjectData() {
-        const { data: projects } = await client.from('projects').select('*').order('created_at', { ascending: false });
+        const { data: projects, error } = await client.from('projects').select('*').order('created_at', { ascending: false });
+        if(error) return;
         const container = document.getElementById('project-list-container');
         container.innerHTML = projects.map(pj => `
             <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
@@ -162,12 +165,9 @@
 
     async function selectProject(id) {
         currentProjectId = id;
-        
-        // データの取得
         const { data: pj } = await client.from('projects').select('*').eq('id', id).single();
-        if (!pj) return alert("案件データが見つかりません");
+        if (!pj) return alert("案件が見つかりません");
 
-        // フォームへの値セット
         document.getElementById('current-pj-name').textContent = `編集中の案件: ${pj.title_tag}`;
         document.getElementById('field-title_tag').value = pj.title_tag || '';
         document.getElementById('field-h1_title').value = pj.h1_title || '';
@@ -175,46 +175,22 @@
         document.getElementById('field-msg_calendar').value = pj.msg_calendar || '';
         document.getElementById('field-msg_bottom').value = pj.msg_bottom || '';
         document.getElementById('field-msg_confirm').value = pj.msg_confirm || '';
-        document.getElementById('field-form_config').value = JSON.stringify(pj.form_config || {});
 
-        // --- URL生成の修正（htm / html 両対応） ---
+        // URL生成の修正 (dashboard.htm を index.html に置換)
         let currentUrl = window.location.href.split('?')[0].split('#')[0];
-        // dashboard.htm または dashboard.html を index.html に書き換える
-        let previewUrlBase = currentUrl.replace(/dashboard\.html?$/, 'index.html');
-        
-        // もし置換が起きなかった（ファイル名が違う）場合でも強制的に index.html に向ける安全策
-        if (previewUrlBase.endsWith('dashboard.htm')) {
-            previewUrlBase = previewUrlBase.replace('dashboard.htm', 'index.html');
-        }
-
+        let previewUrlBase = currentUrl.replace(/dashboard\.htm(l)?$/, 'index.html');
         const finalPreviewUrl = previewUrlBase + '?id=' + id;
-        
-        // プレビューリンクとコピー用URLに反映
+
         document.getElementById('preview-link').href = finalPreviewUrl;
         document.getElementById('target-url').value = finalPreviewUrl;
 
-        // シフト枠の取得
-        const { data: shifts } = await client.from('shift_types').select('*').eq('project_id', id).order('display_order');
-        document.getElementById('shift-list').innerHTML = '';
-        if(shifts && shifts.length > 0) {
-            shifts.forEach(s => addShiftRow(s.name));
-        } else {
-            addShiftRow('休み');
-        }
-
-        // 並べ替え機能の再初期化
-        const el = document.getElementById('shift-list');
-        if (sortableInstance) sortableInstance.destroy();
-        sortableInstance = new Sortable(el, { handle: '.drag-handle', animation: 150, ghostClass: 'ghost' });
-
-        showSection('edit-all');
-    }
-
+        // シフト枠
         const { data: shifts } = await client.from('shift_types').select('*').eq('project_id', id).order('display_order');
         document.getElementById('shift-list').innerHTML = '';
         if(shifts && shifts.length > 0) shifts.forEach(s => addShiftRow(s.name));
         else addShiftRow('休み');
 
+        // ドラッグ初期化
         const el = document.getElementById('shift-list');
         if (sortableInstance) sortableInstance.destroy();
         sortableInstance = new Sortable(el, { handle: '.drag-handle', animation: 150, ghostClass: 'ghost' });
@@ -231,6 +207,8 @@
 
     async function saveAllSettings() {
         if (!currentProjectId) return;
+        const btn = document.querySelector('.btn-save-all');
+        btn.innerText = "保存中...";
         try {
             await client.from('projects').update({
                 title_tag: document.getElementById('field-title_tag').value,
@@ -247,8 +225,9 @@
             })).filter(s => s.name.trim() !== '');
 
             if(newShifts.length > 0) await client.from('shift_types').insert(newShifts);
-            alert("保存しました！プレビューで確認してください。");
+            alert("保存しました！");
         } catch (err) { alert(err.message); }
+        btn.innerText = "設定を保存して反映する";
     }
 
     async function createNewProject() {
@@ -260,10 +239,12 @@
 
     function generateQR() {
         const url = document.getElementById('target-url').value;
+        if(!url) return alert("案件を選択してください");
         document.getElementById('qrcode').innerHTML = "";
         new QRCode(document.getElementById("qrcode"), { text: url, width: 180, height: 180 });
     }
 
+    // 初期化
     window.onload = async () => {
         const { data: { session } } = await client.auth.getSession();
         if (session) {
@@ -275,5 +256,3 @@
 </script>
 </body>
 </html>
-
-
