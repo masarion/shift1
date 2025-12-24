@@ -17,9 +17,7 @@
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #eee; max-height: 400px; overflow-y: auto; }
         .day-cell { background: #fff; aspect-ratio: 1/1.4; display: flex; flex-direction: column; align-items: center; padding-top: 8px; cursor: pointer; font-size: 1rem; transition: background 0.3s; }
         .day-cell span { font-weight: bold; }
-        /* 未入力時のハイライト用クラス */
         .day-cell.is-error { background: var(--error-bg); border: 2px solid var(--danger); box-sizing: border-box; }
-        
         .weekday-header div:nth-child(7), .day-cell:nth-child(7n) span { color: var(--sat); }
         .weekday-header div:nth-child(1), .day-cell:nth-child(7n+1) span { color: var(--sun); }
         .shift-display { display: flex; flex-direction: column; width: 100%; align-items: center; margin-top: 4px; }
@@ -89,7 +87,7 @@
 </div>
 
 <script>
-    // ==========================================
+     // ==========================================
         // 1. 設定情報（あなたの情報に書き換えてください）
         // ==========================================
         // 左メニュー「設定」→「Date API」→「Project URL」をコピー
@@ -108,13 +106,17 @@
     let tempSelected = [];
     let targetDate = "";
     let totalDays = 0; 
-    let currentFullDates = []; // カレンダーに存在する全日付リスト
+    let currentFullDates = [];
 
     async function init() {
+        if (!PROJECT_ID) {
+            document.body.innerHTML = "<div style='padding:50px; text-align:center;'><h1>エラー</h1><p>URLが正しくありません。</p></div>";
+            return;
+        }
+
         const now = new Date();
         const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-        const urlParam = window.location.search;
-        const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${nextMonthDate.getMonth() + 1}_${urlParam}`;
+        const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${nextMonthDate.getMonth() + 1}_${PROJECT_ID}`;
         
         if (localStorage.getItem(nextMonthKey)) {
             document.body.innerHTML = `
@@ -126,26 +128,35 @@
         }
 
         try {
+            // ダッシュボードで設定した情報を取得
             const [pRes, sRes] = await Promise.all([
                 db.from('projects').select('*').eq('id', PROJECT_ID).single(),
-                db.from('shift_types').select('*').eq('project_id', PROJECT_ID).order('sort_order')
+                db.from('shift_types').select('*').eq('project_id', PROJECT_ID).order('display_order', { ascending: true })
             ]);
+            
             if (pRes.error || sRes.error) throw (pRes.error || sRes.error);
 
             const proj = pRes.data;
             shiftTypes = sRes.data;
             const m = nextMonthDate.getMonth() + 1;
 
+            // 各メッセージをHTMLに反映
             document.title = proj.title_tag || "シフト提出";
-            document.getElementById('h1-title').textContent = proj.title_tag ? proj.title_tag.replace('◯', m) : `${m}月のシフト希望`;
-            
+            document.getElementById('h1-title').textContent = proj.h1_title ? proj.h1_title.replace('◯', m) : `${m}月のシフト希望`;
             document.getElementById('msg-top').textContent = proj.msg_top || ""; 
             document.getElementById('msg-calendar').textContent = proj.msg_calendar || "";
             document.getElementById('msg-bottom').textContent = proj.msg_bottom || "";
             document.getElementById('msg-confirm').textContent = proj.msg_confirm || "";
 
+            // 非表示設定のメッセージは空なら隠す
+            ['msg-top', 'msg-calendar', 'msg-bottom', 'msg-confirm'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el.textContent.trim()) el.style.display = 'none';
+                else el.style.display = 'block';
+            });
+
             renderCalendar(nextMonthDate);
-        } catch (e) { console.error(e); alert("読み込み失敗"); }
+        } catch (e) { console.error(e); alert("設定の読み込みに失敗しました。URLを確認してください。"); }
     }
 
     function renderCalendar(baseDate) {
@@ -155,7 +166,7 @@
         const firstDay = new Date(y, m, 1).getDay();
         const lastDate = new Date(y, m + 1, 0).getDate();
         totalDays = lastDate;
-        currentFullDates = []; // リセット
+        currentFullDates = [];
 
         for (let i = 0; i < firstDay; i++) {
             const empty = document.createElement('div');
@@ -165,15 +176,15 @@
 
         for (let d = 1; d <= lastDate; d++) {
             const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-            currentFullDates.push(dateStr); // 日付リストに追加
+            currentFullDates.push(dateStr); 
             
             const cell = document.createElement('div');
             cell.className = 'day-cell';
             cell.id = `cell-${dateStr}`;
-            const weekDay = weekDays[new Date(y, m, d).getDay()];
+            const weekDayNum = new Date(y, m, d).getDay();
+            const weekDay = weekDays[weekDayNum];
             cell.innerHTML = `<span>${d}</span><div class="shift-display"></div>`;
             cell.onclick = () => {
-                // クリックされたら赤色を消す
                 cell.classList.remove('is-error');
                 openModal(dateStr, d, weekDay);
             };
@@ -181,7 +192,6 @@
         }
     }
 
-    // --- モーダル制御 ---
     function openModal(date, day, weekDay) {
         targetDate = date;
         document.getElementById('modal-date-display').textContent = `${date.split('-')[1]}月${day}日(${weekDay})の希望`;
@@ -196,7 +206,8 @@
         shiftTypes.forEach(t => {
             const b = document.createElement('button');
             b.className = `shift-btn ${tempSelected.includes(t.name) ? 'active' : ''}`;
-            if (t.name === '休み') b.classList.add('is-off-btn');
+            // 「休み」という文字が含まれていれば赤色スタイルにする
+            if (t.name.includes('休み')) b.classList.add('is-off-btn');
             b.textContent = t.name;
             b.onclick = () => {
                 if (tempSelected.includes(t.name)) tempSelected = tempSelected.filter(x => x !== t.name);
@@ -216,23 +227,21 @@
 
     function updateCell(date) {
         const display = document.getElementById(`cell-${date}`).querySelector('.shift-display');
-        display.innerHTML = (selectedShifts[date] || []).map(s => `<div class="shift-tag ${s==='休み'?'is-off':''}">${s}</div>`).join('');
+        display.innerHTML = (selectedShifts[date] || []).map(s => `<div class="shift-tag ${s.includes('休み')?'is-off':''}">${s}</div>`).join('');
     }
 
     function clearTemp() { tempSelected = []; renderOptions(); }
     function closeModal() { document.getElementById('shift-modal').style.display = 'none'; }
 
-    // --- 確認・送信処理 ---
     function showSummary() {
         const name = document.getElementById('staff-name').value;
         if (!name) return alert("氏名を入力してください");
         
-        // 全日チェック & 未入力日を赤くする
         let missingDates = [];
         currentFullDates.forEach(date => {
             const cell = document.getElementById(`cell-${date}`);
             if (!selectedShifts[date]) {
-                cell.classList.add('is-error'); // 未入力セルを赤く
+                cell.classList.add('is-error'); 
                 missingDates.push(date);
             } else {
                 cell.classList.remove('is-error');
@@ -273,8 +282,7 @@
             if (error) throw error;
 
             const nextMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
-            const urlParam = window.location.search;
-            const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${nextMonthDate.getMonth() + 1}_${urlParam}`;
+            const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${nextMonthDate.getMonth() + 1}_${PROJECT_ID}`;
             localStorage.setItem(nextMonthKey, "true");
 
             alert("送信完了しました！");
