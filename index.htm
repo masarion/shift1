@@ -110,23 +110,24 @@
             return;
         }
 
-        // 来月の月を計算
+        // 1. 来月の数字を計算
         const now = new Date();
         const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-        const m = nextMonthDate.getMonth() + 1;
+        const m = nextMonthDate.getMonth() + 1; // 来月の月
 
-        // 重複提出チェック
+        // 2. 重複提出チェック
         const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${m}_${PROJECT_ID}`;
         if (localStorage.getItem(nextMonthKey)) {
             document.body.innerHTML = `
                 <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
                     <h2 style="font-size:2rem;">提出済み</h2>
-                    <p style="color:#666;">${m}月分のシフト希望は送信済みです。</p>
+                    <p style="color:#666;">${m}月分のシフト希望は送信済みです。<br>変更がある場合は管理者に連絡してください。</p>
                 </div>`;
             return;
         }
 
         try {
+            // 3. Supabaseから設定データを取得
             const [pRes, sRes] = await Promise.all([
                 db.from('projects').select('*').eq('id', PROJECT_ID).single(),
                 db.from('shift_types').select('*').eq('project_id', PROJECT_ID).order('display_order', { ascending: true })
@@ -137,13 +138,14 @@
             const proj = pRes.data;
             shiftTypes = sRes.data;
 
-            // --- H1タイトルの自動置換処理 ---
-            let titleText = proj.h1_title || "{{month}}月のシフト希望";
-            // ◯ または {{month}} を来月の数字に書き換え
-            titleText = titleText.replace('◯', m).replace('{{month}}', m);
+            // --- ★ H1タイトルの冒頭に自動で数字を入れる ★ ---
+            const baseTitle = proj.h1_title || "月のシフト希望";
+            const finalTitle = m + baseTitle; // 数字 ＋ ダッシュボードの文字
 
-            document.title = proj.title_tag || "シフト提出";
-            document.getElementById('h1-title').textContent = titleText;
+            document.getElementById('h1-title').textContent = finalTitle;
+            document.title = proj.title_tag || finalTitle;
+
+            // 4. メッセージ類の反映
             document.getElementById('msg-top').textContent = proj.msg_top || ""; 
             document.getElementById('msg-calendar').textContent = proj.msg_calendar || "";
             document.getElementById('msg-bottom').textContent = proj.msg_bottom || "";
@@ -155,7 +157,9 @@
                 else el.style.display = 'block';
             });
 
+            // 5. 来月のカレンダーを描画（引数に計算済みの翌月の日付を渡す）
             renderCalendar(nextMonthDate);
+
         } catch (e) { 
             console.error(e); 
             alert("設定の読み込みに失敗しました。"); 
@@ -301,3 +305,4 @@
 </script>
 </body>
 </html>
+
