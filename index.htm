@@ -87,17 +87,12 @@
 </div>
 
 <script>
-     // ==========================================
-        // 1. 設定情報（あなたの情報に書き換えてください）
-        // ==========================================
-        // 左メニュー「設定」→「Date API」→「Project URL」をコピー
-        const SUBAPASE_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
-
-　　　　// 左メニュー「設定」→「API Keys」→「Publishable key」をコピー
-        const SUPABASE_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
-　　　　
-　　　　//テーブルエディタのIDのUUIDをコピー
-        const PROJECT_ID   = 'cabb1760-a320-4d61-82c8-c2c069768d35';
+    const SUBAPASE_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
+    
+    // URLの ?id= からプロジェクトIDを取得、なければデフォルト
+    const urlParams = new URLSearchParams(window.location.search);
+    const PROJECT_ID = urlParams.get('id') || 'cabb1760-a320-4d61-82c8-c2c069768d35';
 
     const db = supabase.createClient(SUBAPASE_URL, SUPABASE_KEY);
     const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
@@ -109,26 +104,19 @@
     let currentFullDates = [];
 
     async function init() {
-        if (!PROJECT_ID) {
-            document.body.innerHTML = "<div style='padding:50px; text-align:center;'><h1>エラー</h1><p>URLが正しくありません。</p></div>";
-            return;
-        }
-
+        // 来月を計算
         const now = new Date();
         const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-        const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${nextMonthDate.getMonth() + 1}_${PROJECT_ID}`;
-        
+        const m = nextMonthDate.getMonth() + 1;
+
+        // 重複提出チェック
+        const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${m}_${PROJECT_ID}`;
         if (localStorage.getItem(nextMonthKey)) {
-            document.body.innerHTML = `
-                <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
-                    <h2 style="font-size:2rem;">提出済み</h2>
-                    <p style="color:#666;">来月分のシフト希望は送信済みです。<br>変更がある場合は管理者に連絡してください。</p>
-                </div>`;
+            document.body.innerHTML = `<div style="padding:100px 20px; text-align:center;"><h2>提出済み</h2><p>来月分のシフト希望は送信済みです。</p></div>`;
             return;
         }
 
         try {
-            // ダッシュボードで設定した情報を取得
             const [pRes, sRes] = await Promise.all([
                 db.from('projects').select('*').eq('id', PROJECT_ID).single(),
                 db.from('shift_types').select('*').eq('project_id', PROJECT_ID).order('display_order', { ascending: true })
@@ -138,25 +126,30 @@
 
             const proj = pRes.data;
             shiftTypes = sRes.data;
-            const m = nextMonthDate.getMonth() + 1;
 
-            // 各メッセージをHTMLに反映
+            // --- H1タイトルの自動置換処理 ---
+            let titleText = proj.h1_title || "{{month}}月のシフト希望";
+            // ◯ または {{month}} を 来月の数字に置換
+            titleText = titleText.replace('◯', m).replace('{{month}}', m);
+            
             document.title = proj.title_tag || "シフト提出";
-            document.getElementById('h1-title').textContent = proj.h1_title ? proj.h1_title.replace('◯', m) : `${m}月のシフト希望`;
+            document.getElementById('h1-title').textContent = titleText;
             document.getElementById('msg-top').textContent = proj.msg_top || ""; 
             document.getElementById('msg-calendar').textContent = proj.msg_calendar || "";
             document.getElementById('msg-bottom').textContent = proj.msg_bottom || "";
             document.getElementById('msg-confirm').textContent = proj.msg_confirm || "";
 
-            // 非表示設定のメッセージは空なら隠す
+            // メッセージBOXの表示制御
             ['msg-top', 'msg-calendar', 'msg-bottom', 'msg-confirm'].forEach(id => {
                 const el = document.getElementById(id);
                 if (!el.textContent.trim()) el.style.display = 'none';
-                else el.style.display = 'block';
             });
 
             renderCalendar(nextMonthDate);
-        } catch (e) { console.error(e); alert("設定の読み込みに失敗しました。URLを確認してください。"); }
+        } catch (e) { 
+            console.error(e); 
+            alert("データの読み込みに失敗しました。"); 
+        }
     }
 
     function renderCalendar(baseDate) {
@@ -206,7 +199,6 @@
         shiftTypes.forEach(t => {
             const b = document.createElement('button');
             b.className = `shift-btn ${tempSelected.includes(t.name) ? 'active' : ''}`;
-            // 「休み」という文字が含まれていれば赤色スタイルにする
             if (t.name.includes('休み')) b.classList.add('is-off-btn');
             b.textContent = t.name;
             b.onclick = () => {
@@ -239,18 +231,13 @@
         
         let missingDates = [];
         currentFullDates.forEach(date => {
-            const cell = document.getElementById(`cell-${date}`);
             if (!selectedShifts[date]) {
-                cell.classList.add('is-error'); 
+                document.getElementById(`cell-${date}`).classList.add('is-error'); 
                 missingDates.push(date);
-            } else {
-                cell.classList.remove('is-error');
             }
         });
 
-        if (missingDates.length > 0) {
-            return alert(`未入力の日があります（赤色のセル）。\n全${totalDays}日分の選択をお願いします。`);
-        }
+        if (missingDates.length > 0) return alert(`未入力の日があります。全${totalDays}日分の選択をお願いします。`);
         
         const summary = document.getElementById('summary-content');
         summary.innerHTML = `<div class="summary-item"><strong>提出者:</strong> ${name} 様</div>`;
@@ -262,9 +249,8 @@
         });
 
         const freeText = document.getElementById('free-text').value;
-        if (freeText) {
-            summary.innerHTML += `<div class="summary-item" style="background:#f9f9f9; padding:10px; margin-top:10px;"><strong>備考:</strong><br>${freeText.replace(/\n/g, '<br>')}</div>`;
-        }
+        if (freeText) summary.innerHTML += `<div class="summary-item"><strong>備考:</strong><br>${freeText.replace(/\n/g, '<br>')}</div>`;
+        
         document.getElementById('confirm-screen').style.display = 'block';
     }
 
@@ -287,7 +273,7 @@
 
             alert("送信完了しました！");
             location.reload(); 
-        } catch (e) { alert("送信エラー: " + JSON.stringify(e)); }
+        } catch (e) { alert("送信エラーが発生しました。"); }
     }
 
     function copyToClipboard() {
