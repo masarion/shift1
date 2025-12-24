@@ -161,22 +161,54 @@
     }
 
     async function selectProject(id) {
-    currentProjectId = id;
-    const { data: pj } = await client.from('projects').select('*').eq('id', id).single();
-    
-    document.getElementById('current-pj-name').textContent = `編集中の案件: ${pj.title_tag}`;
-    // ... (中略: フィールドへの値代入) ...
+        currentProjectId = id;
+        
+        // データの取得
+        const { data: pj } = await client.from('projects').select('*').eq('id', id).single();
+        if (!pj) return alert("案件データが見つかりません");
 
-    // --- URLの組み立てをより確実に修正 ---
-    // 現在のページのURLからパスを取得
-    const currentPath = window.location.pathname;
-    // ファイル名（dashboard.html）を index.html に置換
-    const newPath = currentPath.replace(/dashboard\.html$/, 'index.html');
-    // プロトコル(http/https) + ホスト名 + 新しいパス + ID
-    const previewUrl = window.location.origin + newPath + '?id=' + id;
+        // フォームへの値セット
+        document.getElementById('current-pj-name').textContent = `編集中の案件: ${pj.title_tag}`;
+        document.getElementById('field-title_tag').value = pj.title_tag || '';
+        document.getElementById('field-h1_title').value = pj.h1_title || '';
+        document.getElementById('field-msg_top').value = pj.msg_top || '';
+        document.getElementById('field-msg_calendar').value = pj.msg_calendar || '';
+        document.getElementById('field-msg_bottom').value = pj.msg_bottom || '';
+        document.getElementById('field-msg_confirm').value = pj.msg_confirm || '';
+        document.getElementById('field-form_config').value = JSON.stringify(pj.form_config || {});
 
-    document.getElementById('preview-link').href = previewUrl;
-    document.getElementById('target-url').value = previewUrl;
+        // --- URL生成の修正（htm / html 両対応） ---
+        let currentUrl = window.location.href.split('?')[0].split('#')[0];
+        // dashboard.htm または dashboard.html を index.html に書き換える
+        let previewUrlBase = currentUrl.replace(/dashboard\.html?$/, 'index.html');
+        
+        // もし置換が起きなかった（ファイル名が違う）場合でも強制的に index.html に向ける安全策
+        if (previewUrlBase.endsWith('dashboard.htm')) {
+            previewUrlBase = previewUrlBase.replace('dashboard.htm', 'index.html');
+        }
+
+        const finalPreviewUrl = previewUrlBase + '?id=' + id;
+        
+        // プレビューリンクとコピー用URLに反映
+        document.getElementById('preview-link').href = finalPreviewUrl;
+        document.getElementById('target-url').value = finalPreviewUrl;
+
+        // シフト枠の取得
+        const { data: shifts } = await client.from('shift_types').select('*').eq('project_id', id).order('display_order');
+        document.getElementById('shift-list').innerHTML = '';
+        if(shifts && shifts.length > 0) {
+            shifts.forEach(s => addShiftRow(s.name));
+        } else {
+            addShiftRow('休み');
+        }
+
+        // 並べ替え機能の再初期化
+        const el = document.getElementById('shift-list');
+        if (sortableInstance) sortableInstance.destroy();
+        sortableInstance = new Sortable(el, { handle: '.drag-handle', animation: 150, ghostClass: 'ghost' });
+
+        showSection('edit-all');
+    }
 
         const { data: shifts } = await client.from('shift_types').select('*').eq('project_id', id).order('display_order');
         document.getElementById('shift-list').innerHTML = '';
@@ -243,4 +275,5 @@
 </script>
 </body>
 </html>
+
 
