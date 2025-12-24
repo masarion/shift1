@@ -119,6 +119,92 @@
         await client.auth.signOut();
         location.reload();
     }
+// --- 案件一覧を読み込んで表示する関数 ---
+async function loadProjectData() {
+    const listContainer = document.getElementById('sec-projects');
+    
+    // 1. Supabaseから案件一覧を取得
+    // すでにテーブルがあるので、ここから全案件を引っ張ってきます
+    const { data: projects, error } = await client
+        .from('projects')
+        .select('*'); // すでに title や message カラムがある前提です
+
+    if (error) {
+        console.error("データ取得失敗:", error);
+        listContainer.innerHTML = `<p style="color:red">エラー: ${error.message}</p>`;
+        return;
+    }
+
+    // 2. HTMLの組み立て
+    let html = `<h1>案件一覧</h1>
+                <div class="card">
+                    <button class="btn-primary" onclick="createNewProject()">+ 新規案件を作成</button>
+                </div>`;
+
+    if (!projects || projects.length === 0) {
+        html += `<p>案件が見つかりませんでした。新しい案件を作成してください。</p>`;
+    } else {
+        projects.forEach(pj => {
+            // pj.name があればそれを、なければ id の一部を表示
+            const displayName = pj.name || pj.title || "名称未設定の案件";
+            html += `
+            <div class="card" style="display:flex; justify-content:space-between; align-items:center; border-left: 5px solid #4f46e5;">
+                <div>
+                    <strong style="font-size:1.1rem;">${displayName}</strong><br>
+                    <span style="color:#666; font-size:0.85rem;">ID: ${pj.id}</span>
+                </div>
+                <div>
+                    <button onclick="selectProject('${pj.id}', '${pj.title}', '${pj.message}')">選択して編集</button>
+                    <button onclick="copyProject('${pj.id}')" style="background:#edf2f7; color:#4a5568; margin-left:5px;">コピー</button>
+                </div>
+            </div>`;
+        });
+    }
+    listContainer.innerHTML = html;
+}
+
+// 現在選んでいる案件の情報を保持する変数
+let currentProjectId = null;
+
+// 案件を選択した時の処理
+function selectProject(id, title, msg) {
+    currentProjectId = id;
+    
+    // 「ページ内容編集」の入力欄に今の値をセット
+    document.getElementById('page-title').value = title || "";
+    document.getElementById('page-msg').value = msg || "";
+    
+    // QRコード用のURLも更新（index.htmlに案件IDを渡す形式）
+    const baseUrl = window.location.href.replace('dashboard.html', 'index.html');
+    document.getElementById('target-url').value = `${baseUrl}?id=${id}`;
+    
+    alert(`案件「${title}」を選択しました。各メニューから編集してください。`);
+    showSection('edit-content'); // 編集画面へ切り替え
+}
+
+// 案件のコピー機能（既存のデータを元に新しいレコードを作る）
+async function copyProject(oldId) {
+    if(!confirm("この案件をコピーして新しい案件を作成しますか？")) return;
+    
+    // 1. 元のデータを取得
+    const { data: oldPj } = await client.from('projects').select('*').eq('id', oldId).single();
+    
+    // 2. 新しい案件としてインサート
+    const { data: newPj, error } = await client.from('projects').insert([
+        { 
+            name: oldPj.name + " (コピー)", 
+            title: oldPj.title + " (コピー)", 
+            message: oldPj.message 
+        }
+    ]).select();
+
+    if (error) {
+        alert("コピー失敗: " + error.message);
+    } else {
+        alert("案件をコピーしました。");
+        loadProjectData(); // リスト再読み込み
+    }
+}
 
     // --- 画面切り替え ---
     function showSection(id) {
