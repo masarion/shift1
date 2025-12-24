@@ -161,22 +161,22 @@
     }
 
     async function selectProject(id) {
-        currentProjectId = id;
-        const { data: pj } = await client.from('projects').select('*').eq('id', id).single();
-        
-        document.getElementById('current-pj-name').textContent = `編集中の案件: ${pj.title_tag}`;
-        document.getElementById('field-title_tag').value = pj.title_tag || '';
-        document.getElementById('field-h1_title').value = pj.h1_title || '';
-        document.getElementById('field-msg_top').value = pj.msg_top || '';
-        document.getElementById('field-msg_calendar').value = pj.msg_calendar || '';
-        document.getElementById('field-msg_bottom').value = pj.msg_bottom || '';
-        document.getElementById('field-msg_confirm').value = pj.msg_confirm || '';
-        document.getElementById('field-form_config').value = JSON.stringify(pj.form_config || {});
+    currentProjectId = id;
+    const { data: pj } = await client.from('projects').select('*').eq('id', id).single();
+    
+    document.getElementById('current-pj-name').textContent = `編集中の案件: ${pj.title_tag}`;
+    // ... (中略: フィールドへの値代入) ...
 
-        const baseUrl = window.location.href.split('dashboard.html')[0];
-        const previewUrl = `${baseUrl}index.html?id=${id}`;
-        document.getElementById('preview-link').href = previewUrl;
-        document.getElementById('target-url').value = previewUrl;
+    // --- URLの組み立てをより確実に修正 ---
+    // 現在のページのURLからパスを取得
+    const currentPath = window.location.pathname;
+    // ファイル名（dashboard.html）を index.html に置換
+    const newPath = currentPath.replace(/dashboard\.html$/, 'index.html');
+    // プロトコル(http/https) + ホスト名 + 新しいパス + ID
+    const previewUrl = window.location.origin + newPath + '?id=' + id;
+
+    document.getElementById('preview-link').href = previewUrl;
+    document.getElementById('target-url').value = previewUrl;
 
         const { data: shifts } = await client.from('shift_types').select('*').eq('project_id', id).order('display_order');
         document.getElementById('shift-list').innerHTML = '';
@@ -243,3 +243,4 @@
 </script>
 </body>
 </html>
+
