@@ -287,14 +287,19 @@
             }]);
             if (error) throw error;
 
-            const nextMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
-            const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${nextMonthDate.getMonth() + 1}_${PROJECT_ID}`;
-            localStorage.setItem(nextMonthKey, "true");
-
-            alert("送信完了しました！");
-            location.reload(); 
-        } catch (e) { alert("送信エラー: " + JSON.stringify(e)); }
-    }
+            // 2. 重複提出チェック（URLに preview=true があればスキップする）
+        const isPreview = urlParams.get('preview') === 'true';
+        const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${m}_${PROJECT_ID}`;
+        
+        if (!isPreview && localStorage.getItem(nextMonthKey)) {
+            document.body.innerHTML = `
+                <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
+                    <h2 style="font-size:2rem;">提出済み</h2>
+                    <p style="color:#666;">${m}月分のシフト希望は送信済みです。</p>
+                    <p style="font-size:0.8rem; color:#ccc;">(Preview mode: ?preview=true)</p>
+                </div>`;
+            return;
+        }
 
     function copyToClipboard() {
         const text = document.getElementById('summary-content').innerText;
@@ -305,5 +310,6 @@
 </script>
 </body>
 </html>
+
 
 
