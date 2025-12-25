@@ -108,13 +108,14 @@
         
         // --- ロック画面の文言修正 ---
         if (!isPreview && localStorage.getItem(nextMonthKey)) {
-            document.body.innerHTML = `
-                <div style="padding:100px 20px; text-align:center;">
-                    <h2 style="margin-bottom:20px;">提出済み</h2>
-                    <p>${m}月分は送信済みです。</p>
-                </div>`;
-            return;
-        }
+    document.body.innerHTML = `
+        <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
+            <h2 style="color:#333;">送信済み</h2>
+            <p style="color:#666;">${m}月分のシフト希望は既に提出されています。</p>
+            <p style="font-size:0.9rem; color:#999;">※内容の変更が必要な場合は管理者に連絡してください。</p>
+        </div>`;
+    return;
+}
 
         try {
             const [pRes, sRes] = await Promise.all([
@@ -234,3 +235,4 @@
 </script>
 </body>
 </html>
+
