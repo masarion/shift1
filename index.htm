@@ -93,8 +93,9 @@
     
     // URLのパラメーターを取得
     const urlParams = new URLSearchParams(window.location.search);
-    // idがあればそれを使う、なければあなたのID（cabb1760...）を「直接」使う
-    const PROJECT_ID = urlParams.get('id') || 'cabb1760-a320-4d61-82c8-c2c069768d35';
+    // idを取得し、もし末尾に「/」が付いていたら削除する（お掃除処理）
+    let rawId = urlParams.get('id') || 'cabb1760-a320-4d61-82c8-c2c069768d35';
+    const PROJECT_ID = rawId.replace(/\/$/, "");
 
     const db = supabase.createClient(SUBAPASE_URL, SUPABASE_KEY);
     const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
@@ -309,6 +310,7 @@
 </script>
 </body>
 </html>
+
 
 
 
