@@ -93,9 +93,9 @@
     
     // URLのパラメーターを取得
     const urlParams = new URLSearchParams(window.location.search);
-    // idを取得し、もし末尾に「/」が付いていたら削除する（お掃除処理）
+    // idを取得し、末尾に「/」があれば削除。なければデフォルトIDを使用。
     let rawId = urlParams.get('id') || 'cabb1760-a320-4d61-82c8-c2c069768d35';
-    const PROJECT_ID = rawId.replace(/\/$/, "");
+    const PROJECT_ID = rawId.split('/')[0]; // スラッシュ以降を強制カット
 
     const db = supabase.createClient(SUBAPASE_URL, SUPABASE_KEY);
     const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
@@ -107,69 +107,71 @@
     let currentFullDates = [];
 
     async function init() {
-        if (!PROJECT_ID) {
+        if (!PROJECT_ID || PROJECT_ID === 'null') {
             document.body.innerHTML = "<div style='padding:50px; text-align:center;'><h1>エラー</h1><p>IDが正しくありません。</p></div>";
             return;
         }
 
-        // 1. 来月の数字を計算
         const now = new Date();
         const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-        const m = nextMonthDate.getMonth() + 1; // 来月の月
+        const m = nextMonthDate.getMonth() + 1;
 
-        // 2. 重複提出チェック
-        // URLの末尾に「?p」や「&p」が付いているかだけをチェックする
-        const isPreview = urlParams.has('p'); 
+        // --- 重複提出チェック (ここがポイント) ---
+        // URLに「?」以降の文字が1文字でもあればプレビューとみなす
+        const isPreview = window.location.search.length > 0 && !window.location.search.includes('id=');
+        // もしid=がある場合は、さらに別の文字（&pなど）があるかチェック
+        const isForcePreview = window.location.search.split('&').length > 1 || (window.location.search.includes('?') && !window.location.search.includes('id='));
         
         const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${m}_${PROJECT_ID}`;
         
-        // 「p」が付いておらず、かつ提出済みの場合はロックする
-        if (!isPreview && localStorage.getItem(nextMonthKey)) {
+        if (localStorage.getItem(nextMonthKey) && !isPreview && !isForcePreview) {
             document.body.innerHTML = `
                 <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
-                    <h2 style="font-size:2rem;">提出済み</h2>
-                    <p style="color:#666;">${m}月分のシフト希望は送信済みです。</p>
+                    <h2>提出済み</h2>
+                    <p>${m}月分のシフト希望は送信済みです。</p>
                 </div>`;
             return;
         }
 
         try {
-            // 3. Supabaseから設定データを取得
+            // ここでSupabaseからデータを取ります（PROJECT_IDから余計な文字を排除済み）
             const [pRes, sRes] = await Promise.all([
-                db.from('projects').select('*').eq('id', PROJECT_ID).single(),
-                db.from('shift_types').select('*').eq('project_id', PROJECT_ID).order('display_order', { ascending: true })
+                db.from('projects').select('*').eq('id', PROJECT_ID.trim()).single(),
+                db.from('shift_types').select('*').eq('project_id', PROJECT_ID.trim()).order('display_order', { ascending: true })
             ]);
             
-            if (pRes.error || sRes.error) throw (pRes.error || sRes.error);
+            if (pRes.error) throw pRes.error;
+            if (sRes.error) throw sRes.error;
 
             const proj = pRes.data;
             shiftTypes = sRes.data;
 
-            // --- ★ H1タイトルの冒頭に自動で数字を入れる ★ ---
+            // 見出しの結合
             const baseTitle = proj.h1_title || "月のシフト希望";
-            const finalTitle = m + baseTitle; // 数字 ＋ ダッシュボードの文字
-
+            const finalTitle = m + baseTitle;
             document.getElementById('h1-title').textContent = finalTitle;
             document.title = proj.title_tag || finalTitle;
 
-            // 4. メッセージ類の反映
-            document.getElementById('msg-top').textContent = proj.msg_top || ""; 
-            document.getElementById('msg-calendar').textContent = proj.msg_calendar || "";
-            document.getElementById('msg-bottom').textContent = proj.msg_bottom || "";
-            document.getElementById('msg-confirm').textContent = proj.msg_confirm || "";
-
-            ['msg-top', 'msg-calendar', 'msg-bottom', 'msg-confirm'].forEach(id => {
+            // 各メッセージの表示設定
+            const msgs = ['msg-top', 'msg-calendar', 'msg-bottom', 'msg-confirm'];
+            msgs.forEach(id => {
                 const el = document.getElementById(id);
-                if (!el.textContent.trim()) el.style.display = 'none';
-                else el.style.display = 'block';
+                const text = proj[id.replace('-', '_')];
+                if (text) {
+                    el.textContent = text;
+                    el.style.display = 'block';
+                } else {
+                    el.style.display = 'none';
+                }
             });
 
-            // 5. 来月のカレンダーを描画（引数に計算済みの翌月の日付を渡す）
             renderCalendar(nextMonthDate);
-
         } catch (e) { 
-            console.error(e); 
-            alert("設定の読み込みに失敗しました。"); 
+            console.error("Fetch Error:", e);
+            // エラー時、画面に詳細を表示して原因を特定しやすくします
+            document.getElementById('h1-title').textContent = "読み込みエラー";
+            document.getElementById('msg-top').style.display = 'block';
+            document.getElementById('msg-top').innerHTML = `設定の読み込みに失敗しました。<br><small style="color:red;">${e.message || JSON.stringify(e)}</small>`;
         }
     }
 
@@ -312,6 +314,7 @@
 </script>
 </body>
 </html>
+
 
 
 
