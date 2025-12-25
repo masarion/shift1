@@ -115,13 +115,16 @@
         const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
         const m = nextMonthDate.getMonth() + 1; // 来月の月
 
-        // 2. 重複提出チェック
+        // 2. 重複提出チェック（URLに preview=true があればスキップする）
+        const isPreview = urlParams.get('preview') === 'true';
         const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${m}_${PROJECT_ID}`;
-        if (localStorage.getItem(nextMonthKey)) {
+        
+        if (!isPreview && localStorage.getItem(nextMonthKey)) {
             document.body.innerHTML = `
                 <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
                     <h2 style="font-size:2rem;">提出済み</h2>
-                    <p style="color:#666;">${m}月分のシフト希望は送信済みです。<br>変更がある場合は管理者に連絡してください。</p>
+                    <p style="color:#666;">${m}月分のシフト希望は送信済みです。</p>
+                    <p style="font-size:0.8rem; color:#ccc;">(Preview mode: ?preview=true)</p>
                 </div>`;
             return;
         }
@@ -305,5 +308,6 @@
 </script>
 </body>
 </html>
+
 
 
