@@ -34,22 +34,22 @@
         #main-content { flex-grow: 1; overflow-y: auto; padding: 40px; }
         h1 { font-size: 1.8rem; margin-bottom: 30px; }
         .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #edf2f7; }
-        .card h3 { margin-top: 0; margin-bottom: 5px; font-size: 1.1rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
-        .card .description { font-size: 0.8rem; color: #718096; line-height: 1.5; margin-bottom: 20px; }
+        .card h3 { margin-top: 0; margin-bottom: 10px; font-size: 1.1rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+        
+        .description-text { font-size: 0.85rem; color: #64748b; margin-bottom: 20px; line-height: 1.6; background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #cbd5e1; }
         
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; color: #4a5568; }
         .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
         
-        /* シフト枠リスト */
         .shift-item { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; background: #fff; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; }
-        .drag-handle { cursor: grab; color: #4a5568; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; font-weight: bold; width: 50px; }
-        .shift-number { font-size: 0.85rem; color: var(--primary); min-width: 20px; }
+        .drag-handle { cursor: grab; color: #94a3b8; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
+        .shift-index { font-size: 0.9rem; font-weight: bold; color: var(--primary); min-width: 20px; }
         
         button { padding: 12px 24px; border-radius: 10px; cursor: pointer; border: none; font-weight: bold; transition: all 0.2s; font-size: 0.95rem; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-secondary { background: #f1f5f9; color: #475569; }
-        .btn-danger { background: #fff5f5; color: #e53e3e; font-size: 0.8rem; padding: 6px 12px; }
+        .btn-danger { background: #fff1f2; color: #e11d48; font-size: 0.8rem; padding: 6px 12px; }
         .btn-save-all { background: #059669; color: white; width: 100%; margin-top: 15px; font-size: 1.1rem; }
         .ghost { opacity: 0.4; background: #ebf4ff; border: 2px dashed var(--primary); }
     </style>
@@ -93,28 +93,25 @@
     </section>
 
     <section id="sec-edit-all" style="display:none;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px;">
-            <div>
-                <h1>ページ内容とシフト枠の編集</h1>
-                <div id="current-pj-name" style="padding: 10px 15px; background: #ebf4ff; border-radius: 8px; color: var(--primary); font-weight: bold; display: inline-block;"></div>
-            </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h1>ページ内容とシフト枠の編集</h1>
             <div style="text-align: right;">
                 <a id="preview-link" href="#" target="_blank" class="btn-primary" style="background:#6366f1; text-decoration:none;">編集済みページをプレビュー ↗</a>
-                <p style="font-size: 0.75rem; color: #666; margin-top: 8px; line-height: 1.4;">
-                    ※送信済み画面が出る場合は、URLの末尾に「&1」などを付ければ<br>
-                    入力画面をプレビューできます。
+                <p style="font-size: 0.75rem; color: #ef4444; margin-top: 8px;">
+                    ※送信済み画面になる場合はURL末尾に「&◯（例：&1）」を付ければプレビューが見れます
                 </p>
             </div>
         </div>
+        <div id="current-pj-name" style="margin-bottom:20px; padding: 10px 15px; background: #ebf4ff; border-radius: 8px; color: var(--primary); font-weight: bold; display: inline-block;"></div>
         
         <div style="display: flex; gap: 30px; align-items: flex-start;">
             <div class="card" style="flex: 1.2;">
                 <h3>1. 表示テキストの設定</h3>
-                <p class="description">
-                    ・各入力欄を書き換えることで、公開ページのテキストを変更できます。<br>
-                    ・入力欄が長くなる場合は、右下の角をドラッグして枠を広げられます。<br>
-                    ・最下部の「設定を保存して反映する」を押すと、すべての変更が即時反映されます。
-                </p>
+                <div class="description-text">
+                    ・フォーム編集でページのテキストを自由に変えることができます。<br>
+                    ・文章が長くなるときは、フォーム右下の角をドラッグすることで枠を大きくできます。<br>
+                    ・一番下の「設定を保存して反映する」ボタンを押すと、すべての内容がページに反映されます。
+                </div>
                 <div class="form-group"><label>管理用名称</label><input type="text" id="field-title_tag"></div>
                 <div class="form-group"><label>画面トップの見出し</label><input type="text" id="field-h1_title"></div>
                 <div class="form-group"><label>冒頭メッセージ</label><textarea id="field-msg_top" rows="3"></textarea></div>
@@ -122,15 +119,15 @@
                 <div class="form-group"><label>フォーム説明</label><textarea id="field-msg_bottom" rows="3"></textarea></div>
                 <div class="form-group"><label>確認画面の注意書き</label><textarea id="field-msg_confirm" rows="3"></textarea></div>
             </div>
-            
+
             <div class="card" style="flex: 0.8;">
                 <h3>2. シフト枠の種類</h3>
-                <p class="description">
-                    ・「+ 枠を追加」ボタンで新しいシフト枠を作成できます。<br>
-                    ・左側の ☰ をドラッグ＆ドロップすると、表示順序を並べ替えられます。<br>
+                <div class="description-text">
+                    ・下の「＋枠を追加」ボタンで新しいシフト枠を追加できます。<br>
+                    ・左側の「☰」をドラッグ＆ドロップして並べ替えが可能です。<br>
                     ・公開ページでは上から順番に表示されます。<br>
-                    ・「設定を保存して反映する」を押すと、変更が反映されます。
-                </p>
+                    ・「設定を保存して反映する」ボタンを押すと変更が反映されます。
+                </div>
                 <div id="shift-list"></div>
                 <button class="btn-secondary" style="width: 100%; margin-top: 15px;" onclick="addShiftRow()">+ 枠を追加</button>
                 <button class="btn-save-all" onclick="saveAllSettings()">設定を保存して反映する</button>
@@ -241,9 +238,9 @@
             handle: '.drag-handle', 
             animation: 150, 
             ghostClass: 'ghost',
-            onEnd: reorderNumbers 
+            onEnd: updateShiftNumbers 
         });
-        reorderNumbers();
+        updateShiftNumbers();
         showSection('edit-all');
     }
 
@@ -251,24 +248,24 @@
         const div = document.createElement('div');
         div.className = 'shift-item';
         div.innerHTML = `
-            <div class="drag-handle">☰ <span class="shift-number"></span></div>
+            <div class="drag-handle">☰ <span class="shift-index"></span></div>
             <input type="text" class="shift-name-input" value="${name}">
-            <button class="btn-danger" onclick="deleteShiftRow(this)">削除</button>`;
+            <button class="btn-danger" onclick="removeShiftRow(this)">削除</button>`;
         document.getElementById('shift-list').appendChild(div);
-        reorderNumbers();
+        updateShiftNumbers();
     }
 
-    function deleteShiftRow(btn) {
-        if(confirm("このシフト枠を削除してもよろしいですか？\n※保存ボタンを押すまで確定はされません。")) {
+    function removeShiftRow(btn) {
+        if (confirm("このシフト枠を削除しますか？\n（保存ボタンを押すまでデータは消えません）")) {
             btn.parentElement.remove();
-            reorderNumbers();
+            updateShiftNumbers();
         }
     }
 
-    function reorderNumbers() {
-        const items = document.querySelectorAll('.shift-item');
-        items.forEach((item, index) => {
-            item.querySelector('.shift-number').textContent = (index + 1);
+    function updateShiftNumbers() {
+        const spans = document.querySelectorAll('.shift-index');
+        spans.forEach((span, i) => {
+            span.textContent = i + 1;
         });
     }
 
