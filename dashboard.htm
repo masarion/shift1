@@ -40,6 +40,7 @@
         
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; color: #4a5568; }
+        .form-group label small { font-weight: normal; color: #718096; margin-left: 8px; font-size: 0.8rem; }
         .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
         
         .shift-item { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; background: #fff; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; }
@@ -49,7 +50,6 @@
         button { padding: 12px 24px; border-radius: 10px; cursor: pointer; border: none; font-weight: bold; transition: all 0.2s; font-size: 0.95rem; }
         .btn-primary { background: var(--primary); color: white; }
         
-        /* プレビューボタンのデザイン強化 */
         .btn-preview { 
             background: linear-gradient(135deg, #6366f1 0%, #4361ee 100%); 
             color: white; 
@@ -132,7 +132,10 @@
                     ・文章が長くなるときは、フォーム右下の角をドラッグすることで枠を大きくできます。<br>
                     ・一番下の「設定を保存して反映する」ボタンを押すと、すべての内容がスタッフ用ページに反映されます。
                 </div>
-                <div class="form-group"><label>管理用名称</label><input type="text" id="field-title_tag"></div>
+                <div class="form-group">
+                    <label>管理用名称 <small>※スタッフがブックマークした時にこの名称になります</small></label>
+                    <input type="text" id="field-title_tag">
+                </div>
                 <div class="form-group"><label>画面トップの見出し</label><input type="text" id="field-h1_title"></div>
                 <div class="form-group"><label>冒頭メッセージ</label><textarea id="field-msg_top" rows="3"></textarea></div>
                 <div class="form-group"><label>カレンダー操作説明</label><textarea id="field-msg_calendar" rows="3"></textarea></div>
@@ -174,7 +177,6 @@
     let sortableInstance = null;
     let isResetMode = false;
 
-    // --- 認証関連 ---
     async function handleAuth() {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
@@ -209,7 +211,6 @@
 
     async function logout() { await client.auth.signOut(); location.reload(); }
 
-    // --- セクション切り替え ---
     function showSection(id) {
         document.querySelectorAll('section').forEach(s => s.style.display = 'none');
         document.getElementById('sec-' + id).style.display = 'block';
@@ -217,7 +218,6 @@
         document.getElementById('nav-' + id).classList.add('nav-active');
     }
 
-    // --- プロジェクト操作 ---
     async function loadProjectData() {
         const { data: projects, error } = await client.from('projects').select('*').order('created_at', { ascending: false });
         if(error) return;
@@ -254,12 +254,7 @@
 
         const el = document.getElementById('shift-list');
         if (sortableInstance) sortableInstance.destroy();
-        sortableInstance = new Sortable(el, { 
-            handle: '.drag-handle', 
-            animation: 150, 
-            ghostClass: 'ghost',
-            onEnd: updateShiftNumbers 
-        });
+        sortableInstance = new Sortable(el, { handle: '.drag-handle', animation: 150, ghostClass: 'ghost', onEnd: updateShiftNumbers });
         updateShiftNumbers();
         showSection('edit-all');
     }
@@ -267,10 +262,7 @@
     function addShiftRow(name = '') {
         const div = document.createElement('div');
         div.className = 'shift-item';
-        div.innerHTML = `
-            <div class="drag-handle">☰ <span class="shift-index"></span></div>
-            <input type="text" class="shift-name-input" value="${name}">
-            <button class="btn-danger" onclick="removeShiftRow(this)">削除</button>`;
+        div.innerHTML = `<div class="drag-handle">☰ <span class="shift-index"></span></div><input type="text" class="shift-name-input" value="${name}"><button class="btn-danger" onclick="removeShiftRow(this)">削除</button>`;
         document.getElementById('shift-list').appendChild(div);
         updateShiftNumbers();
     }
@@ -284,9 +276,7 @@
 
     function updateShiftNumbers() {
         const spans = document.querySelectorAll('.shift-index');
-        spans.forEach((span, i) => {
-            span.textContent = i + 1;
-        });
+        spans.forEach((span, i) => { span.textContent = i + 1; });
     }
 
     async function saveAllSettings() {
@@ -307,7 +297,6 @@
             const newShifts = Array.from(document.querySelectorAll('.shift-item')).map((row, index) => ({
                 project_id: currentProjectId, name: row.querySelector('.shift-name-input').value, display_order: index
             })).filter(s => s.name.trim() !== '');
-
             if(newShifts.length > 0) await client.from('shift_types').insert(newShifts);
             alert("保存しました！");
         } catch (err) { alert(err.message); }
