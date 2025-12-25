@@ -43,23 +43,18 @@
 <div class="container" id="input-screen">
     <h1 id="h1-title">読み込み中...</h1>
     <div id="msg-top" class="msg-box"></div>
-    
     <label>氏名（必須）</label>
     <input type="text" id="staff-name" placeholder="お名前を入力">
-
     <div id="msg-calendar" class="msg-box"></div>
-
     <div class="calendar-wrapper">
         <div class="weekday-header">
             <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
         </div>
         <div id="calendar" class="calendar-grid"></div>
     </div>
-    
     <div id="msg-bottom" class="msg-box"></div> 
     <label>備考・その他希望</label>
     <textarea id="free-text" rows="3" placeholder="特記事項があれば入力"></textarea>
-    
     <button class="btn btn-confirm" style="width:100%;" onclick="showSummary()">内容確認ボタン</button>
 </div>
 
@@ -90,17 +85,14 @@
     const SUBAPASE_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     
-    // --- 【重要】ID取得ロジックの再構築 ---
+    // --- 【超厳格】ID取得ロジック ---
     function getCleanId() {
-        const fullSearch = window.location.search;
-        if (!fullSearch) return 'cabb1760-a320-4d61-82c8-c2c069768d35';
-
-        // 1. まず「?id=」の後の文字列を抜き出す
-        const match = fullSearch.match(/id=([^&?]+)/);
-        if (!match) return 'cabb1760-a320-4d61-82c8-c2c069768d35';
-
-        // 2. 抜き出したIDから、英数字とハイフン以外を物理的に削ぎ落とす
-        return match[1].replace(/[^a-zA-Z0-9-]/g, '');
+        const urlParams = new URLSearchParams(window.location.search);
+        let rawId = urlParams.get('id') || 'cabb1760-a320-4d61-82c8-c2c069768d35';
+        
+        // 正規表現でUUIDの形式（8-4-4-4-12の計36文字）だけを抽出
+        const uuidMatch = rawId.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+        return uuidMatch ? uuidMatch[0] : 'cabb1760-a320-4d61-82c8-c2c069768d35';
     }
 
     const PROJECT_ID = getCleanId();
@@ -115,8 +107,8 @@
         const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
         const m = nextMonthDate.getMonth() + 1;
 
-        // --- 重複提出チェック (URLに?や&など、ID以外の情報があればプレビュー) ---
-        const isPreview = window.location.search.replace(`id=${PROJECT_ID}`, '').length > 1;
+        // URLに「id=」以外の文字（?1など）が含まれているか、末尾に何かが付いていればプレビュー
+        const isPreview = window.location.search.length > (PROJECT_ID.length + 4); 
         const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${m}_${PROJECT_ID}`;
         
         if (!isPreview && localStorage.getItem(nextMonthKey)) {
@@ -135,12 +127,9 @@
             const proj = pRes.data;
             shiftTypes = sRes.data;
 
-            // 月の自動結合
-            const baseTitle = proj.h1_title || "月のシフト希望";
-            document.getElementById('h1-title').textContent = m + baseTitle;
-            document.title = proj.title_tag || (m + baseTitle);
+            document.getElementById('h1-title').textContent = m + (proj.h1_title || "月のシフト希望");
+            document.title = proj.title_tag || document.getElementById('h1-title').textContent;
 
-            // メッセージ反映
             const config = { 'msg-top': proj.msg_top, 'msg-calendar': proj.msg_calendar, 'msg-bottom': proj.msg_bottom, 'msg-confirm': proj.msg_confirm };
             Object.keys(config).forEach(id => {
                 const el = document.getElementById(id);
@@ -150,13 +139,13 @@
 
             renderCalendar(nextMonthDate);
         } catch (e) { 
-            document.getElementById('h1-title').textContent = "エラー";
+            document.getElementById('h1-title').textContent = "読み込みエラー";
             document.getElementById('msg-top').style.display = 'block';
-            document.getElementById('msg-top').innerHTML = `読み込み失敗<br><small style="color:red;">${e.message || "ID不正"}</small>`;
+            document.getElementById('msg-top').innerHTML = `設定が見つかりません。<br><small style="color:red;">ID: ${PROJECT_ID}</small>`;
         }
     }
 
-    // --- 以下の関数群は変更なし ---
+    // --- 以降の機能は維持 ---
     function renderCalendar(baseDate) {
         const container = document.getElementById('calendar');
         container.innerHTML = '';
@@ -224,8 +213,7 @@
         currentFullDates.forEach(date => {
             const dObj = new Date(date);
             const formattedDate = `${dObj.getMonth()+1}/${dObj.getDate()}(${weekDays[dObj.getDay()]})`;
-            const shifts = selectedShifts[date] ? selectedShifts[date].join(', ') : '未入力';
-            summary.innerHTML += `<div class="summary-item"><strong>${formattedDate}:</strong> ${shifts}</div>`;
+            summary.innerHTML += `<div class="summary-item"><strong>${formattedDate}:</strong> ${selectedShifts[date] ? selectedShifts[date].join(', ') : '未入力'}</div>`;
         });
         const freeText = document.getElementById('free-text').value;
         if (freeText) summary.innerHTML += `<div class="summary-item" style="background:#f9f9f9; padding:10px;"><strong>備考:</strong><br>${freeText}</div>`;
