@@ -115,7 +115,7 @@
         const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
         const m = nextMonthDate.getMonth() + 1; // 来月の月
 
-        // 2. 重複提出チェック（URLに preview=true があればスキップする）
+        /// 2. 重複提出チェック（URLに preview=true があればスキップする）
         const isPreview = urlParams.get('preview') === 'true';
         const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${m}_${PROJECT_ID}`;
         
@@ -308,6 +308,7 @@
 </script>
 </body>
 </html>
+
 
 
 
