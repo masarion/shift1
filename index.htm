@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>読み込み中...</title>
+    <title>シフト希望入力</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f9; --sat: #007bff; --sun: #dc3545; --error-bg: #ffebeb; }
@@ -87,46 +87,34 @@
 </div>
 
 <script>
-    // --- 基本設定 ---
     const SUBAPASE_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     
-    // URLのパラメーターを取得
-    const urlParams = new URLSearchParams(window.location.search);
-    // idを取得し、末尾に「/」があれば削除。なければデフォルトIDを使用。
+    // --- 【修正ポイント】ID取得を徹底的にクリーンにする ---
+    const urlStr = window.location.search;
+    const urlParams = new URLSearchParams(urlStr);
+    
+    // idを取得し、英数字とハイフン以外を全て除去
     let rawId = urlParams.get('id') || 'cabb1760-a320-4d61-82c8-c2c069768d35';
-    const PROJECT_ID = rawId.split('/')[0].trim(); 
+    const PROJECT_ID = rawId.replace(/[^a-zA-Z0-9-]/g, ''); 
 
     const db = supabase.createClient(SUBAPASE_URL, SUPABASE_KEY);
     const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
     let shiftTypes = [];
     let selectedShifts = {}; 
-    let tempSelected = [];
-    let targetDate = "";
-    let totalDays = 0; 
     let currentFullDates = [];
 
     async function init() {
-        if (!PROJECT_ID || PROJECT_ID === 'null') {
-            document.body.innerHTML = "<div style='padding:50px; text-align:center;'><h1>エラー</h1><p>IDが正しくありません。</p></div>";
-            return;
-        }
-
         const now = new Date();
         const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
         const m = nextMonthDate.getMonth() + 1;
 
-        // --- 重複提出チェック ---
-        // URLに「p」という文字があればプレビューモード（提出済みでも表示）
-        const isPreview = urlParams.has('p');
+        // --- 重複提出チェック (id以外の文字が1文字でもあればプレビュー) ---
+        const isPreview = urlStr.replace(`id=${rawId}`, '').length > 1;
         const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${m}_${PROJECT_ID}`;
         
         if (!isPreview && localStorage.getItem(nextMonthKey)) {
-            document.body.innerHTML = `
-                <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
-                    <h2>提出済み</h2>
-                    <p>${m}月分のシフト希望は送信済みです。</p>
-                </div>`;
+            document.body.innerHTML = `<div style="padding:100px 20px; text-align:center;"><h2>提出済み</h2><p>${m}月分は送信済みです。</p></div>`;
             return;
         }
 
@@ -136,37 +124,29 @@
                 db.from('shift_types').select('*').eq('project_id', PROJECT_ID).order('display_order', { ascending: true })
             ]);
             
-            if (pRes.error) throw pRes.error;
-            if (sRes.error) throw sRes.error;
+            if (pRes.error || sRes.error) throw (pRes.error || sRes.error);
 
             const proj = pRes.data;
             shiftTypes = sRes.data;
 
-            // 冒頭に翌月の数字を自動付与
+            // 月の自動結合
             const baseTitle = proj.h1_title || "月のシフト希望";
-            const finalTitle = m + baseTitle;
-            document.getElementById('h1-title').textContent = finalTitle;
-            document.title = proj.title_tag || finalTitle;
+            document.getElementById('h1-title').textContent = m + baseTitle;
+            document.title = proj.title_tag || (m + baseTitle);
 
-            // 各メッセージの反映
-            const msgKeys = { 'msg-top': 'msg_top', 'msg-calendar': 'msg_calendar', 'msg-bottom': 'msg_bottom', 'msg-confirm': 'msg_confirm' };
-            for (let id in msgKeys) {
+            // メッセージ反映
+            const config = { 'msg-top': proj.msg_top, 'msg-calendar': proj.msg_calendar, 'msg-bottom': proj.msg_bottom, 'msg-confirm': proj.msg_confirm };
+            Object.keys(config).forEach(id => {
                 const el = document.getElementById(id);
-                const val = proj[msgKeys[id]];
-                if (val) {
-                    el.textContent = val;
-                    el.style.display = 'block';
-                } else {
-                    el.style.display = 'none';
-                }
-            }
+                if (config[id]) { el.textContent = config[id]; el.style.display = 'block'; }
+                else el.style.display = 'none';
+            });
 
             renderCalendar(nextMonthDate);
         } catch (e) { 
-            console.error("Fetch Error:", e);
-            document.getElementById('h1-title').textContent = "読み込みエラー";
+            document.getElementById('h1-title').textContent = "エラー発生";
             document.getElementById('msg-top').style.display = 'block';
-            document.getElementById('msg-top').innerHTML = `設定の読み込みに失敗しました。<br><small style="color:red;">${e.message || "IDを確認してください"}</small>`;
+            document.getElementById('msg-top').innerHTML = `読み込みに失敗しました。<br><small style="color:red;">${e.message || "IDが正しくありません"}</small>`;
         }
     }
 
@@ -176,8 +156,6 @@
         const y = baseDate.getFullYear(), m = baseDate.getMonth();
         const firstDay = new Date(y, m, 1).getDay();
         const lastDate = new Date(y, m + 1, 0).getDate();
-        totalDays = lastDate;
-        currentFullDates = [];
 
         for (let i = 0; i < firstDay; i++) {
             const empty = document.createElement('div');
@@ -188,17 +166,11 @@
         for (let d = 1; d <= lastDate; d++) {
             const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
             currentFullDates.push(dateStr); 
-            
             const cell = document.createElement('div');
             cell.className = 'day-cell';
             cell.id = `cell-${dateStr}`;
-            const weekDayNum = new Date(y, m, d).getDay();
-            const weekDay = weekDays[weekDayNum];
             cell.innerHTML = `<span>${d}</span><div class="shift-display"></div>`;
-            cell.onclick = () => {
-                cell.classList.remove('is-error');
-                openModal(dateStr, d, weekDay);
-            };
+            cell.onclick = () => openModal(dateStr, d, weekDays[new Date(y, m, d).getDay()]);
             container.appendChild(cell);
         }
     }
@@ -231,13 +203,9 @@
     function applyShift() {
         if (tempSelected.length > 0) selectedShifts[targetDate] = [...tempSelected];
         else delete selectedShifts[targetDate];
-        updateCell(targetDate);
+        const display = document.getElementById(`cell-${targetDate}`).querySelector('.shift-display');
+        display.innerHTML = (selectedShifts[targetDate] || []).map(s => `<div class="shift-tag ${s.includes('休み')?'is-off':''}">${s}</div>`).join('');
         closeModal();
-    }
-
-    function updateCell(date) {
-        const display = document.getElementById(`cell-${date}`).querySelector('.shift-display');
-        display.innerHTML = (selectedShifts[date] || []).map(s => `<div class="shift-tag ${s.includes('休み')?'is-off':''}">${s}</div>`).join('');
     }
 
     function clearTemp() { tempSelected = []; renderOptions(); }
@@ -247,34 +215,18 @@
         const name = document.getElementById('staff-name').value;
         if (!name) return alert("氏名を入力してください");
         
-        let missingDates = [];
-        currentFullDates.forEach(date => {
-            const cell = document.getElementById(`cell-${date}`);
-            if (!selectedShifts[date]) {
-                cell.classList.add('is-error'); 
-                missingDates.push(date);
-            } else {
-                cell.classList.remove('is-error');
-            }
-        });
-
-        if (missingDates.length > 0) {
-            return alert(`未入力の日があります（赤色のセル）。\n全${totalDays}日分の選択をお願いします。`);
-        }
-        
         const summary = document.getElementById('summary-content');
         summary.innerHTML = `<div class="summary-item"><strong>提出者:</strong> ${name} 様</div>`;
         
-        Object.keys(selectedShifts).sort().forEach(date => {
+        currentFullDates.forEach(date => {
             const dObj = new Date(date);
             const formattedDate = `${dObj.getMonth()+1}/${dObj.getDate()}(${weekDays[dObj.getDay()]})`;
-            summary.innerHTML += `<div class="summary-item"><strong>${formattedDate}:</strong> ${selectedShifts[date].join(', ')}</div>`;
+            const shifts = selectedShifts[date] ? selectedShifts[date].join(', ') : '未入力';
+            summary.innerHTML += `<div class="summary-item"><strong>${formattedDate}:</strong> ${shifts}</div>`;
         });
 
         const freeText = document.getElementById('free-text').value;
-        if (freeText) {
-            summary.innerHTML += `<div class="summary-item" style="background:#f9f9f9; padding:10px; margin-top:10px;"><strong>備考:</strong><br>${freeText.replace(/\n/g, '<br>')}</div>`;
-        }
+        if (freeText) summary.innerHTML += `<div class="summary-item" style="background:#f9f9f9; padding:10px;"><strong>備考:</strong><br>${freeText}</div>`;
         document.getElementById('confirm-screen').style.display = 'block';
     }
 
@@ -290,19 +242,14 @@
                 memo: document.getElementById('free-text').value
             }]);
             if (error) throw error;
-
-            const nextMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
-            const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${nextMonthDate.getMonth() + 1}_${PROJECT_ID}`;
-            localStorage.setItem(nextMonthKey, "true");
-
+            localStorage.setItem(`submitted_${new Date().getFullYear()}_${new Date().getMonth() + 2}_${PROJECT_ID}`, "true");
             alert("送信完了しました！");
             location.reload(); 
-        } catch (e) { alert("送信エラー: " + JSON.stringify(e)); }
+        } catch (e) { alert("送信エラー: " + e.message); }
     }
 
     function copyToClipboard() {
-        const text = document.getElementById('summary-content').innerText;
-        navigator.clipboard.writeText(text).then(() => alert("コピーしました"));
+        navigator.clipboard.writeText(document.getElementById('summary-content').innerText).then(() => alert("コピーしました"));
     }
 
     init();
