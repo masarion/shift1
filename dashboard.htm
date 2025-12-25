@@ -14,6 +14,7 @@
             --bg: #f8f9fc; 
             --text: #2b2d42; 
             --danger: #e11d48;
+            --success: #059669;
         }
         body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; color: var(--text); }
         
@@ -63,16 +64,16 @@
             box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3); 
             transition: transform 0.2s, box-shadow 0.2s;
         }
-        .btn-preview:hover { 
-            transform: translateY(-2px); 
-            box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4); 
-            filter: brightness(1.1);
-        }
+        .btn-preview:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4); filter: brightness(1.1); }
 
         .btn-secondary { background: #f1f5f9; color: #475569; }
         .btn-danger-light { background: #fff1f2; color: var(--danger); font-size: 0.8rem; padding: 6px 12px; }
-        .btn-save-all { background: #059669; color: white; width: 100%; margin-top: 15px; font-size: 1.1rem; }
-        .btn-delete-project { background: transparent; color: #94a3b8; border: 1px solid #e2e8f0; width: 100%; margin-top: 40px; font-size: 0.85rem; }
+        
+        /* 保存・削除アクションエリア */
+        .action-area { margin-top: 40px; padding-top: 30px; border-top: 2px dashed #e2e8f0; text-align: center; }
+        .btn-save-all { background: var(--success); color: white; width: 100%; max-width: 600px; font-size: 1.1rem; padding: 18px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2); }
+        .btn-save-all:hover { filter: brightness(1.05); transform: translateY(-1px); }
+        .btn-delete-project { background: transparent; color: #94a3b8; border: 1px solid #e2e8f0; width: 100%; max-width: 400px; margin-top: 30px; font-size: 0.85rem; padding: 10px; }
         .btn-delete-project:hover { background: #fff1f2; color: var(--danger); border-color: var(--danger); }
         
         .ghost { opacity: 0.4; background: #ebf4ff; border: 2px dashed var(--primary); }
@@ -133,7 +134,7 @@
                 <h3>1. 表示テキストの設定</h3>
                 <div class="description-text">
                     ・フォーム編集でスタッフ用ページのテキストを自由に変えることができます。<br>
-                    ・文章が長くなるときは、フォーム右下の角をドラッグすることで枠を大きくできます。<br>
+                    ・文章が長くなるときは、右下の角をドラッグすることで枠を大きくできます。<br>
                     ・一番下の「設定を保存して反映する」ボタンを押すと、すべての内容がスタッフ用ページに反映されます。
                 </div>
                 <div class="form-group">
@@ -157,10 +158,13 @@
                 </div>
                 <div id="shift-list"></div>
                 <button class="btn-secondary" style="width: 100%; margin-top: 15px;" onclick="addShiftRow()">+ 枠を追加</button>
-                <button class="btn-save-all" onclick="saveAllSettings()">設定を保存して反映する</button>
-
-                <button class="btn-delete-project" onclick="deleteCurrentProject()">この案件（プロジェクト）を削除する</button>
             </div>
+        </div>
+
+        <div class="action-area">
+            <button class="btn-save-all" onclick="saveAllSettings()">設定を保存して反映する</button>
+            <br>
+            <button class="btn-delete-project" onclick="deleteCurrentProject()">この案件（プロジェクト）を削除する</button>
         </div>
     </section>
 
@@ -311,12 +315,23 @@
 
     async function deleteCurrentProject() {
         if (!currentProjectId) return;
-        if (confirm("本当にこの案件を削除しますか？\n削除すると、この案件に紐づくシフト枠や設定がすべて消去され、復元できません。")) {
+        const msg = "【重要】本当にこの案件を削除しますか？\n\n" +
+                  "・この案件の設定（テキストやシフト枠）\n" +
+                  "・スタッフから提出されたすべてのデータ\n" +
+                  "が完全に削除され、二度と復元できません。";
+        
+        if (confirm(msg)) {
+            // 提出データの削除
+            await client.from('submissions').delete().eq('project_id', currentProjectId);
+            // シフト枠の削除
+            await client.from('shift_types').delete().eq('project_id', currentProjectId);
+            // プロジェクト自体の削除
             const { error } = await client.from('projects').delete().eq('id', currentProjectId);
+            
             if (error) {
                 alert("削除に失敗しました: " + error.message);
             } else {
-                alert("案件を削除しました。");
+                alert("案件および関連データをすべて削除しました。");
                 currentProjectId = null;
                 loadProjectData();
                 showSection('projects');
