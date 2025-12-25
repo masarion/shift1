@@ -13,6 +13,7 @@
             --active-bg: #4895ef; 
             --bg: #f8f9fc; 
             --text: #2b2d42; 
+            --danger: #e11d48;
         }
         body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; color: var(--text); }
         
@@ -69,8 +70,11 @@
         }
 
         .btn-secondary { background: #f1f5f9; color: #475569; }
-        .btn-danger { background: #fff1f2; color: #e11d48; font-size: 0.8rem; padding: 6px 12px; }
+        .btn-danger-light { background: #fff1f2; color: var(--danger); font-size: 0.8rem; padding: 6px 12px; }
         .btn-save-all { background: #059669; color: white; width: 100%; margin-top: 15px; font-size: 1.1rem; }
+        .btn-delete-project { background: transparent; color: #94a3b8; border: 1px solid #e2e8f0; width: 100%; margin-top: 40px; font-size: 0.85rem; }
+        .btn-delete-project:hover { background: #fff1f2; color: var(--danger); border-color: var(--danger); }
+        
         .ghost { opacity: 0.4; background: #ebf4ff; border: 2px dashed var(--primary); }
     </style>
 </head>
@@ -154,6 +158,8 @@
                 <div id="shift-list"></div>
                 <button class="btn-secondary" style="width: 100%; margin-top: 15px;" onclick="addShiftRow()">+ 枠を追加</button>
                 <button class="btn-save-all" onclick="saveAllSettings()">設定を保存して反映する</button>
+
+                <button class="btn-delete-project" onclick="deleteCurrentProject()">この案件（プロジェクト）を削除する</button>
             </div>
         </div>
     </section>
@@ -262,7 +268,7 @@
     function addShiftRow(name = '') {
         const div = document.createElement('div');
         div.className = 'shift-item';
-        div.innerHTML = `<div class="drag-handle">☰ <span class="shift-index"></span></div><input type="text" class="shift-name-input" value="${name}"><button class="btn-danger" onclick="removeShiftRow(this)">削除</button>`;
+        div.innerHTML = `<div class="drag-handle">☰ <span class="shift-index"></span></div><input type="text" class="shift-name-input" value="${name}"><button class="btn-danger-light" onclick="removeShiftRow(this)">削除</button>`;
         document.getElementById('shift-list').appendChild(div);
         updateShiftNumbers();
     }
@@ -301,6 +307,21 @@
             alert("保存しました！");
         } catch (err) { alert(err.message); }
         btn.innerText = "設定を保存して反映する";
+    }
+
+    async function deleteCurrentProject() {
+        if (!currentProjectId) return;
+        if (confirm("本当にこの案件を削除しますか？\n削除すると、この案件に紐づくシフト枠や設定がすべて消去され、復元できません。")) {
+            const { error } = await client.from('projects').delete().eq('id', currentProjectId);
+            if (error) {
+                alert("削除に失敗しました: " + error.message);
+            } else {
+                alert("案件を削除しました。");
+                currentProjectId = null;
+                loadProjectData();
+                showSection('projects');
+            }
+        }
     }
 
     async function createNewProject() {
