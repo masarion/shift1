@@ -98,25 +98,25 @@
     let shiftTypes = [];
     let selectedShifts = {}; 
     let currentFullDates = [];
-    let targetMonthStr = ""; // 保存・判定用の年月文字列 (例: "2025-1")
+    let targetMonthStr = "";
 
     async function init() {
         const now = new Date();
         const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
         const y = nextMonthDate.getFullYear();
         const m = nextMonthDate.getMonth() + 1;
-        targetMonthStr = `${y}-${m}`; // カレンダーの年月を固定
+        targetMonthStr = `${y}-${m}`;
 
-        const isPreview = window.location.search.includes('preview=true'); 
+        // ロック解除判定：ID以外の文字（?id=...&a や ?id=...&preview など）があればisPreviewとする
+        const isPreview = window.location.search.length > (window.location.search.indexOf(PROJECT_ID) + PROJECT_ID.length);
         const lockKey = `submitted_${targetMonthStr}_${PROJECT_ID}`;
         
-        // --- ロック判定 ---
         if (!isPreview && localStorage.getItem(lockKey)) {
             document.body.innerHTML = `
                 <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
                     <h2 style="color:#333;">送信済み</h2>
-                    <p style="color:#333;">${m}月分のシフト希望は<br>既に提出されています。</p>
-                    <p style="color:#333;">※内容の変更が必要な場合は<br>管理者に連絡してください。</p>
+                    <p style="color:#666;">${m}月分のシフト希望は既に提出されています。</p>
+                    <p style="font-size:0.9rem; color:#999;">※内容の変更が必要な場合は管理者に連絡してください。</p>
                 </div>`;
             return;
         }
@@ -250,10 +250,7 @@
                 memo: document.getElementById('free-text').value
             }]);
             if (error) throw error;
-            
-            // 重複提出防止フラグ：年月とIDを組み合わせて保存
             localStorage.setItem(`submitted_${targetMonthStr}_${PROJECT_ID}`, "true");
-            
             alert("送信完了しました！");
             location.reload(); 
         } catch (e) { alert("送信エラー: " + e.message); }
@@ -267,4 +264,3 @@
 </script>
 </body>
 </html>
-
