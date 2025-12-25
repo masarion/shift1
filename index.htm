@@ -118,13 +118,12 @@
         const m = nextMonthDate.getMonth() + 1; // 来月の月
 
         // 2. 重複提出チェック
-        // URLの中に「id」以外のパラメーター（例：?p=1 や ?abc）があるかチェック
-        const urlKeys = Array.from(urlParams.keys());
-        const isPreview = urlKeys.some(key => key !== 'id'); 
+        // URLの末尾に「?p」や「&p」が付いているかだけをチェックする
+        const isPreview = urlParams.has('p'); 
         
         const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${m}_${PROJECT_ID}`;
         
-        // 「id以外の何か」が付いておらず、かつ提出済みの場合はロックする
+        // 「p」が付いておらず、かつ提出済みの場合はロックする
         if (!isPreview && localStorage.getItem(nextMonthKey)) {
             document.body.innerHTML = `
                 <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
@@ -313,6 +312,7 @@
 </script>
 </body>
 </html>
+
 
 
 
