@@ -48,6 +48,26 @@
         
         button { padding: 12px 24px; border-radius: 10px; cursor: pointer; border: none; font-weight: bold; transition: all 0.2s; font-size: 0.95rem; }
         .btn-primary { background: var(--primary); color: white; }
+        
+        /* プレビューボタンのデザイン強化 */
+        .btn-preview { 
+            background: linear-gradient(135deg, #6366f1 0%, #4361ee 100%); 
+            color: white; 
+            text-decoration: none; 
+            padding: 12px 28px; 
+            border-radius: 12px; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 8px; 
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3); 
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-preview:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4); 
+            filter: brightness(1.1);
+        }
+
         .btn-secondary { background: #f1f5f9; color: #475569; }
         .btn-danger { background: #fff1f2; color: #e11d48; font-size: 0.8rem; padding: 6px 12px; }
         .btn-save-all { background: #059669; color: white; width: 100%; margin-top: 15px; font-size: 1.1rem; }
@@ -96,8 +116,8 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <h1>ページ内容とシフト枠の編集</h1>
             <div style="text-align: right;">
-                <a id="preview-link" href="#" target="_blank" class="btn-primary" style="background:#6366f1; text-decoration:none;">編集済みページをプレビュー ↗</a>
-                <p style="font-size: 0.75rem; color: #ef4444; margin-top: 8px;">
+                <a id="preview-link" href="#" target="_blank" class="btn-preview">編集済みページをプレビュー ↗</a>
+                <p style="font-size: 0.75rem; color: #ef4444; margin-top: 10px; font-weight: bold;">
                     ※送信済み画面になる場合はURL末尾に「&◯（例：&1）」を付ければプレビューが見れます
                 </p>
             </div>
@@ -108,9 +128,9 @@
             <div class="card" style="flex: 1.2;">
                 <h3>1. 表示テキストの設定</h3>
                 <div class="description-text">
-                    ・フォーム編集でページのテキストを自由に変えることができます。<br>
+                    ・フォーム編集でスタッフ用ページのテキストを自由に変えることができます。<br>
                     ・文章が長くなるときは、フォーム右下の角をドラッグすることで枠を大きくできます。<br>
-                    ・一番下の「設定を保存して反映する」ボタンを押すと、すべての内容がページに反映されます。
+                    ・一番下の「設定を保存して反映する」ボタンを押すと、すべての内容がスタッフ用ページに反映されます。
                 </div>
                 <div class="form-group"><label>管理用名称</label><input type="text" id="field-title_tag"></div>
                 <div class="form-group"><label>画面トップの見出し</label><input type="text" id="field-h1_title"></div>
@@ -125,7 +145,7 @@
                 <div class="description-text">
                     ・下の「＋枠を追加」ボタンで新しいシフト枠を追加できます。<br>
                     ・左側の「☰」をドラッグ＆ドロップして並べ替えが可能です。<br>
-                    ・公開ページでは上から順番に表示されます。<br>
+                    ・スタッフ用ページでは上から順番に表示されます。<br>
                     ・「設定を保存して反映する」ボタンを押すと変更が反映されます。
                 </div>
                 <div id="shift-list"></div>
