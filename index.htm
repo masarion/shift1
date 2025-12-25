@@ -17,7 +17,6 @@
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #eee; max-height: 400px; overflow-y: auto; }
         .day-cell { background: #fff; aspect-ratio: 1/1.4; display: flex; flex-direction: column; align-items: center; padding-top: 8px; cursor: pointer; font-size: 1rem; transition: background 0.3s; }
         .day-cell span { font-weight: bold; }
-        .day-cell.is-error { background: var(--error-bg); border: 2px solid var(--danger); box-sizing: border-box; }
         .weekday-header div:nth-child(7), .day-cell:nth-child(7n) span { color: var(--sat); }
         .weekday-header div:nth-child(1), .day-cell:nth-child(7n+1) span { color: var(--sun); }
         .shift-display { display: flex; flex-direction: column; width: 100%; align-items: center; margin-top: 4px; }
@@ -85,12 +84,9 @@
     const SUBAPASE_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     
-    // --- 【超厳格】ID取得ロジック ---
     function getCleanId() {
         const urlParams = new URLSearchParams(window.location.search);
         let rawId = urlParams.get('id') || 'cabb1760-a320-4d61-82c8-c2c069768d35';
-        
-        // 正規表現でUUIDの形式（8-4-4-4-12の計36文字）だけを抽出
         const uuidMatch = rawId.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
         return uuidMatch ? uuidMatch[0] : 'cabb1760-a320-4d61-82c8-c2c069768d35';
     }
@@ -107,12 +103,16 @@
         const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
         const m = nextMonthDate.getMonth() + 1;
 
-        // URLに「id=」以外の文字（?1など）が含まれているか、末尾に何かが付いていればプレビュー
         const isPreview = window.location.search.length > (PROJECT_ID.length + 4); 
         const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${m}_${PROJECT_ID}`;
         
+        // --- ロック画面の文言修正 ---
         if (!isPreview && localStorage.getItem(nextMonthKey)) {
-            document.body.innerHTML = `<div style="padding:100px 20px; text-align:center;"><h2>提出済み</h2><p>${m}月分は送信済みです。</p></div>`;
+            document.body.innerHTML = `
+                <div style="padding:100px 20px; text-align:center;">
+                    <h2 style="margin-bottom:20px;">提出済み</h2>
+                    <p>${m}月分は送信済みです。</p>
+                </div>`;
             return;
         }
 
@@ -121,12 +121,10 @@
                 db.from('projects').select('*').eq('id', PROJECT_ID).single(),
                 db.from('shift_types').select('*').eq('project_id', PROJECT_ID).order('display_order', { ascending: true })
             ]);
-            
             if (pRes.error || sRes.error) throw (pRes.error || sRes.error);
 
             const proj = pRes.data;
             shiftTypes = sRes.data;
-
             document.getElementById('h1-title').textContent = m + (proj.h1_title || "月のシフト希望");
             document.title = proj.title_tag || document.getElementById('h1-title').textContent;
 
@@ -136,16 +134,15 @@
                 if (config[id]) { el.textContent = config[id]; el.style.display = 'block'; }
                 else el.style.display = 'none';
             });
-
             renderCalendar(nextMonthDate);
         } catch (e) { 
             document.getElementById('h1-title').textContent = "読み込みエラー";
             document.getElementById('msg-top').style.display = 'block';
-            document.getElementById('msg-top').innerHTML = `設定が見つかりません。<br><small style="color:red;">ID: ${PROJECT_ID}</small>`;
+            document.getElementById('msg-top').innerHTML = `設定が見つかりません。`;
         }
     }
 
-    // --- 以降の機能は維持 ---
+    // 以下の関数（renderCalendar, applyShiftなど）は以前のコードと同じです。
     function renderCalendar(baseDate) {
         const container = document.getElementById('calendar');
         container.innerHTML = '';
@@ -168,7 +165,6 @@
             container.appendChild(cell);
         }
     }
-
     function openModal(date, day, weekDay) {
         targetDate = date;
         document.getElementById('modal-date-display').textContent = `${date.split('-')[1]}月${day}日(${weekDay})の希望`;
@@ -176,7 +172,6 @@
         renderOptions();
         document.getElementById('shift-modal').style.display = 'flex';
     }
-
     function renderOptions() {
         const div = document.getElementById('shift-options');
         div.innerHTML = '';
@@ -193,7 +188,6 @@
             div.appendChild(b);
         });
     }
-
     function applyShift() {
         if (tempSelected.length > 0) selectedShifts[targetDate] = [...tempSelected];
         else delete selectedShifts[targetDate];
@@ -201,10 +195,8 @@
         display.innerHTML = (selectedShifts[targetDate] || []).map(s => `<div class="shift-tag ${s.includes('休み')?'is-off':''}">${s}</div>`).join('');
         closeModal();
     }
-
     function clearTemp() { tempSelected = []; renderOptions(); }
     function closeModal() { document.getElementById('shift-modal').style.display = 'none'; }
-
     function showSummary() {
         const name = document.getElementById('staff-name').value;
         if (!name) return alert("氏名を入力してください");
@@ -219,9 +211,7 @@
         if (freeText) summary.innerHTML += `<div class="summary-item" style="background:#f9f9f9; padding:10px;"><strong>備考:</strong><br>${freeText}</div>`;
         document.getElementById('confirm-screen').style.display = 'block';
     }
-
     function hideSummary() { document.getElementById('confirm-screen').style.display = 'none'; }
-
     async function submitFinal() {
         if (!confirm("送信しますか？")) return;
         try {
@@ -237,11 +227,9 @@
             location.reload(); 
         } catch (e) { alert("送信エラー: " + e.message); }
     }
-
     function copyToClipboard() {
         navigator.clipboard.writeText(document.getElementById('summary-content').innerText).then(() => alert("コピーしました"));
     }
-
     init();
 </script>
 </body>
