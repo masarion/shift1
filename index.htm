@@ -90,14 +90,20 @@
     const SUBAPASE_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     
-    // --- 【修正ポイント】ID取得を徹底的にクリーンにする ---
-    const urlStr = window.location.search;
-    const urlParams = new URLSearchParams(urlStr);
-    
-    // idを取得し、英数字とハイフン以外を全て除去
-    let rawId = urlParams.get('id') || 'cabb1760-a320-4d61-82c8-c2c069768d35';
-    const PROJECT_ID = rawId.replace(/[^a-zA-Z0-9-]/g, ''); 
+    // --- 【重要】ID取得ロジックの再構築 ---
+    function getCleanId() {
+        const fullSearch = window.location.search;
+        if (!fullSearch) return 'cabb1760-a320-4d61-82c8-c2c069768d35';
 
+        // 1. まず「?id=」の後の文字列を抜き出す
+        const match = fullSearch.match(/id=([^&?]+)/);
+        if (!match) return 'cabb1760-a320-4d61-82c8-c2c069768d35';
+
+        // 2. 抜き出したIDから、英数字とハイフン以外を物理的に削ぎ落とす
+        return match[1].replace(/[^a-zA-Z0-9-]/g, '');
+    }
+
+    const PROJECT_ID = getCleanId();
     const db = supabase.createClient(SUBAPASE_URL, SUPABASE_KEY);
     const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
     let shiftTypes = [];
@@ -109,8 +115,8 @@
         const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
         const m = nextMonthDate.getMonth() + 1;
 
-        // --- 重複提出チェック (id以外の文字が1文字でもあればプレビュー) ---
-        const isPreview = urlStr.replace(`id=${rawId}`, '').length > 1;
+        // --- 重複提出チェック (URLに?や&など、ID以外の情報があればプレビュー) ---
+        const isPreview = window.location.search.replace(`id=${PROJECT_ID}`, '').length > 1;
         const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${m}_${PROJECT_ID}`;
         
         if (!isPreview && localStorage.getItem(nextMonthKey)) {
@@ -144,25 +150,24 @@
 
             renderCalendar(nextMonthDate);
         } catch (e) { 
-            document.getElementById('h1-title').textContent = "エラー発生";
+            document.getElementById('h1-title').textContent = "エラー";
             document.getElementById('msg-top').style.display = 'block';
-            document.getElementById('msg-top').innerHTML = `読み込みに失敗しました。<br><small style="color:red;">${e.message || "IDが正しくありません"}</small>`;
+            document.getElementById('msg-top').innerHTML = `読み込み失敗<br><small style="color:red;">${e.message || "ID不正"}</small>`;
         }
     }
 
+    // --- 以下の関数群は変更なし ---
     function renderCalendar(baseDate) {
         const container = document.getElementById('calendar');
         container.innerHTML = '';
         const y = baseDate.getFullYear(), m = baseDate.getMonth();
         const firstDay = new Date(y, m, 1).getDay();
         const lastDate = new Date(y, m + 1, 0).getDate();
-
         for (let i = 0; i < firstDay; i++) {
             const empty = document.createElement('div');
             empty.className = 'day-cell';
             container.appendChild(empty);
         }
-
         for (let d = 1; d <= lastDate; d++) {
             const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
             currentFullDates.push(dateStr); 
@@ -214,17 +219,14 @@
     function showSummary() {
         const name = document.getElementById('staff-name').value;
         if (!name) return alert("氏名を入力してください");
-        
         const summary = document.getElementById('summary-content');
         summary.innerHTML = `<div class="summary-item"><strong>提出者:</strong> ${name} 様</div>`;
-        
         currentFullDates.forEach(date => {
             const dObj = new Date(date);
             const formattedDate = `${dObj.getMonth()+1}/${dObj.getDate()}(${weekDays[dObj.getDay()]})`;
             const shifts = selectedShifts[date] ? selectedShifts[date].join(', ') : '未入力';
             summary.innerHTML += `<div class="summary-item"><strong>${formattedDate}:</strong> ${shifts}</div>`;
         });
-
         const freeText = document.getElementById('free-text').value;
         if (freeText) summary.innerHTML += `<div class="summary-item" style="background:#f9f9f9; padding:10px;"><strong>備考:</strong><br>${freeText}</div>`;
         document.getElementById('confirm-screen').style.display = 'block';
