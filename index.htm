@@ -6,79 +6,84 @@
     <title>シフト希望入力</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-    :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f9; --sat: #007bff; --sun: #dc3545; --error-bg: #ffebeb; }
-    body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #333; font-size: 18px; }
-    .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); box-sizing: border-box; }
-    h1 { text-align: center; font-size: 1.6rem; color: #222; margin-bottom: 20px; }
-    .msg-box { background: #f0f7ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 1rem; white-space: pre-wrap; border-left: 5px solid var(--primary); }
-    input[type="text"], textarea { width: 100%; padding: 15px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 20px; font-size: 18px; }
-    
-    .calendar-wrapper { border: 1px solid #eee; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
-    .weekday-header { display: grid; grid-template-columns: repeat(7, 1fr); background: #eee; text-align: center; font-weight: bold; font-size: 0.9rem; padding: 10px 0; }
-    
-    /* カレンダー：横幅を100%に固定 */
-    .calendar-grid { 
-        display: grid; 
-        grid-template-columns: repeat(7, 1fr); 
-        gap: 1px; 
-        background: #eee; 
-        max-height: 400px; 
-        overflow-y: auto; 
-        width: 100%;
-    }
-    
-    /* セル：枠の大きさを固定し、中身が増えたらセル内だけで縦スクロール */
-    .day-cell { 
-        background: #fff; 
-        aspect-ratio: 1/1.4; 
-        display: flex; 
-        flex-direction: column; 
-        align-items: center; 
-        padding: 4px 1px; 
-        cursor: pointer; 
-        font-size: 1rem; 
-        transition: background 0.3s;
-        box-sizing: border-box;
-        min-width: 0;      /* 横に広がるのを防ぐ */
-        overflow-y: auto;  /* 枠を超えたらセル内スクロール */
-    }
-    
-    .day-cell span { font-weight: bold; }
-    .weekday-header div:nth-child(7), .day-cell:nth-child(7n) span { color: var(--sat); }
-    .weekday-header div:nth-child(1), .day-cell:nth-child(7n+1) span { color: var(--sun); }
-    
-    .shift-display { display: flex; flex-direction: column; width: 100%; align-items: center; margin-top: 4px; }
-    
-    /* シフト名：文字サイズを最小限にし、枠内で折り返し */
-    .shift-tag {
-        font-size: 0.65rem;     /* 枠維持のため少し小さく */
-        color: var(--primary);
-        font-weight: bold;
-        line-height: 1.1;
-        text-align: center;
-        width: 100%;
-        word-break: break-all;  /* 枠に合わせて強制改行 */
-        white-space: normal;    /* 改行を許可 */
-        margin-top: 2px;
-        display: block;
-    }
+        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f9; --sat: #007bff; --sun: #dc3545; --error-bg: #ffebeb; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #333; font-size: 18px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); box-sizing: border-box; }
+        h1 { text-align: center; font-size: 1.6rem; color: #222; margin-bottom: 20px; }
+        .msg-box { background: #f0f7ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 1rem; white-space: pre-wrap; border-left: 5px solid var(--primary); }
+        input[type="text"], textarea { width: 100%; padding: 15px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 20px; font-size: 18px; }
+        
+        .calendar-wrapper { border: 1px solid #eee; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+        .weekday-header { display: grid; grid-template-columns: repeat(7, 1fr); background: #eee; text-align: center; font-weight: bold; font-size: 0.9rem; padding: 10px 0; }
+        
+        /* カレンダー：横幅固定 */
+        .calendar-grid { 
+            display: grid; 
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 1px; 
+            background: #eee; 
+            max-height: 400px; 
+            overflow-y: auto; 
+            width: 100%;
+        }
+        
+        /* セル：枠固定・未選択エラー用設定 */
+        .day-cell { 
+            background: #fff; 
+            aspect-ratio: 1/1.4; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 4px 1px; 
+            cursor: pointer; 
+            font-size: 1rem; 
+            transition: background 0.3s;
+            box-sizing: border-box;
+            min-width: 0;
+            overflow-y: auto;
+        }
+        
+        /* 未選択時の赤枠表示 */
+        .day-cell.is-error {
+            background: var(--error-bg);
+            border: 2px solid var(--danger) !important;
+        }
+        
+        .day-cell span { font-weight: bold; }
+        .weekday-header div:nth-child(7), .day-cell:nth-child(7n) span { color: var(--sat); }
+        .weekday-header div:nth-child(1), .day-cell:nth-child(7n+1) span { color: var(--sun); }
+        
+        .shift-display { display: flex; flex-direction: column; width: 100%; align-items: center; margin-top: 4px; }
+        
+        .shift-tag {
+            font-size: 0.65rem;
+            color: var(--primary);
+            font-weight: bold;
+            line-height: 1.1;
+            text-align: center;
+            width: 100%;
+            word-break: break-all;
+            white-space: normal;
+            margin-top: 2px;
+            display: block;
+        }
 
-    .shift-tag.is-off { color: var(--danger); }
+        .shift-tag.is-off { color: var(--danger); }
 
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; }
-    .modal-content { background: white; width: 95%; max-width: 450px; border-radius: 15px; padding: 25px; box-sizing: border-box; }
-    .shift-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 25px 0; }
-    .shift-btn { padding: 18px 5px; border: 2px solid var(--primary); background: white; color: var(--primary); border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: bold; }
-    .shift-btn.active { background: var(--primary); color: white; }
-    .shift-btn.is-off-btn { border-color: var(--danger); color: var(--danger); }
-    .shift-btn.is-off-btn.active { background: var(--danger); color: white; }
-    .modal-footer { display: flex; gap: 10px; }
-    .btn { border: none; border-radius: 10px; font-weight: bold; cursor: pointer; padding: 18px; font-size: 1.1rem; }
-    .btn-confirm { background: var(--success); color: white; flex: 2; }
-    .btn-clear { background: var(--danger); color: white; flex: 1; }
-    #confirm-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; padding: 20px; overflow-y: auto; box-sizing: border-box; }
-    .summary-item { padding: 12px 0; border-bottom: 1px solid #eee; font-size: 1.1rem; }
-</style>
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; width: 95%; max-width: 450px; border-radius: 15px; padding: 25px; box-sizing: border-box; }
+        .shift-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 25px 0; }
+        .shift-btn { padding: 18px 5px; border: 2px solid var(--primary); background: white; color: var(--primary); border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: bold; }
+        .shift-btn.active { background: var(--primary); color: white; }
+        .shift-btn.is-off-btn { border-color: var(--danger); color: var(--danger); }
+        .shift-btn.is-off-btn.active { background: var(--danger); color: white; }
+        .modal-footer { display: flex; gap: 10px; }
+        .btn { border: none; border-radius: 10px; font-weight: bold; cursor: pointer; padding: 18px; font-size: 1.1rem; }
+        .btn-confirm { background: var(--success); color: white; flex: 2; }
+        .btn-clear { background: var(--danger); color: white; flex: 1; }
+        #confirm-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; padding: 20px; overflow-y: auto; box-sizing: border-box; }
+        .summary-item { padding: 12px 0; border-bottom: 1px solid #eee; font-size: 1.1rem; }
+    </style>
 </head>
 <body>
 
@@ -149,16 +154,15 @@
         const isPreview = window.location.search.length > (PROJECT_ID.length + 4); 
         const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${m}_${PROJECT_ID}`;
         
-        // --- ロック画面の文言修正 ---
         if (!isPreview && localStorage.getItem(nextMonthKey)) {
-    document.body.innerHTML = `
-        <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
-            <h2 style="color:#333;">送信済み</h2>
-            <p style="color:#666;">${m}月分のシフト希望は既に提出されています。</p>
-            <p style="font-size:0.9rem; color:#999;">※内容の変更が必要な場合は管理者に連絡してください。</p>
-        </div>`;
-    return;
-}
+            document.body.innerHTML = `
+                <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
+                    <h2 style="color:#333;">送信済み</h2>
+                    <p style="color:#666;">${m}月分のシフト希望は既に提出されています。</p>
+                    <p style="font-size:0.9rem; color:#999;">※内容の変更が必要な場合は管理者に連絡してください。</p>
+                </div>`;
+            return;
+        }
 
         try {
             const [pRes, sRes] = await Promise.all([
@@ -186,7 +190,6 @@
         }
     }
 
-    // 以下の関数（renderCalendar, applyShiftなど）は以前のコードと同じです。
     function renderCalendar(baseDate) {
         const container = document.getElementById('calendar');
         container.innerHTML = '';
@@ -209,6 +212,7 @@
             container.appendChild(cell);
         }
     }
+
     function openModal(date, day, weekDay) {
         targetDate = date;
         document.getElementById('modal-date-display').textContent = `${date.split('-')[1]}月${day}日(${weekDay})の希望`;
@@ -216,6 +220,7 @@
         renderOptions();
         document.getElementById('shift-modal').style.display = 'flex';
     }
+
     function renderOptions() {
         const div = document.getElementById('shift-options');
         div.innerHTML = '';
@@ -232,30 +237,56 @@
             div.appendChild(b);
         });
     }
+
     function applyShift() {
-        if (tempSelected.length > 0) selectedShifts[targetDate] = [...tempSelected];
-        else delete selectedShifts[targetDate];
+        if (tempSelected.length > 0) {
+            selectedShifts[targetDate] = [...tempSelected];
+            document.getElementById(`cell-${targetDate}`).classList.remove('is-error');
+        } else {
+            delete selectedShifts[targetDate];
+        }
         const display = document.getElementById(`cell-${targetDate}`).querySelector('.shift-display');
         display.innerHTML = (selectedShifts[targetDate] || []).map(s => `<div class="shift-tag ${s.includes('休み')?'is-off':''}">${s}</div>`).join('');
         closeModal();
     }
+
     function clearTemp() { tempSelected = []; renderOptions(); }
     function closeModal() { document.getElementById('shift-modal').style.display = 'none'; }
+
+    // --- 未選択チェック付きの確認画面表示 ---
     function showSummary() {
         const name = document.getElementById('staff-name').value;
         if (!name) return alert("氏名を入力してください");
+
+        let unselectedDays = [];
+        currentFullDates.forEach(date => {
+            const cell = document.getElementById(`cell-${date}`);
+            cell.classList.remove('is-error');
+            if (!selectedShifts[date] || selectedShifts[date].length === 0) {
+                unselectedDays.push(date);
+                cell.classList.add('is-error');
+            }
+        });
+
+        if (unselectedDays.length > 0) {
+            alert("未選択の日にちがあります。カレンダーの赤い枠の日にちを選択してください。");
+            return;
+        }
+
         const summary = document.getElementById('summary-content');
         summary.innerHTML = `<div class="summary-item"><strong>提出者:</strong> ${name} 様</div>`;
         currentFullDates.forEach(date => {
             const dObj = new Date(date);
             const formattedDate = `${dObj.getMonth()+1}/${dObj.getDate()}(${weekDays[dObj.getDay()]})`;
-            summary.innerHTML += `<div class="summary-item"><strong>${formattedDate}:</strong> ${selectedShifts[date] ? selectedShifts[date].join(', ') : '未入力'}</div>`;
+            summary.innerHTML += `<div class="summary-item"><strong>${formattedDate}:</strong> ${selectedShifts[date].join(', ')}</div>`;
         });
         const freeText = document.getElementById('free-text').value;
         if (freeText) summary.innerHTML += `<div class="summary-item" style="background:#f9f9f9; padding:10px;"><strong>備考:</strong><br>${freeText}</div>`;
         document.getElementById('confirm-screen').style.display = 'block';
     }
+
     function hideSummary() { document.getElementById('confirm-screen').style.display = 'none'; }
+
     async function submitFinal() {
         if (!confirm("送信しますか？")) return;
         try {
@@ -266,18 +297,21 @@
                 memo: document.getElementById('free-text').value
             }]);
             if (error) throw error;
-            localStorage.setItem(`submitted_${new Date().getFullYear()}_${new Date().getMonth() + 2}_${PROJECT_ID}`, "true");
+            
+            // 重複提出防止フラグを保存
+            const m = new Date().getMonth() + 2; 
+            localStorage.setItem(`submitted_${new Date().getFullYear()}_${m}_${PROJECT_ID}`, "true");
+            
             alert("送信完了しました！");
             location.reload(); 
         } catch (e) { alert("送信エラー: " + e.message); }
     }
+
     function copyToClipboard() {
         navigator.clipboard.writeText(document.getElementById('summary-content').innerText).then(() => alert("コピーしました"));
     }
+
     init();
 </script>
 </body>
 </html>
-
-
-
