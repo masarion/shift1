@@ -95,7 +95,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     // idを取得し、末尾に「/」があれば削除。なければデフォルトIDを使用。
     let rawId = urlParams.get('id') || 'cabb1760-a320-4d61-82c8-c2c069768d35';
-    const PROJECT_ID = rawId.split('/')[0]; // スラッシュ以降を強制カット
+    const PROJECT_ID = rawId.split('/')[0].trim(); 
 
     const db = supabase.createClient(SUBAPASE_URL, SUPABASE_KEY);
     const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
@@ -116,15 +116,12 @@
         const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
         const m = nextMonthDate.getMonth() + 1;
 
-        // --- 重複提出チェック (ここがポイント) ---
-        // URLに「?」以降の文字が1文字でもあればプレビューとみなす
-        const isPreview = window.location.search.length > 0 && !window.location.search.includes('id=');
-        // もしid=がある場合は、さらに別の文字（&pなど）があるかチェック
-        const isForcePreview = window.location.search.split('&').length > 1 || (window.location.search.includes('?') && !window.location.search.includes('id='));
-        
+        // --- 重複提出チェック ---
+        // URLに「p」という文字があればプレビューモード（提出済みでも表示）
+        const isPreview = urlParams.has('p');
         const nextMonthKey = `submitted_${nextMonthDate.getFullYear()}_${m}_${PROJECT_ID}`;
         
-        if (localStorage.getItem(nextMonthKey) && !isPreview && !isForcePreview) {
+        if (!isPreview && localStorage.getItem(nextMonthKey)) {
             document.body.innerHTML = `
                 <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
                     <h2>提出済み</h2>
@@ -134,10 +131,9 @@
         }
 
         try {
-            // ここでSupabaseからデータを取ります（PROJECT_IDから余計な文字を排除済み）
             const [pRes, sRes] = await Promise.all([
-                db.from('projects').select('*').eq('id', PROJECT_ID.trim()).single(),
-                db.from('shift_types').select('*').eq('project_id', PROJECT_ID.trim()).order('display_order', { ascending: true })
+                db.from('projects').select('*').eq('id', PROJECT_ID).single(),
+                db.from('shift_types').select('*').eq('project_id', PROJECT_ID).order('display_order', { ascending: true })
             ]);
             
             if (pRes.error) throw pRes.error;
@@ -146,32 +142,31 @@
             const proj = pRes.data;
             shiftTypes = sRes.data;
 
-            // 見出しの結合
+            // 冒頭に翌月の数字を自動付与
             const baseTitle = proj.h1_title || "月のシフト希望";
             const finalTitle = m + baseTitle;
             document.getElementById('h1-title').textContent = finalTitle;
             document.title = proj.title_tag || finalTitle;
 
-            // 各メッセージの表示設定
-            const msgs = ['msg-top', 'msg-calendar', 'msg-bottom', 'msg-confirm'];
-            msgs.forEach(id => {
+            // 各メッセージの反映
+            const msgKeys = { 'msg-top': 'msg_top', 'msg-calendar': 'msg_calendar', 'msg-bottom': 'msg_bottom', 'msg-confirm': 'msg_confirm' };
+            for (let id in msgKeys) {
                 const el = document.getElementById(id);
-                const text = proj[id.replace('-', '_')];
-                if (text) {
-                    el.textContent = text;
+                const val = proj[msgKeys[id]];
+                if (val) {
+                    el.textContent = val;
                     el.style.display = 'block';
                 } else {
                     el.style.display = 'none';
                 }
-            });
+            }
 
             renderCalendar(nextMonthDate);
         } catch (e) { 
             console.error("Fetch Error:", e);
-            // エラー時、画面に詳細を表示して原因を特定しやすくします
             document.getElementById('h1-title').textContent = "読み込みエラー";
             document.getElementById('msg-top').style.display = 'block';
-            document.getElementById('msg-top').innerHTML = `設定の読み込みに失敗しました。<br><small style="color:red;">${e.message || JSON.stringify(e)}</small>`;
+            document.getElementById('msg-top').innerHTML = `設定の読み込みに失敗しました。<br><small style="color:red;">${e.message || "IDを確認してください"}</small>`;
         }
     }
 
@@ -314,14 +309,3 @@
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
