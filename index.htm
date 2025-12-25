@@ -91,8 +91,9 @@
     const SUBAPASE_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     
-    // URLの引数からプロジェクトIDを取得、なければ以前の固定IDを使用
+    // URLのパラメーターを取得
     const urlParams = new URLSearchParams(window.location.search);
+    // idがあればそれを使う、なければあなたのID（cabb1760...）を「直接」使う
     const PROJECT_ID = urlParams.get('id') || 'cabb1760-a320-4d61-82c8-c2c069768d35';
 
     const db = supabase.createClient(SUBAPASE_URL, SUPABASE_KEY);
@@ -308,6 +309,7 @@
 </script>
 </body>
 </html>
+
 
 
 
