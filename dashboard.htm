@@ -113,9 +113,7 @@
                 <div class="input-group">
                     <label>画面トップの見出し</label>
                     <div class="editor-toolbar">
-                        <button class="toolbar-btn" onclick="formatDoc('bold')">B</button>
-                        <input type="color" onchange="formatDoc('foreColor', this.value)" title="文字色">
-                        <input type="number" placeholder="サイズ" style="width:50px; padding:2px;" onchange="formatDoc('fontSizeCustom', this.value)" title="フォントサイズ(px)">
+                        <button class="toolbar-btn" onclick="document.execCommand('bold')">B</button>
                     </div>
                     <div id="edit-h1-title" class="rich-editor" contenteditable="true"></div>
                 </div>
@@ -123,9 +121,7 @@
                 <div class="input-group">
                     <label>冒頭メッセージ</label>
                     <div class="editor-toolbar">
-                        <button class="toolbar-btn" onclick="formatDoc('bold')">B</button>
-                        <input type="color" onchange="formatDoc('foreColor', this.value)">
-                        <input type="number" placeholder="サイズ" style="width:50px; padding:2px;" onchange="formatDoc('fontSizeCustom', this.value)">
+                        <button class="toolbar-btn" onclick="document.execCommand('bold')">B</button>
                     </div>
                     <div id="edit-msg-top" class="rich-editor" contenteditable="true"></div>
                 </div>
@@ -178,7 +174,7 @@
 
     <section id="sec-responses" style="display:none;">
         <h1>送信データ（回答）確認</h1>
-        <div class="card" id="response-container">
+        <div class="card">
             <p>左メニューの案件リストから確認したい案件を選択してください。</p>
         </div>
     </section>
@@ -191,31 +187,6 @@
     let currentId = null;
     let sortable = null;
 
-    // リッチテキスト装飾機能の修正
-    function formatDoc(cmd, val) {
-        if (cmd === 'fontSizeCustom') {
-            const sel = window.getSelection();
-            if (sel.rangeCount > 0) {
-                const range = sel.getRangeAt(0);
-                if (range.toString().length > 0) {
-                    const span = document.createElement("span");
-                    span.style.fontSize = val + "px";
-                    range.surroundContents(span);
-                } else {
-                    // 選択されていない場合はインラインスタイルを試みる（簡易版）
-                    document.execCommand('insertHTML', false, `<span style="font-size:${val}px">&nbsp;</span>`);
-                }
-            }
-        } else {
-            document.execCommand(cmd, false, val);
-        }
-        // 操作後にエディタへフォーカスを戻す（重要）
-        const activeEditor = document.activeElement;
-        if (activeEditor && activeEditor.classList.contains('rich-editor')) {
-            activeEditor.focus();
-        }
-    }
-
     function showSection(id) {
         document.querySelectorAll('section').forEach(s => s.style.display = 'none');
         document.getElementById('sec-' + id).style.display = 'block';
@@ -224,20 +195,11 @@
         if(navEl) navEl.classList.add('nav-active');
     }
 
-    // サイドメニュー案件クリック時の振分けロジック
-    function handleNavProjectClick(id) {
-        const isResponseMode = document.getElementById('nav-responses').classList.contains('nav-active');
-        if (isResponseMode) {
-            showResponseData(id);
-        } else {
-            editProject(id);
-        }
-    }
-
     async function loadProjects() {
         const { data: pjs, error } = await client.from('projects').select('*').order('created_at', { ascending: false });
         if(error) return;
         
+        // メイン一覧
         document.getElementById('project-list').innerHTML = pjs.map(p => `
             <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:15px 25px;">
                 <strong>${p.title_tag || '無題の案件'}</strong>
@@ -245,33 +207,11 @@
             </div>
         `).join('');
 
+        // サイドメニュー案件リンク（admin.htmへ遷移するように修正）
         const subList = document.getElementById('nav-response-list');
         subList.innerHTML = pjs.map(p => `
-            <div class="nav-sub-item" onclick="handleNavProjectClick('${p.id}')">└ ${p.title_tag}</div>
+            <div class="nav-sub-item" onclick="location.href='admin.htm?id=${p.id}'">└ ${p.title_tag}</div>
         `).join('');
-    }
-
-    // 回答確認画面への遷移（中身の表示）
-    async function showResponseData(id) {
-        const { data: p } = await client.from('projects').select('title_tag').eq('id', id).single();
-        const container = document.getElementById('response-container');
-        container.innerHTML = `<h3>「${p.title_tag}」の回答データ</h3><p>データを読み込んでいます...</p>`;
-        
-        const { data: res } = await client.from('responses').select('*').eq('project_id', id).order('created_at', {ascending: false});
-        
-        if (!res || res.length === 0) {
-            container.innerHTML = `<h3>「${p.title_tag}」の回答データ</h3><p>送信されたデータはまだありません。</p>`;
-            return;
-        }
-
-        let html = `<table border="1" style="width:100%; border-collapse:collapse; margin-top:10px;">
-                    <tr style="background:#f1f5f9;"><th>送信日時</th><th>氏名</th><th>内容</th></tr>`;
-        res.forEach(r => {
-            const date = new Date(r.created_at).toLocaleString();
-            html += `<tr><td style="padding:8px;">${date}</td><td style="padding:8px;">${r.staff_name || ''}</td><td style="padding:8px;">${r.data || ''}</td></tr>`;
-        });
-        html += `</table>`;
-        container.innerHTML = `<h3>「${p.title_tag}」の回答データ</h3>` + html;
     }
 
     async function editProject(id) {
@@ -392,8 +332,6 @@
         </head><body>
             <div class="no-print">
                 <button onclick="document.execCommand('bold')">B</button>
-                <input type="color" onchange="document.execCommand('foreColor', false, this.value)">
-                <span>サイズ:</span><input type="number" style="width:50px" onchange="document.execCommand('insertHTML', false, '<span style=\'font-size:'+this.value+'px\'>'+window.getSelection()+'</span>')">
                 <button class="btn-exec" onclick="window.print()">印刷する</button>
                 <button onclick="window.close()">閉じる</button>
             </div>
