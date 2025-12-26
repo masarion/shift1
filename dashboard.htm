@@ -27,7 +27,7 @@
         #main-content { flex-grow: 1; overflow-y: auto; padding: 40px; }
         .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #edf2f7; margin-bottom: 25px; }
         
-        /* 編集グリッド */
+        /* 編集エリア */
         .edit-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 25px; align-items: start; }
         .section-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #f1f5f9; }
         .section-desc { font-size: 0.85rem; color: #64748b; margin-bottom: 20px; line-height: 1.5; }
@@ -37,21 +37,25 @@
         .input-group .field-desc { font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: normal; }
         .input-group textarea, .input-group input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 0.95rem; }
         
-        /* シフト行 */
+        /* 下部アクションエリア（中央配置） */
+        .action-area { text-align: center; margin-top: 20px; padding: 30px 0; }
+        
+        /* ボタン類 */
+        .btn-save-fixed { background: var(--success); color: white; padding: 14px 60px; font-size: 1.1rem; border-radius: 12px; cursor: pointer; border: none; font-weight: bold; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2); }
+        .btn-preview { background: white; color: var(--primary); border: 1.5px solid var(--primary); padding: 8px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
+        .btn-delete-pj { color: #94a3b8; background: none; border: none; font-size: 0.85rem; cursor: pointer; text-decoration: underline; margin-top: 25px; display: inline-block; }
+        .btn-delete-pj:hover { color: var(--danger); }
+        
+        /* シフト行とゴミ箱アイコン */
         .shift-row { display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 10px; margin-bottom: 8px; border: 1px solid #e2e8f0; }
         .drag-handle { cursor: grab; color: #64748b; font-size: 1.2rem; user-select: none; }
-        
-        .btn-save-fixed { background: var(--success); color: white; padding: 12px 30px; font-size: 1rem; border-radius: 10px; cursor: pointer; border: none; font-weight: bold; }
-        .btn-preview { background: white; color: var(--primary); border: 1.5px solid var(--primary); padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 0.9rem; }
-        .btn-preview:hover { background: #f0f7ff; }
-        .btn-delete { color: #94a3b8; background: none; border: none; font-size: 0.85rem; cursor: pointer; text-decoration: underline; margin-top: 30px; }
-        .btn-delete:hover { color: var(--danger); }
-        .btn-print { background: var(--primary); color: white; width: 100%; padding: 15px; font-size: 1rem; margin-top: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
+        .btn-trash { background: none; border: none; cursor: pointer; padding: 5px; color: #94a3b8; display: flex; align-items: center; transition: 0.2s; }
+        .btn-trash:hover { color: var(--danger); }
 
-        /* プレビューエリア設定（枠線なし） */
+        /* QR・印刷系 */
+        .btn-print { background: var(--primary); color: white; width: 100%; padding: 15px; font-size: 1rem; margin-top: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
         #preview-card-area { background: transparent; border: none; box-shadow: none; padding: 0; }
         .print-config { background: #f1f5f9; padding: 15px; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; justify-content: center; }
-        .print-config select { padding: 8px; border-radius: 5px; border: 1px solid #cbd5e1; }
         #print-preview-box { text-align: center; padding: 40px 20px; background: #fff; border: none; }
     </style>
 </head>
@@ -68,7 +72,7 @@
     <section id="sec-projects">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
             <h1>案件一覧</h1>
-            <button class="btn-save-fixed" onclick="createNewProject()">+ 新規案件作成</button>
+            <button class="btn-save-fixed" style="padding:10px 30px; font-size:1rem;" onclick="createNewProject()">+ 新規案件作成</button>
         </div>
         <div id="project-list">読み込み中...</div>
     </section>
@@ -77,14 +81,11 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
             <div>
                 <h1 id="edit-page-title" style="margin-bottom:5px;">案件の編集</h1>
-                <p style="font-size: 0.9rem; color: #64748b;">スタッフ用シフト希望ページのテキストを編集できます。「変更を保存して反映」ボタンを押すと反映されます。</p>
+                <p style="font-size: 0.9rem; color: #64748b; margin:0;">スタッフ用シフト希望ページのテキストを編集できます。「変更を保存して反映」ボタンを押すと反映されます。</p>
             </div>
             <div style="text-align: right;">
-                <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 15px; justify-content: flex-end;">
-                    <p style="font-size: 0.75rem; color: #94a3b8; margin: 0; text-align: right;">提出済みの画面が出たときはURL末尾に「&◯」を付けることで<br>スタッフ用ページを確認することができます</p>
-                    <button class="btn-preview" onclick="openLivePreview()">実際のページを確認する</button>
-                </div>
-                <button class="btn-save-fixed" onclick="saveSettings()">変更を保存して反映</button>
+                <button class="btn-preview" onclick="openLivePreview()">プレビュー</button>
+                <p style="font-size: 0.7rem; color: #94a3b8; margin: 5px 0 0 0;">提出済み画面が出るときはURL末尾に「&◯」を付けて確認してください</p>
             </div>
         </div>
 
@@ -102,19 +103,20 @@
                 <div class="input-group"><label>冒頭メッセージ</label><textarea id="edit-msg-top" rows="3"></textarea></div>
                 <div class="input-group"><label>カレンダー操作説明</label><textarea id="edit-msg-calendar" rows="2"></textarea></div>
                 <div class="input-group"><label>確認画面の注意書き</label><textarea id="edit-msg-confirm" rows="2"></textarea></div>
-
-                <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #f1f5f9; text-align: center;">
-                    <button class="btn-save-fixed" onclick="saveSettings()">変更を保存して反映</button>
-                    <br>
-                    <button class="btn-delete" onclick="deleteCurrentProject()">この案件を完全に削除する</button>
-                </div>
             </div>
+            
             <div class="card">
                 <div class="section-title">2. シフト枠の種類</div>
-                <p class="section-desc">シフト枠の編集、削除ができます。⠿をクリックしてドラッグアンドドロップすると並べ替えができます。「＋枠を追加」ボタンをクリックすると新規でシフト枠を追加できます</p>
+                <p class="section-desc">シフト枠の編集、削除ができます。⠿をドラッグして並べ替え、ゴミ箱アイコンをクリックして削除できます。「＋枠を追加」ボタンで新規追加できます。</p>
                 <div id="shift-manager-list"></div>
                 <button onclick="addShiftRow()" style="width:100%; padding:12px; margin-top:10px; background:#f1f5f9; border:1px dashed #cbd5e1; border-radius:8px; cursor:pointer;">+ 枠を追加</button>
             </div>
+        </div>
+
+        <div class="action-area">
+            <button class="btn-save-fixed" onclick="saveSettings()">変更を保存して反映</button>
+            <br>
+            <button class="btn-delete-pj" onclick="deleteCurrentProject()">この案件を完全に削除する</button>
         </div>
     </section>
 
@@ -201,7 +203,12 @@
     function addShiftRow(val = '') {
         const div = document.createElement('div');
         div.className = 'shift-row';
-        div.innerHTML = `<div class="drag-handle">⠿</div><input type="text" value="${val}" style="flex:1; border:none; background:transparent;"><button onclick="this.parentElement.remove()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">削除</button>`;
+        div.innerHTML = `
+            <div class="drag-handle">⠿</div>
+            <input type="text" value="${val}" style="flex:1; border:none; background:transparent;">
+            <button class="btn-trash" onclick="this.parentElement.remove()" title="削除">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>`;
         document.getElementById('shift-manager-list').appendChild(div);
     }
 
@@ -213,13 +220,10 @@
 
     async function deleteCurrentProject() {
         if(!currentId) return;
-        if(!confirm("この案件を削除すると、紐づくシフト枠の設定や送信されたデータもすべて失われます。本当に削除しますか？")) return;
-        const { error } = await client.from('projects').delete().eq('id', currentId);
-        if(!error) {
-            alert("削除しました。");
-            showSection('projects');
-            loadProjects();
-        }
+        if(!confirm("この案件を削除すると、設定や送信データがすべて失われます。本当によろしいですか？")) return;
+        await client.from('projects').delete().eq('id', currentId);
+        showSection('projects');
+        loadProjects();
     }
 
     async function loadQRProjectList() {
@@ -251,41 +255,30 @@
         const title = document.getElementById('qr-pj-name').textContent;
         const qrData = document.getElementById('qr-pj-url').textContent;
         const win = window.open('', '_blank');
-        
-        win.document.write(`<html><head><title>印刷用</title>
+        win.document.write(`<html><head><title>印刷</title>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
             <style>
                 @page { margin: 0; }
                 body { text-align: center; font-family: sans-serif; background: #f0f0f0; margin: 0; padding: 0; }
                 .no-print-area { padding: 20px; background: #fff; border-bottom: 1px solid #ddd; }
                 .btn-exec-print { background: #4361ee; color: white; padding: 15px 40px; font-size: 1.2rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-                .print-canvas { background: white; display: inline-block; padding: 120px 60px 60px 60px; min-height: 100vh; box-sizing: border-box; }
+                .print-canvas { background: white; display: inline-block; padding: 150px 60px 60px 60px; min-height: 100vh; box-sizing: border-box; }
                 .editable { cursor: pointer; border: 1px dashed transparent; }
-                .editable:hover { border-color: #ccc; background: #fafafa; }
                 h1 { font-size: 2.8rem; margin: 20px 0 60px 0; }
                 p.month { font-size: 4rem; margin: 0; font-weight: bold; }
                 p.footer { font-size: 1.8rem; margin-top: 60px; font-weight: bold; }
                 #qrcode { display: flex; justify-content: center; margin: 30px auto; }
-                @media print { 
-                    .no-print-area { display: none; } 
-                    body { background: white; }
-                    .print-canvas { padding-top: 150px; }
-                }
+                @media print { .no-print-area { display: none; } body { background: white; } }
             </style>
         </head><body>
-            <div class="no-print-area">
-                <p style="margin-bottom:10px;">テキストをクリックして編集できます。準備ができたら下のボタンを押してください。</p>
-                <button class="btn-exec-print" onclick="window.print()">この内容で印刷する</button>
-            </div>
+            <div class="no-print-area"><button class="btn-exec-print" onclick="window.print()">この内容で印刷する</button></div>
             <div class="print-canvas">
                 <p class="month editable" contenteditable="true">${month}</p>
                 <h1 class="editable" contenteditable="true">${title}</h1>
                 <div id="qrcode"></div>
                 <p class="footer editable" contenteditable="true">シフト希望の提出はこちらから</p>
             </div>
-            <script>
-                new QRCode(document.getElementById("qrcode"), { text: "${qrData}", width: 400, height: 400 });
-            <\/script>
+            <script>new QRCode(document.getElementById("qrcode"), { text: "${qrData}", width: 400, height: 400 });<\/script>
         </body></html>`);
         win.document.close();
     }
@@ -293,8 +286,8 @@
     async function createNewProject() {
         const name = prompt("新しい案件の名称を入力してください");
         if(!name) return;
-        const { data, error } = await client.from('projects').insert([{ title_tag: name, h1_title: name }]).select();
-        if(!error) loadProjects();
+        await client.from('projects').insert([{ title_tag: name, h1_title: name }]);
+        loadProjects();
     }
 
     async function saveSettings() {
