@@ -132,14 +132,27 @@
     </section>
 
     <section id="sec-qr-gen" style="display:none;">
-        <h1>共有用URL・QRコード</h1>
-        <div class="card" style="max-width: 500px;">
-            <p style="font-weight: bold; margin-bottom: 10px;">スタッフ配布用URL</p>
-            <input type="text" id="target-url" readonly style="width: 100%; padding: 12px; margin-bottom: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
-            <button class="btn-primary" style="width:100%" onclick="generateQR()">QRコードを作成</button>
-            <div id="qrcode" style="margin-top:30px; display: flex; justify-content: center; background: white; padding: 20px; border: 1px solid #eee; border-radius: 10px;"></div>
+    <h1>共有用URL・QRコード作成</h1>
+    <div style="display: flex; gap: 20px;">
+        <div class="card" style="flex: 1;">
+            <h3>1. 案件を選択</h3>
+            <div id="qr-project-selector" style="max-height: 400px; overflow-y: auto;">
+                </div>
         </div>
-    </section>
+
+        <div class="card" style="flex: 1.5; text-align: center;">
+            <h3>2. 印刷プレビュー</h3>
+            <div id="print-area" style="padding: 20px; border: 2px dashed #ccc; background: white; margin-bottom: 20px;">
+                <h2 id="qr-display-name" style="font-size: 1.8rem; margin-bottom: 20px; color: #333;">案件を選択してください</h2>
+                <div id="qrcode" style="display: flex; justify-content: center; margin-bottom: 20px;"></div>
+                <p id="qr-display-url" style="color: #666; font-size: 0.9rem; word-break: break-all;"></p>
+            </div>
+            <button class="btn-save-all" id="btn-print" onclick="printQRCode()" style="display:none;">
+                🖨️ A4縦で印刷する
+            </button>
+        </div>
+    </div>
+</section>
 </div>
 
 <script>
@@ -311,4 +324,5 @@
 </script>
 </body>
 </html>
+
 
