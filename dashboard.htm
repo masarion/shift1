@@ -29,67 +29,54 @@
         
         /* 整理された2カラムレイアウト */
         .edit-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 25px; align-items: start; }
-        .section-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #f1f5f9; display: flex; align-items: center; gap: 10px; }
+        .section-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #f1f5f9; }
         
-        /* 入力パーツ */
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 6px; }
         .input-group textarea, .input-group input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 0.95rem; }
         
-        /* 【復元】シフトアイテム：正解の「☰」アイコン */
+        /* 正解の「☰」アイコン */
         .shift-row { display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 10px; margin-bottom: 8px; border: 1px solid #e2e8f0; }
-        .drag-handle { cursor: grab; color: #64748b; font-size: 1.2rem; user-select: none; padding: 0 5px; }
+        .drag-handle { cursor: grab; color: #64748b; font-size: 1.2rem; user-select: none; }
         
-        /* ボタン類 */
-        .btn-save-fixed { background: var(--success); color: white; padding: 15px 40px; font-size: 1.1rem; border-radius: 12px; cursor: pointer; border: none; font-weight: bold; box-shadow: 0 4px 12px rgba(5,150,105,0.2); }
-        .btn-print { background: var(--primary); color: white; width: 100%; padding: 15px; font-size: 1rem; margin-top: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(67,97,238,0.2); }
-        .btn-delete { background: none; border: none; color: var(--danger); cursor: pointer; font-weight: bold; }
+        .btn-save-fixed { background: var(--success); color: white; padding: 12px 30px; font-size: 1rem; border-radius: 10px; cursor: pointer; border: none; font-weight: bold; }
+        .btn-print { background: var(--primary); color: white; width: 100%; padding: 15px; font-size: 1rem; margin-top: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
     <h3 style="padding-left:10px;">管理システム</h3>
-    <div class="nav-item nav-active" id="nav-edit-all" onclick="showSection('edit-all')">ページ内容・シフト編集</div>
+    <div class="nav-item nav-active" id="nav-projects" onclick="showSection('projects')">案件一覧</div>
+    <div class="nav-item" id="nav-edit-all" onclick="showSection('edit-all')">ページ内容・シフト編集</div>
     <div class="nav-item" id="nav-qr" onclick="showSection('qr'); loadQRProjectList();">URL・QRコード作成</div>
-    <div id="sidebar-admin-links" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:20px;"></div>
 </div>
 
 <div id="main-content">
-    <section id="sec-edit-all">
+    <section id="sec-projects">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
-            <h1>ページ内容とシフト枠の編集</h1>
+            <h1>案件一覧</h1>
+            <button class="btn-save-fixed" onclick="createNewProject()">+ 新規案件作成</button>
+        </div>
+        <div id="project-list">読み込み中...</div>
+    </section>
+
+    <section id="sec-edit-all" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+            <h1 id="edit-page-title">案件の編集</h1>
             <button class="btn-save-fixed" onclick="saveSettings()">変更を保存して反映</button>
         </div>
-
         <div class="edit-grid">
             <div class="card">
                 <div class="section-title">📝 1. 表示テキストの設定</div>
-                <div class="input-group">
-                    <label>案件名称（管理用）</label>
-                    <input type="text" id="edit-title-tag">
-                </div>
-                <div class="input-group">
-                    <label>画面トップの見出し</label>
-                    <textarea id="edit-h1-title" rows="2"></textarea>
-                </div>
-                <div class="input-group">
-                    <label>冒頭メッセージ</label>
-                    <textarea id="edit-msg-top" rows="3"></textarea>
-                </div>
-                <div class="input-group">
-                    <label>カレンダー操作説明</label>
-                    <textarea id="edit-msg-calendar" rows="2"></textarea>
-                </div>
-                <div class="input-group">
-                    <label>確認画面の注意書き</label>
-                    <textarea id="edit-msg-confirm" rows="2"></textarea>
-                </div>
+                <div class="input-group"><label>案件名称（管理用）</label><input type="text" id="edit-title-tag"></div>
+                <div class="input-group"><label>画面トップの見出し</label><textarea id="edit-h1-title" rows="2"></textarea></div>
+                <div class="input-group"><label>冒頭メッセージ</label><textarea id="edit-msg-top" rows="3"></textarea></div>
+                <div class="input-group"><label>カレンダー操作説明</label><textarea id="edit-msg-calendar" rows="2"></textarea></div>
+                <div class="input-group"><label>確認画面の注意書き</label><textarea id="edit-msg-confirm" rows="2"></textarea></div>
             </div>
-
             <div class="card">
                 <div class="section-title">☰ 2. シフト枠の種類</div>
-                <p style="font-size:0.8rem; color:#64748b; margin-top:-15px; margin-bottom:15px;">ドラッグ（☰）で並び替えができます</p>
                 <div id="shift-manager-list"></div>
                 <button onclick="addShiftRow()" style="width:100%; padding:12px; margin-top:10px; background:#f1f5f9; border:1px dashed #cbd5e1; border-radius:8px; cursor:pointer;">+ 枠を追加</button>
             </div>
@@ -120,27 +107,45 @@
     const S_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
     const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     const client = supabase.createClient(S_URL, S_KEY);
-    let currentId = "f4594c70-652a-466d-8e43-1579be404b90"; // 実際は選択中のID
+    let currentId = null;
     let sortable = null;
 
     function showSection(id) {
         document.querySelectorAll('section').forEach(s => s.style.display = 'none');
         document.getElementById('sec-' + id).style.display = 'block';
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('nav-active'));
-        document.getElementById('nav-' + id).classList.add('nav-active');
+        const navId = id === 'projects' ? 'nav-projects' : id === 'edit-all' ? 'nav-edit-all' : 'nav-qr';
+        const navEl = document.getElementById(navId);
+        if(navEl) navEl.classList.add('nav-active');
     }
 
-    async function loadInitialData() {
-        const { data: p } = await client.from('projects').select('*').eq('id', currentId).single();
-        if(p) {
-            document.getElementById('edit-title-tag').value = p.title_tag || '';
-            document.getElementById('edit-h1-title').value = p.h1_title || '';
-            document.getElementById('edit-msg-top').value = p.msg_top || '';
-            document.getElementById('edit-msg-calendar').value = p.msg_calendar || '';
-            document.getElementById('edit-msg-confirm').value = p.msg_confirm || '';
+    async function loadProjects() {
+        const { data: pjs, error } = await client.from('projects').select('*').order('created_at', { ascending: false });
+        if(error) return;
+        const list = document.getElementById('project-list');
+        if(pjs.length === 0) {
+            list.innerHTML = "案件がありません。「新規案件作成」から追加してください。";
+            return;
         }
+        list.innerHTML = pjs.map(p => `
+            <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:15px 25px;">
+                <strong>${p.title_tag || '無題の案件'}</strong>
+                <button onclick="editProject('${p.id}')" style="background:var(--primary); color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer;">編集する</button>
+            </div>
+        `).join('');
+    }
+
+    async function editProject(id) {
+        currentId = id;
+        const { data: p } = await client.from('projects').select('*').eq('id', id).single();
+        document.getElementById('edit-page-title').textContent = `「${p.title_tag}」の編集`;
+        document.getElementById('edit-title-tag').value = p.title_tag || '';
+        document.getElementById('edit-h1-title').value = p.h1_title || '';
+        document.getElementById('edit-msg-top').value = p.msg_top || '';
+        document.getElementById('edit-msg-calendar').value = p.msg_calendar || '';
+        document.getElementById('edit-msg-confirm').value = p.msg_confirm || '';
         
-        const { data: shifts } = await client.from('shift_types').select('*').eq('project_id', currentId).order('display_order');
+        const { data: shifts } = await client.from('shift_types').select('*').eq('project_id', id).order('display_order');
         const container = document.getElementById('shift-manager-list');
         container.innerHTML = '';
         if(shifts && shifts.length > 0) shifts.forEach(s => addShiftRow(s.name));
@@ -148,12 +153,13 @@
         
         if(sortable) sortable.destroy();
         sortable = new Sortable(container, { handle: '.drag-handle', animation: 150 });
+        showSection('edit-all');
     }
 
     function addShiftRow(val = '') {
         const div = document.createElement('div');
         div.className = 'shift-row';
-        div.innerHTML = `<div class="drag-handle">☰</div><input type="text" value="${val}" style="flex:1; border:none; background:transparent; font-size:1rem;"><button class="btn-delete" onclick="this.parentElement.remove()">削除</button>`;
+        div.innerHTML = `<div class="drag-handle">☰</div><input type="text" value="${val}" style="flex:1; border:none; background:transparent;"><button onclick="this.parentElement.remove()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">削除</button>`;
         document.getElementById('shift-manager-list').appendChild(div);
     }
 
@@ -190,11 +196,34 @@
         win.document.close();
     }
 
-    async function saveSettings() {
-        alert("保存完了（デグレードなし）");
+    async function createNewProject() {
+        const name = prompt("新しい案件の名称を入力してください");
+        if(!name) return;
+        const { data, error } = await client.from('projects').insert([{ title_tag: name, h1_title: name }]).select();
+        if(!error) loadProjects();
     }
 
-    window.onload = loadInitialData;
+    async function saveSettings() {
+        if(!currentId) return;
+        await client.from('projects').update({
+            title_tag: document.getElementById('edit-title-tag').value,
+            h1_title: document.getElementById('edit-h1-title').value,
+            msg_top: document.getElementById('edit-msg-top').value,
+            msg_calendar: document.getElementById('edit-msg-calendar').value,
+            msg_confirm: document.getElementById('edit-msg-confirm').value
+        }).eq('id', currentId);
+        
+        await client.from('shift_types').delete().eq('project_id', currentId);
+        const shifts = Array.from(document.querySelectorAll('.shift-row input')).map((el, i) => ({
+            project_id: currentId, name: el.value, display_order: i
+        })).filter(s => s.name !== '');
+        await client.from('shift_types').insert(shifts);
+        alert("設定を保存しました。");
+        showSection('projects');
+        loadProjects();
+    }
+
+    window.onload = loadProjects;
 </script>
 </body>
 </html>
