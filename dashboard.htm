@@ -183,15 +183,38 @@
 
     function execPrint() {
         const title = document.getElementById('qr-pj-name').textContent;
-        const qr = document.getElementById('qrcode-area').innerHTML;
+        const qrData = document.getElementById('qr-pj-url').textContent;
         const win = window.open('', '_blank');
-        win.document.write(`<html><body style="text-align:center; padding-top:100px; font-family:sans-serif;">
-            <div style="border:3px solid #000; display:inline-block; padding:50px;">
-                <h1 style="font-size:3rem; margin-bottom:50px;">${title}</h1>
-                ${qr}
-                <p style="font-size:1.5rem; margin-top:50px;">シフト希望の提出はこちらから</p>
+        
+        // 印刷用ウィンドウの構築
+        win.document.write(`<html><head><title>Print QR</title>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+            <style>
+                body { text-align: center; padding-top: 50px; font-family: sans-serif; }
+                .print-container { border: 4px solid #000; display: inline-block; padding: 60px; border-radius: 20px; }
+                .editable { cursor: pointer; border: 1px dashed transparent; }
+                .editable:hover { border-color: #ccc; background: #fafafa; }
+                h1 { font-size: 2.2rem; margin: 10px 0 40px 0; white-space: nowrap; }
+                p.month { font-size: 3rem; margin: 0; font-weight: bold; }
+                p.footer { font-size: 1.5rem; margin-top: 50px; font-weight: bold; }
+                #qrcode { display: flex; justify-content: center; margin: 20px auto; }
+                @media print { .no-print { display: none; } }
+            </style>
+        </head><body>
+            <div class="no-print" style="background:#fff3cd; padding:10px; margin-bottom:20px; border-radius:8px;">
+                💡 各テキストをクリックすると直接編集できます。準備ができたらブラウザの印刷機能を実行してください。
             </div>
-            <script>window.onload=()=>{window.print(); window.close();};<\/script>
+            <div class="print-container">
+                <p class="month editable" contenteditable="true">◯月</p>
+                <h1 class="editable" contenteditable="true">${title}</h1>
+                <div id="qrcode"></div>
+                <p class="footer editable" contenteditable="true">シフト希望の提出はこちらから</p>
+            </div>
+            <script>
+                new QRCode(document.getElementById("qrcode"), { text: "${qrData}", width: 350, height: 350 });
+                // 自動で印刷ダイアログを開く場合は以下を有効化
+                // window.onload = () => { setTimeout(() => window.print(), 500); };
+            <\/script>
         </body></html>`);
         win.document.close();
     }
