@@ -178,7 +178,7 @@
 
     <section id="sec-responses" style="display:none;">
         <h1>送信データ（回答）確認</h1>
-        <div class="card">
+        <div class="card" id="response-container">
             <p>左メニューの案件リストから確認したい案件を選択してください。</p>
         </div>
     </section>
@@ -191,18 +191,28 @@
     let currentId = null;
     let sortable = null;
 
-    // リッチテキスト装飾機能
+    // リッチテキスト装飾機能の修正
     function formatDoc(cmd, val) {
         if (cmd === 'fontSizeCustom') {
             const sel = window.getSelection();
             if (sel.rangeCount > 0) {
-                const span = document.createElement("span");
-                span.style.fontSize = val + "px";
                 const range = sel.getRangeAt(0);
-                range.surroundContents(span);
+                if (range.toString().length > 0) {
+                    const span = document.createElement("span");
+                    span.style.fontSize = val + "px";
+                    range.surroundContents(span);
+                } else {
+                    // 選択されていない場合はインラインスタイルを試みる（簡易版）
+                    document.execCommand('insertHTML', false, `<span style="font-size:${val}px">&nbsp;</span>`);
+                }
             }
         } else {
             document.execCommand(cmd, false, val);
+        }
+        // 操作後にエディタへフォーカスを戻す（重要）
+        const activeEditor = document.activeElement;
+        if (activeEditor && activeEditor.classList.contains('rich-editor')) {
+            activeEditor.focus();
         }
     }
 
@@ -214,11 +224,20 @@
         if(navEl) navEl.classList.add('nav-active');
     }
 
+    // サイドメニュー案件クリック時の振分けロジック
+    function handleNavProjectClick(id) {
+        const isResponseMode = document.getElementById('nav-responses').classList.contains('nav-active');
+        if (isResponseMode) {
+            showResponseData(id);
+        } else {
+            editProject(id);
+        }
+    }
+
     async function loadProjects() {
         const { data: pjs, error } = await client.from('projects').select('*').order('created_at', { ascending: false });
         if(error) return;
         
-        // メイン一覧
         document.getElementById('project-list').innerHTML = pjs.map(p => `
             <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:15px 25px;">
                 <strong>${p.title_tag || '無題の案件'}</strong>
@@ -226,11 +245,33 @@
             </div>
         `).join('');
 
-        // サイドメニュー案件リンク（復旧）
         const subList = document.getElementById('nav-response-list');
         subList.innerHTML = pjs.map(p => `
-            <div class="nav-sub-item" onclick="editProject('${p.id}')">└ ${p.title_tag}</div>
+            <div class="nav-sub-item" onclick="handleNavProjectClick('${p.id}')">└ ${p.title_tag}</div>
         `).join('');
+    }
+
+    // 回答確認画面への遷移（中身の表示）
+    async function showResponseData(id) {
+        const { data: p } = await client.from('projects').select('title_tag').eq('id', id).single();
+        const container = document.getElementById('response-container');
+        container.innerHTML = `<h3>「${p.title_tag}」の回答データ</h3><p>データを読み込んでいます...</p>`;
+        
+        const { data: res } = await client.from('responses').select('*').eq('project_id', id).order('created_at', {ascending: false});
+        
+        if (!res || res.length === 0) {
+            container.innerHTML = `<h3>「${p.title_tag}」の回答データ</h3><p>送信されたデータはまだありません。</p>`;
+            return;
+        }
+
+        let html = `<table border="1" style="width:100%; border-collapse:collapse; margin-top:10px;">
+                    <tr style="background:#f1f5f9;"><th>送信日時</th><th>氏名</th><th>内容</th></tr>`;
+        res.forEach(r => {
+            const date = new Date(r.created_at).toLocaleString();
+            html += `<tr><td style="padding:8px;">${date}</td><td style="padding:8px;">${r.staff_name || ''}</td><td style="padding:8px;">${r.data || ''}</td></tr>`;
+        });
+        html += `</table>`;
+        container.innerHTML = `<h3>「${p.title_tag}」の回答データ</h3>` + html;
     }
 
     async function editProject(id) {
@@ -251,11 +292,7 @@
         
         updateNumbers();
         if(sortable) sortable.destroy();
-        sortable = new Sortable(container, { 
-            handle: '.drag-handle', 
-            animation: 150,
-            onEnd: updateNumbers 
-        });
+        sortable = new Sortable(container, { handle: '.drag-handle', animation: 150, onEnd: updateNumbers });
         showSection('edit-all');
     }
 
@@ -266,7 +303,7 @@
             <div class="shift-num"></div>
             <div class="drag-handle">⠿</div>
             <input type="text" value="${val}" style="flex:1; border:none; background:transparent;">
-            <button class="btn-trash" onclick="if(confirm('このシフト枠を削除しますか？')){this.parentElement.remove(); updateNumbers();}" title="削除">
+            <button class="btn-trash" onclick="if(confirm('このシフト枠を削除しますか？')){this.parentElement.remove(); updateNumbers();}">
                 <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
             </button>`;
         document.getElementById('shift-manager-list').appendChild(div);
@@ -274,9 +311,7 @@
     }
 
     function updateNumbers() {
-        document.querySelectorAll('.shift-num').forEach((el, i) => {
-            el.textContent = (i + 1) + '.';
-        });
+        document.querySelectorAll('.shift-num').forEach((el, i) => { el.textContent = (i + 1) + '.'; });
     }
 
     async function saveSettings() {
