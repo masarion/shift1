@@ -66,6 +66,7 @@
     <div class="nav-item nav-active" id="nav-projects" onclick="showSection('projects')">案件一覧</div>
     <div class="nav-item" id="nav-edit-all" onclick="showSection('edit-all')">ページ内容・シフト編集</div>
     <div class="nav-item" id="nav-qr" onclick="showSection('qr'); loadQRProjectList();">URL・QRコード作成</div>
+    <div class="nav-item" id="nav-responses" onclick="showSection('responses')">送信データ（回答）確認</div>
 </div>
 
 <div id="main-content">
@@ -149,6 +150,13 @@
             </div>
         </div>
     </section>
+
+    <section id="sec-responses" style="display:none;">
+        <h1>送信データ（回答）確認</h1>
+        <div class="card">
+            <p>※回答一覧を表示する機能（ロード処理等）をここに実装します。</p>
+        </div>
+    </section>
 </div>
 
 <script>
@@ -162,7 +170,13 @@
         document.querySelectorAll('section').forEach(s => s.style.display = 'none');
         document.getElementById('sec-' + id).style.display = 'block';
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('nav-active'));
-        const navId = id === 'projects' ? 'nav-projects' : id === 'edit-all' ? 'nav-edit-all' : 'nav-qr';
+        
+        let navId = '';
+        if(id === 'projects') navId = 'nav-projects';
+        else if(id === 'edit-all') navId = 'nav-edit-all';
+        else if(id === 'qr') navId = 'nav-qr';
+        else if(id === 'responses') navId = 'nav-responses';
+        
         const navEl = document.getElementById(navId);
         if(navEl) navEl.classList.add('nav-active');
     }
@@ -206,7 +220,7 @@
         div.innerHTML = `
             <div class="drag-handle">⠿</div>
             <input type="text" value="${val}" style="flex:1; border:none; background:transparent;">
-            <button class="btn-trash" onclick="this.parentElement.remove()" title="削除">
+            <button class="btn-trash" onclick="if(confirm('このシフト枠を削除しますか？')){this.parentElement.remove()}" title="削除">
                 <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
             </button>`;
         document.getElementById('shift-manager-list').appendChild(div);
@@ -260,8 +274,10 @@
             <style>
                 @page { margin: 0; }
                 body { text-align: center; font-family: sans-serif; background: #f0f0f0; margin: 0; padding: 0; }
-                .no-print-area { padding: 20px; background: #fff; border-bottom: 1px solid #ddd; }
-                .btn-exec-print { background: #4361ee; color: white; padding: 15px 40px; font-size: 1.2rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+                .no-print-area { padding: 30px 20px; background: #fff; border-bottom: 1px solid #ddd; }
+                .guide-text { color: #666; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.5; }
+                .btn-exec-print { background: #4361ee; color: white; padding: 15px 40px; font-size: 1.2rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-right: 10px; }
+                .btn-close-win { background: #64748b; color: white; padding: 15px 25px; font-size: 1.1rem; border: none; border-radius: 8px; cursor: pointer; }
                 .print-canvas { background: white; display: inline-block; padding: 150px 60px 60px 60px; min-height: 100vh; box-sizing: border-box; }
                 .editable { cursor: pointer; border: 1px dashed transparent; }
                 h1 { font-size: 2.8rem; margin: 20px 0 60px 0; }
@@ -271,7 +287,11 @@
                 @media print { .no-print-area { display: none; } body { background: white; } }
             </style>
         </head><body>
-            <div class="no-print-area"><button class="btn-exec-print" onclick="window.print()">この内容で印刷する</button></div>
+            <div class="no-print-area">
+                <p class="guide-text">この内容でよろしければ、下のボタンを押して印刷してください。<br>文字の部分をクリックすると、印刷前に内容を自由に書き換えることができます。</p>
+                <button class="btn-exec-print" onclick="window.print()">この内容で印刷する</button>
+                <button class="btn-close-win" onclick="window.close()">閉じる</button>
+            </div>
             <div class="print-canvas">
                 <p class="month editable" contenteditable="true">${month}</p>
                 <h1 class="editable" contenteditable="true">${title}</h1>
@@ -306,8 +326,8 @@
         })).filter(s => s.name !== '');
         await client.from('shift_types').insert(shifts);
         alert("設定を保存しました。");
-        showSection('projects');
-        loadProjects();
+        // 保存後も現在の編集画面を維持するため showSection('projects') を呼びません
+        loadProjects(); 
     }
 
     window.onload = loadProjects;
