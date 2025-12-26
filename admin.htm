@@ -2,250 +2,226 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>シフト管理システム | 管理パネル</title>
+    <title>シフト調整システム</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
-        :root { 
-            --primary: #4361ee; 
-            --sidebar-bg: #2b3a67; 
-            --active-bg: #4895ef; 
-            --bg: #f8f9fc; 
-            --text: #2b2d42; 
-            --danger: #e11d48;
-            --success: #059669;
-        }
-        body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; color: var(--text); }
+        :root { --sat: #007bff; --sun: #dc3545; --bg: #f4f7f9; --tag-bg: #e2e8f0; --danger: #e53e3e; --success: #38a169; --pdf: #6366f1; }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 0; color: #2d3748; }
         
-        /* サイドバー */
-        #sidebar { width: 260px; background: var(--sidebar-bg); color: white; padding: 25px 15px; flex-shrink: 0; display: flex; flex-direction: column; }
-        #sidebar h3 { font-size: 1.2rem; margin-bottom: 30px; padding-left: 10px; border-left: 4px solid var(--active-bg); }
-        .nav-item { padding: 14px 18px; cursor: pointer; border-radius: 10px; margin-bottom: 8px; transition: all 0.3s; display: flex; align-items: center; text-decoration: none; color: white; font-size: 0.95rem; }
-        .nav-item:hover { background: rgba(255,255,255,0.1); }
-        .nav-active { background: var(--active-bg) !important; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        
-        /* 提出一覧リンク専用（ここが動的に変化します） */
-        .nav-external { margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; }
-        #nav-admin-link { display: none; background: rgba(255,255,255,0.1); border: 1px solid var(--active-bg); color: #fff; margin-top: 5px; }
-        #nav-admin-link:hover { background: var(--active-bg); }
+        /* 土日の色分け */
+        .txt-sat { color: var(--sat) !important; }
+        .txt-sun { color: var(--sun) !important; }
 
-        /* メイン・フォーム周りは省略せず全文維持 */
-        #main-content { flex-grow: 1; overflow-y: auto; padding: 40px; }
-        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #edf2f7; }
-        .description-text { font-size: 0.85rem; color: #64748b; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #cbd5e1; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; }
-        .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; }
-        .shift-item { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; background: #fff; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; }
-        .drag-handle { cursor: grab; color: #94a3b8; }
-        button { padding: 12px 24px; border-radius: 10px; cursor: pointer; border: none; font-weight: bold; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-save-all { background: var(--success); color: white; width: 100%; max-width: 600px; padding: 18px; }
-        .btn-delete-project { background: transparent; color: #94a3b8; border: 1px solid #e2e8f0; width: 100%; max-width: 400px; margin-top: 30px; }
+        .header-content { background: white; padding: 15px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 2000; }
+        h2 { margin: 0 0 10px 0; font-size: 1.4rem; border-left: 5px solid #4a5568; padding-left: 15px; }
+        .how-to { font-size: 0.85rem; color: #4a5568; margin-bottom: 15px; background: #fffaf0; border: 1px solid #feebc8; padding: 12px; border-radius: 6px; line-height: 1.6; }
+        .caution { color: var(--danger); font-weight: bold; }
+        
+        .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .spacer { flex-grow: 1; }
+        button { padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; border: 1px solid #cbd5e0; background: white; }
+        .btn-pdf { background: var(--pdf); color: white; border: none; }
+        .btn-save { background: var(--success); color: white; border: none; }
+
+        /* 編集画面：日付行と左列を固定 */
+        .table-area { padding: 20px; overflow: auto; height: calc(100vh - 240px); }
+        .main-table { border-collapse: collapse; background: white; table-layout: fixed; width: max-content; }
+        .main-table th, .main-table td { 
+            border: 1px solid #cbd5e0; 
+            padding: 2px 4px; /* 1名時に高すぎない設定 */
+            text-align: center; 
+            vertical-align: top; 
+            width: 115px; 
+            min-width: 115px; 
+        }
+        .main-table thead th { 
+            background: #f7fafc; 
+            position: sticky; 
+            top: 0; 
+            z-index: 150; 
+            border-bottom: 2px solid #a0aec0; 
+            padding: 8px 4px; 
+        }
+        .shift-name-col { 
+            background: #edf2f7 !important; 
+            font-weight: bold; 
+            position: sticky; 
+            left: 0; 
+            z-index: 160; 
+            text-align: left !important; 
+            width: 140px !important; 
+            min-width: 140px !important; 
+            vertical-align: middle; 
+        }
+        .main-table thead th.shift-name-col { z-index: 170; }
+
+        .name-tag { 
+            background: var(--tag-bg); 
+            border: 1px solid #cbd5e0; 
+            border-radius: 4px; 
+            padding: 2px 4px; 
+            margin: 1px 0; 
+            font-size: 12px; 
+            white-space: nowrap; 
+            display: block; 
+            cursor: grab; 
+        }
+
+        /* PDF設定：9px・分割・枠なし文字 */
+        #print-container { display: none; }
+        #print-loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 3000; align-items: center; justify-content: center; font-size: 1.5rem; }
+
+        @media print {
+            @page { size: A4 landscape; margin: 5mm; }
+            .header-content, .table-area, #print-loading { display: none !important; }
+            #print-container { display: block !important; }
+            .print-page { page-break-after: always; }
+            .print-table { border-collapse: collapse; width: 100%; table-layout: fixed; border: 2.2px solid #000; }
+            .print-table th, .print-table td { border: 1px solid #000; padding: 4px 2px; text-align: center; vertical-align: middle; }
+            .print-table th { font-size: 9.5px; height: 28px; background: #eee !important; }
+            .p-shift-col { width: 100px; font-size: 10px; font-weight: bold; background: #eee !important; text-align: left; }
+            .p-name { display: block; font-size: 9px; letter-spacing: -0.3px; white-space: nowrap; line-height: 1.2; margin: 1px 0; }
+            h3 { font-size: 13px; margin: 5px 0; }
+        }
     </style>
 </head>
 <body>
 
-<div id="sidebar">
-    <h3>シフト管理システム</h3>
-    <div class="nav-item nav-active" id="nav-projects" onclick="showSection('projects')">案件一覧</div>
-    <div class="nav-item" id="nav-edit-all" onclick="showSection('edit-all')">ページ内容・シフト枠</div>
-    <div class="nav-item" id="nav-qr-gen" onclick="showSection('qr-gen')">URL・QRコード</div>
-    
-    <div class="nav-external">
-        <div id="admin-link-label" style="font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-bottom: 10px; padding-left: 10px;">案件を選択してください</div>
-        <a id="nav-admin-link" href="#" target="_blank" class="nav-item">提出一覧を表示 ↗</a>
-    </div>
+<div id="print-loading">PDFを作成しています...</div>
 
-    <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-        <p id="user-display" style="font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-bottom: 15px;"></p>
-        <button onclick="logout()" style="background:transparent; color:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.2); width: 100%;">ログアウト</button>
+<div class="header-content">
+    <h2>シフト調整システム</h2>
+    <div class="how-to">
+        【操作】移動：ドラッグ＆ドロップ ／ 削除：名前をクリック<br>
+        <span class="caution">【注意】「変更を保存」を押すとデータベースが上書きされ、それ以前の状態には戻せません。</span><br>
+        保存前に「エクセル用にコピー」でバックアップを取っておくことを推奨します。
+    </div>
+    <div class="actions">
+        <div id="month-display" style="font-weight: bold; font-size: 1.1rem; margin-right: 10px;"></div>
+        <button onclick="copyTableForExcel()">エクセル用にコピー</button>
+        <button class="btn-pdf" onclick="generateSplitPDF()">PDF作成（前後半2枚）</button>
+        <div class="spacer"></div>
+        <button onclick="undoLastAction()">1つ前に戻る</button>
+        <button onclick="resetToInitial()">全て元に戻す</button>
+        <button class="btn-save" onclick="saveToDatabase()">変更を保存</button>
     </div>
 </div>
 
-<div id="main-content">
-    <section id="sec-projects">
-        <h1>案件一覧</h1>
-        <div class="card" style="text-align: right;"><button class="btn-primary" onclick="createNewProject()">+ 新しい案件を作成</button></div>
-        <div id="project-list-container"></div>
-    </section>
-
-    <section id="sec-edit-all" style="display:none;">
-        <h1>ページ内容とシフト枠の編集</h1>
-        <div id="current-pj-name" style="margin-bottom:20px; padding: 10px 15px; background: #ebf4ff; border-radius: 8px; color: var(--primary); font-weight: bold;"></div>
-        
-        <div style="display: flex; gap: 30px;">
-            <div class="card" style="flex: 1.2;">
-                <h3>1. 表示テキストの設定</h3>
-                <div class="form-group"><label>管理用名称</label><input type="text" id="field-title_tag"></div>
-                <div class="form-group"><label>見出し</label><input type="text" id="field-h1_title"></div>
-                <div class="form-group"><label>冒頭メッセージ</label><textarea id="field-msg_top" rows="3"></textarea></div>
-                <div class="form-group"><label>カレンダー説明</label><textarea id="field-msg_calendar" rows="3"></textarea></div>
-                <div class="form-group"><label>フォーム説明</label><textarea id="field-msg_bottom" rows="3"></textarea></div>
-                <div class="form-group"><label>確認画面注意</label><textarea id="field-msg_confirm" rows="3"></textarea></div>
-            </div>
-
-            <div class="card" style="flex: 0.8;">
-                <h3>2. シフト枠の種類</h3>
-                <div id="shift-list"></div>
-                <button class="btn-secondary" style="width: 100%; margin-top: 15px;" onclick="addShiftRow()">+ 枠を追加</button>
-            </div>
-        </div>
-
-        <div style="text-align: center; margin-top: 30px;">
-            <button class="btn-save-all" onclick="saveAllSettings()">設定を保存して反映する</button><br>
-            <button class="btn-delete-project" onclick="deleteCurrentProject()">この案件を削除する</button>
-        </div>
-    </section>
-
-    <section id="sec-qr-gen" style="display:none;">
-        <h1>共有用URL・QRコード</h1>
-        <div class="card" style="max-width: 500px;">
-            <input type="text" id="target-url" readonly style="width: 100%; padding: 12px; margin-bottom: 20px;">
-            <button class="btn-primary" style="width:100%" onclick="generateQR()">QRコードを作成</button>
-            <div id="qrcode" style="margin-top:20px;"></div>
-        </div>
-    </section>
+<div class="table-area">
+    <table class="main-table">
+        <thead id="h-row"></thead>
+        <tbody id="b-rows"></tbody>
+    </table>
 </div>
+
+<div id="print-container"></div>
 
 <script>
-    // --- 初期設定 ---
     const S_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
     const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
+    const P_ID  = 'cabb1760-a320-4d61-82c8-c2c069768d35';
     const client = supabase.createClient(S_URL, S_KEY);
-    let currentProjectId = null;
 
-    // --- 案件選択時の重要ロジック ---
-    async function selectProject(id) {
-        currentProjectId = id;
-        const { data: pj } = await client.from('projects').select('*').eq('id', id).single();
-        if (!pj) return;
+    let _MASTER_DATA = [], _INITIAL_DATA = [], _HISTORY = [], _SHIFT_TYPES = [], _CAL_DATES = [];
 
-        // ★ ここでサイドバーのリンクを強制的に書き換えます ★
-        const adminLink = document.getElementById('nav-admin-link');
-        const adminLabel = document.getElementById('admin-link-label');
-        
-        // リンク先を admin.htm?id=案件ID にセット
-        adminLink.setAttribute('href', `admin.htm?id=${id}`); 
-        adminLink.style.display = 'flex'; // 非表示だったリンクを表示
-        
-        // ラベルを更新
-        adminLabel.textContent = `データ確認 (${pj.title_tag})`;
-        adminLabel.style.color = '#4895ef';
-
-        // フォームへの値セット
-        document.getElementById('current-pj-name').textContent = `編集中の案件: ${pj.title_tag}`;
-        document.getElementById('field-title_tag').value = pj.title_tag || '';
-        document.getElementById('field-h1_title').value = pj.h1_title || '';
-        document.getElementById('field-msg_top').value = pj.msg_top || '';
-        document.getElementById('field-msg_calendar').value = pj.msg_calendar || '';
-        document.getElementById('field-msg_bottom').value = pj.msg_bottom || '';
-        document.getElementById('field-msg_confirm').value = pj.msg_confirm || '';
-
-        // QR用URL
-        const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
-        document.getElementById('target-url').value = baseUrl + '/index.htm?id=' + id;
-
-        // セクション切り替え
-        showSection('edit-all');
-        loadShifts(id);
+    async function startApp() {
+        const now = new Date();
+        const target = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        document.getElementById('month-display').textContent = `${target.getFullYear()}年 ${target.getMonth()+1}月`;
+        const { data: t } = await client.from('shift_types').select('*').eq('project_id', P_ID).order('sort_order');
+        const { data: s } = await client.from('submissions').select('*').eq('project_id', P_ID);
+        _SHIFT_TYPES = t || [];
+        _INITIAL_DATA = JSON.parse(JSON.stringify(s || []));
+        _MASTER_DATA = JSON.parse(JSON.stringify(_INITIAL_DATA));
+        const last = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+        _CAL_DATES = Array.from({length: last}, (_, i) => `${target.getFullYear()}-${String(target.getMonth()+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
+        renderAll();
     }
 
-    // セクション切り替え
-    function showSection(id) {
-        document.querySelectorAll('section').forEach(s => s.style.display = 'none');
-        document.getElementById('sec-' + id).style.display = 'block';
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('nav-active'));
-        document.getElementById('nav-' + id).classList.add('nav-active');
+    function renderAll() {
+        const h = document.getElementById('h-row'), b = document.getElementById('b-rows'), w = ["日","月","火","水","木","金","土"];
+        h.innerHTML = `<tr><th class="shift-name-col">シフト枠</th>${_CAL_DATES.map(d => {
+            const dt = new Date(d), dayIdx = dt.getDay(), cl = dayIdx === 0 ? 'txt-sun' : (dayIdx === 6 ? 'txt-sat' : '');
+            return `<th><span class="${cl}">${dt.getMonth()+1}/${dt.getDate()}(${w[dayIdx]})</span></th>`;
+        }).join('')}</tr>`;
+        b.innerHTML = '';
+        _SHIFT_TYPES.forEach(type => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td class="shift-name-col">${type.name}</td>`;
+            _CAL_DATES.forEach(date => {
+                const td = document.createElement('td');
+                td.ondragover = e => e.preventDefault();
+                td.ondrop = e => { e.preventDefault(); handleMove(JSON.parse(e.dataTransfer.getData("text/plain")), date, type.name); };
+                _MASTER_DATA.forEach(staff => {
+                    if ((staff.shift_data[date] || []).includes(type.name)) {
+                        const tag = document.createElement('div');
+                        tag.className = 'name-tag'; tag.textContent = staff.staff_name; tag.draggable = true;
+                        tag.onclick = () => handleDelete(staff.id, date, type.name, staff.staff_name);
+                        tag.ondragstart = e => { e.dataTransfer.setData("text/plain", JSON.stringify({ id: staff.id, d: date, t: type.name })); };
+                        td.appendChild(tag);
+                    }
+                });
+                row.appendChild(td);
+            });
+            b.appendChild(row);
+        });
     }
 
-    // 案件一覧ロード
-    async function loadProjectData() {
-        const { data: projects } = await client.from('projects').select('*').order('created_at', { ascending: false });
-        const container = document.getElementById('project-list-container');
-        container.innerHTML = projects.map(pj => `
-            <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-                <div><strong>${pj.title_tag}</strong></div>
-                <button class="btn-primary" onclick="selectProject('${pj.id}')">編集</button>
-            </div>
-        `).join('');
+    function generateSplitPDF() {
+        const loading = document.getElementById('print-loading');
+        const container = document.getElementById('print-container');
+        loading.style.display = 'flex';
+        container.innerHTML = '';
+        const w = ["日","月","火","水","木","金","土"];
+        const monthTitle = document.getElementById('month-display').textContent;
+        const chunks = [{ title: "前半(1-15日)", dates: _CAL_DATES.slice(0, 15) }, { title: "後半(16日-末)", dates: _CAL_DATES.slice(15) }];
+        chunks.forEach(chunk => {
+            let html = `<div class="print-page"><h3>${monthTitle} ${chunk.title}</h3><table class="print-table"><thead><tr><th class="p-shift-col">シフト枠</th>`;
+            chunk.dates.forEach(d => {
+                const dt = new Date(d), dayIdx = dt.getDay(), cl = dayIdx === 0 ? 'txt-sun' : (dayIdx === 6 ? 'txt-sat' : '');
+                html += `<th><span class="${cl}">${dt.getMonth()+1}/${dt.getDate()}(${w[dayIdx]})</span></th>`;
+            });
+            html += `</tr></thead><tbody>`;
+            _SHIFT_TYPES.forEach(type => {
+                html += `<tr><td class="p-shift-col">${type.name}</td>`;
+                chunk.dates.forEach(date => {
+                    html += `<td>`;
+                    _MASTER_DATA.forEach(staff => {
+                        if ((staff.shift_data[date] || []).includes(type.name)) {
+                            html += `<span class="p-name">${staff.staff_name}</span>`;
+                        }
+                    });
+                    html += `</td>`;
+                });
+                html += `</tr>`;
+            });
+            html += `</tbody></table></div>`;
+            container.innerHTML += html;
+        });
+        setTimeout(() => { loading.style.display = 'none'; window.print(); }, 800);
     }
 
-    // シフト枠ロード
-    async function loadShifts(id) {
-        const { data: shifts } = await client.from('shift_types').select('*').eq('project_id', id).order('display_order');
-        const list = document.getElementById('shift-list');
-        list.innerHTML = '';
-        if(shifts && shifts.length > 0) {
-            shifts.forEach(s => addShiftRow(s.name));
-        } else {
-            addShiftRow('休み');
-        }
+    function pushHistory() { _HISTORY.push(JSON.parse(JSON.stringify(_MASTER_DATA))); }
+    function undoLastAction() { if (_HISTORY.length > 0) { _MASTER_DATA = _HISTORY.pop(); renderAll(); } }
+    function resetToInitial() { if (confirm("全て元に戻しますか？")) { _MASTER_DATA = JSON.parse(JSON.stringify(_INITIAL_DATA)); _HISTORY = []; renderAll(); } }
+    function handleMove(info, toDate, toType) { pushHistory(); const s = _MASTER_DATA.find(st => String(st.id) === String(info.id)); if (s) { s.shift_data[info.d] = s.shift_data[info.d].filter(v => v !== info.t); if (!s.shift_data[toDate]) s.shift_data[toDate] = []; s.shift_data[toDate].push(toType); renderAll(); } }
+    function handleDelete(staffId, date, typeName, name) { if (confirm(`${name}さんを削除しますか？`)) { pushHistory(); const s = _MASTER_DATA.find(st => String(st.id) === String(staffId)); if (s && s.shift_data[date]) { s.shift_data[date] = s.shift_data[date].filter(v => v !== typeName); renderAll(); } } }
+    async function saveToDatabase() { if(!confirm("変更を保存しますか？")) return; try { for (const s of _MASTER_DATA) { await client.from('submissions').update({ shift_data: s.shift_data }).eq('id', s.id); } alert("保存完了しました。"); _INITIAL_DATA = JSON.parse(JSON.stringify(_MASTER_DATA)); _HISTORY = []; } catch (err) { alert(err.message); } }
+    function copyTableForExcel() {
+        const table = document.querySelector('.main-table');
+        let text = "";
+        const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.innerText.trim());
+        text += headers.join("\t") + "\n";
+        table.querySelectorAll('tbody tr').forEach(row => {
+            const cells = Array.from(row.querySelectorAll('td')).map(td => {
+                const tags = Array.from(td.querySelectorAll('.name-tag')).map(tag => tag.innerText);
+                return td.classList.contains('shift-name-col') ? td.innerText.trim() : tags.join(", ");
+            });
+            text += cells.join("\t") + "\n";
+        });
+        navigator.clipboard.writeText(text).then(() => alert("エクセル用にコピーしました。"));
     }
-
-    function addShiftRow(name = '') {
-        const div = document.createElement('div');
-        div.className = 'shift-item';
-        div.innerHTML = `<div class="drag-handle">☰</div><input type="text" class="shift-name-input" value="${name}"><button onclick="this.parentElement.remove()">削除</button>`;
-        document.getElementById('shift-list').appendChild(div);
-    }
-
-    async function saveAllSettings() {
-        if (!currentProjectId) return;
-        const title = document.getElementById('field-title_tag').value;
-        await client.from('projects').update({
-            title_tag: title,
-            h1_title: document.getElementById('field-h1_title').value,
-            msg_top: document.getElementById('field-msg_top').value,
-            msg_calendar: document.getElementById('field-msg_calendar').value,
-            msg_bottom: document.getElementById('field-msg_bottom').value,
-            msg_confirm: document.getElementById('field-msg_confirm').value
-        }).eq('id', currentProjectId);
-
-        // シフト更新
-        await client.from('shift_types').delete().eq('project_id', currentProjectId);
-        const rows = document.querySelectorAll('.shift-item');
-        const newShifts = Array.from(rows).map((row, i) => ({
-            project_id: currentProjectId,
-            name: row.querySelector('.shift-name-input').value,
-            display_order: i
-        }));
-        await client.from('shift_types').insert(newShifts);
-        
-        alert("保存完了");
-        loadProjectData();
-        // 保存後もサイドバーのラベルを更新名に同期
-        document.getElementById('admin-link-label').textContent = `データ確認 (${title})`;
-    }
-
-    async function createNewProject() {
-        const name = prompt("新しい案件名を入力");
-        if (!name) return;
-        const { data } = await client.from('projects').insert([{ title_tag: name }]).select();
-        if(data) selectProject(data[0].id);
-    }
-
-    window.onload = async () => {
-    const { data: { session } } = await client.auth.getSession();
-    if (!session) {
-        window.location.href = 'dashboard.htm'; // 未ログインなら戻す
-        return;
-    }
-
-    // URLからIDを取得するコードを追加
-    const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id');
-
-    if (id) {
-        // IDがある場合：その案件のデータをロードする（既存の関数を呼び出す）
-        loadSubmissions(id); // 名前は既存の関数に合わせて調整してください
-    } else {
-        // IDがない場合：仕方ないのでdashboardへ
-        window.location.href = 'dashboard.htm';
-    }
-};
+    window.onload = startApp;
 </script>
 </body>
 </html>
-
