@@ -41,6 +41,10 @@
         
         .btn-save-fixed { background: var(--success); color: white; padding: 12px 30px; font-size: 1rem; border-radius: 10px; cursor: pointer; border: none; font-weight: bold; }
         .btn-print { background: var(--primary); color: white; width: 100%; padding: 15px; font-size: 1rem; margin-top: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
+        
+        /* 印刷設定用UI */
+        .print-config { background: #f1f5f9; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; justify-content: center; }
+        .print-config select { padding: 8px; border-radius: 5px; border: 1px solid #cbd5e1; }
     </style>
 </head>
 <body>
@@ -92,8 +96,21 @@
             </div>
             <div class="card">
                 <div class="section-title">掲示用プレビュー</div>
-                <div id="print-preview-box" style="text-align: center; border: 2px dashed #cbd5e1; padding: 30px; border-radius: 15px; background: #fff;">
-                    <h2 id="qr-pj-name" style="margin:0;">案件を選択してください</h2>
+                
+                <div id="print-config-area" class="print-config" style="display:none;">
+                    <span>対象月：</span>
+                    <select id="print-month-select" onchange="updatePreviewMonth()">
+                        <option value="1月">1月</option><option value="2月">2月</option><option value="3月">3月</option>
+                        <option value="4月">4月</option><option value="5月">5月</option><option value="6月">6月</option>
+                        <option value="7月">7月</option><option value="8月">8月</option><option value="9月">9月</option>
+                        <option value="10月">10月</option><option value="11月">11月</option><option value="12月">12月</option>
+                        <option value="◯月" selected>指定なし</option>
+                    </select>
+                </div>
+
+                <div id="print-preview-box" style="text-align: center; padding: 30px; border-radius: 15px; background: #fff;">
+                    <p id="preview-month-display" style="font-size: 1.5rem; font-weight: bold; margin: 0; color: #4361ee;">◯月</p>
+                    <h2 id="qr-pj-name" style="margin:5px 0 0 0;">案件を選択してください</h2>
                     <div id="qrcode-area" style="display:flex; justify-content:center; margin:25px 0;"></div>
                     <p id="qr-pj-url" style="font-size:0.8rem; color:#64748b; word-break:break-all;"></p>
                 </div>
@@ -179,14 +196,20 @@
         document.getElementById('qrcode-area').innerHTML = '';
         new QRCode(document.getElementById('qrcode-area'), { text: url, width: 200, height: 200 });
         document.getElementById('btn-print-action').style.display = 'block';
+        document.getElementById('print-config-area').style.display = 'flex';
+    }
+
+    function updatePreviewMonth() {
+        const month = document.getElementById('print-month-select').value;
+        document.getElementById('preview-month-display').textContent = month;
     }
 
     function execPrint() {
+        const month = document.getElementById('preview-month-display').textContent;
         const title = document.getElementById('qr-pj-name').textContent;
         const qrData = document.getElementById('qr-pj-url').textContent;
         const win = window.open('', '_blank');
         
-        // 印刷用ウィンドウの構築
         win.document.write(`<html><head><title>Print QR</title>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
             <style>
@@ -205,15 +228,13 @@
                 💡 各テキストをクリックすると直接編集できます。準備ができたらブラウザの印刷機能を実行してください。
             </div>
             <div class="print-container">
-                <p class="month editable" contenteditable="true">◯月</p>
+                <p class="month editable" contenteditable="true">${month}</p>
                 <h1 class="editable" contenteditable="true">${title}</h1>
                 <div id="qrcode"></div>
                 <p class="footer editable" contenteditable="true">シフト希望の提出はこちらから</p>
             </div>
             <script>
                 new QRCode(document.getElementById("qrcode"), { text: "${qrData}", width: 350, height: 350 });
-                // 自動で印刷ダイアログを開く場合は以下を有効化
-                // window.onload = () => { setTimeout(() => window.print(), 500); };
             <\/script>
         </body></html>`);
         win.document.close();
