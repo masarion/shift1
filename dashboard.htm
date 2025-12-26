@@ -168,7 +168,9 @@
 
     async function logout() { 
         await client.auth.signOut(); 
-        window.location.replace('index.htm'); // 強制リダイレクト
+        // index.htmに行くと「送信済み」判定される可能性があるため、
+        // ログイン画面（自分自身）をリロードして表示させる
+        window.location.href = 'dashboard.htm'; 
     }
 
     function togglePasswordResetMode() {
@@ -183,10 +185,11 @@
         const { data: projects, error } = await client.from('projects').select('*').order('created_at', { ascending: false });
         if(error) return;
 
-        // サイドバーの「提出一覧」リンクを動的に生成
+        // サイドバーの「提出一覧」リンク
+        // パスがズレないよう、直接 admin.htm を指定
         const sidebarLinks = document.getElementById('sidebar-admin-links');
         sidebarLinks.innerHTML = projects.map(pj => `
-            <a href="./admin.htm?id=${pj.id}" target="_blank" class="nav-item admin-link">${pj.title_tag}</a>
+            <a href="admin.htm?id=${pj.id}" target="_blank" class="nav-item admin-link">${pj.title_tag}</a>
         `).join('');
 
         // 案件一覧カード
@@ -308,3 +311,4 @@
 </script>
 </body>
 </html>
+
