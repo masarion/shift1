@@ -42,6 +42,10 @@
         .drag-handle { cursor: grab; color: #64748b; font-size: 1.2rem; user-select: none; }
         
         .btn-save-fixed { background: var(--success); color: white; padding: 12px 30px; font-size: 1rem; border-radius: 10px; cursor: pointer; border: none; font-weight: bold; }
+        .btn-preview { background: white; color: var(--primary); border: 1.5px solid var(--primary); padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 0.9rem; }
+        .btn-preview:hover { background: #f0f7ff; }
+        .btn-delete { color: #94a3b8; background: none; border: none; font-size: 0.85rem; cursor: pointer; text-decoration: underline; margin-top: 30px; }
+        .btn-delete:hover { color: var(--danger); }
         .btn-print { background: var(--primary); color: white; width: 100%; padding: 15px; font-size: 1rem; margin-top: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
 
         /* プレビューエリア設定（枠線なし） */
@@ -75,8 +79,15 @@
                 <h1 id="edit-page-title" style="margin-bottom:5px;">案件の編集</h1>
                 <p style="font-size: 0.9rem; color: #64748b;">スタッフ用シフト希望ページのテキストを編集できます。「変更を保存して反映」ボタンを押すと反映されます。</p>
             </div>
-            <button class="btn-save-fixed" onclick="saveSettings()">変更を保存して反映</button>
+            <div style="text-align: right;">
+                <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 15px; justify-content: flex-end;">
+                    <p style="font-size: 0.75rem; color: #94a3b8; margin: 0; text-align: right;">提出済みの画面が出たときはURL末尾に「&◯」を付けることで<br>スタッフ用ページを確認することができます</p>
+                    <button class="btn-preview" onclick="openLivePreview()">実際のページを確認する</button>
+                </div>
+                <button class="btn-save-fixed" onclick="saveSettings()">変更を保存して反映</button>
+            </div>
         </div>
+
         <div class="edit-grid">
             <div class="card">
                 <div class="section-title">1. 表示テキストの設定</div>
@@ -91,6 +102,12 @@
                 <div class="input-group"><label>冒頭メッセージ</label><textarea id="edit-msg-top" rows="3"></textarea></div>
                 <div class="input-group"><label>カレンダー操作説明</label><textarea id="edit-msg-calendar" rows="2"></textarea></div>
                 <div class="input-group"><label>確認画面の注意書き</label><textarea id="edit-msg-confirm" rows="2"></textarea></div>
+
+                <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #f1f5f9; text-align: center;">
+                    <button class="btn-save-fixed" onclick="saveSettings()">変更を保存して反映</button>
+                    <br>
+                    <button class="btn-delete" onclick="deleteCurrentProject()">この案件を完全に削除する</button>
+                </div>
             </div>
             <div class="card">
                 <div class="section-title">2. シフト枠の種類</div>
@@ -186,6 +203,23 @@
         div.className = 'shift-row';
         div.innerHTML = `<div class="drag-handle">⠿</div><input type="text" value="${val}" style="flex:1; border:none; background:transparent;"><button onclick="this.parentElement.remove()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">削除</button>`;
         document.getElementById('shift-manager-list').appendChild(div);
+    }
+
+    function openLivePreview() {
+        if(!currentId) return;
+        const url = window.location.href.split('dashboard.htm')[0] + 'index.htm?id=' + currentId + '&preview=1';
+        window.open(url, '_blank');
+    }
+
+    async function deleteCurrentProject() {
+        if(!currentId) return;
+        if(!confirm("この案件を削除すると、紐づくシフト枠の設定や送信されたデータもすべて失われます。本当に削除しますか？")) return;
+        const { error } = await client.from('projects').delete().eq('id', currentId);
+        if(!error) {
+            alert("削除しました。");
+            showSection('projects');
+            loadProjects();
+        }
     }
 
     async function loadQRProjectList() {
