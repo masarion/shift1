@@ -25,14 +25,12 @@
         .auth-link { margin-top: 15px; font-size: 0.85rem; color: #666; cursor: pointer; text-decoration: underline; }
         
         /* サイドバー */
-        #sidebar { width: 260px; background: var(--sidebar-bg); color: white; padding: 25px 15px; flex-shrink: 0; display: flex; flex-direction: column; overflow-y: auto; }
+        #sidebar { width: 260px; background: var(--sidebar-bg); color: white; padding: 25px 15px; flex-shrink: 0; display: flex; flex-direction: column; }
         #sidebar h3 { font-size: 1.2rem; margin-bottom: 30px; padding-left: 10px; border-left: 4px solid var(--active-bg); }
-        .nav-item { padding: 14px 18px; cursor: pointer; border-radius: 10px; margin-bottom: 8px; transition: all 0.3s; display: flex; align-items: center; text-decoration: none; color: white; font-size: 0.95rem; border: none; background: none; width: 100%; text-align: left; }
+        .nav-item { padding: 14px 18px; cursor: pointer; border-radius: 10px; margin-bottom: 8px; transition: all 0.3s; display: flex; align-items: center; text-decoration: none; color: white; font-size: 0.95rem; }
         .nav-item:hover { background: rgba(255,255,255,0.1); }
         .nav-active { background: var(--active-bg) !important; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        .sidebar-label { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin: 20px 0 10px 10px; text-transform: uppercase; letter-spacing: 1px; }
-        .admin-link { font-size: 0.85rem; padding-left: 20px; color: #a5b4fc; }
-        .admin-link::before { content: "📊"; margin-right: 8px; }
+        .nav-external { margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; }
         
         /* メインコンテンツ */
         #main-content { flex-grow: 1; overflow-y: auto; padding: 40px; }
@@ -41,8 +39,10 @@
         .card h3 { margin-top: 0; margin-bottom: 10px; font-size: 1.1rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
         
         .description-text { font-size: 0.85rem; color: #64748b; margin-bottom: 20px; line-height: 1.6; background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #cbd5e1; }
+        
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; color: #4a5568; }
+        .form-group label small { font-weight: normal; color: #718096; margin-left: 8px; font-size: 0.8rem; }
         .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
         
         .shift-item { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; background: #fff; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; }
@@ -51,13 +51,30 @@
         
         button { padding: 12px 24px; border-radius: 10px; cursor: pointer; border: none; font-weight: bold; transition: all 0.2s; font-size: 0.95rem; }
         .btn-primary { background: var(--primary); color: white; }
-        .btn-preview { background: linear-gradient(135deg, #6366f1 0%, #4361ee 100%); color: white; text-decoration: none; padding: 12px 28px; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3); }
+        
+        .btn-preview { 
+            background: linear-gradient(135deg, #6366f1 0%, #4361ee 100%); 
+            color: white; 
+            text-decoration: none; 
+            padding: 12px 28px; 
+            border-radius: 12px; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 8px; 
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3); 
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-preview:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4); filter: brightness(1.1); }
+
         .btn-secondary { background: #f1f5f9; color: #475569; }
         .btn-danger-light { background: #fff1f2; color: var(--danger); font-size: 0.8rem; padding: 6px 12px; }
         
+        /* 保存・削除アクションエリア */
         .action-area { margin-top: 40px; padding-top: 30px; border-top: 2px dashed #e2e8f0; text-align: center; }
-        .btn-save-all { background: var(--success); color: white; width: 100%; max-width: 600px; font-size: 1.1rem; padding: 18px; }
+        .btn-save-all { background: var(--success); color: white; width: 100%; max-width: 600px; font-size: 1.1rem; padding: 18px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2); }
+        .btn-save-all:hover { filter: brightness(1.05); transform: translateY(-1px); }
         .btn-delete-project { background: transparent; color: #94a3b8; border: 1px solid #e2e8f0; width: 100%; max-width: 400px; margin-top: 30px; font-size: 0.85rem; padding: 10px; }
+        .btn-delete-project:hover { background: #fff1f2; color: var(--danger); border-color: var(--danger); }
         
         .ghost { opacity: 0.4; background: #ebf4ff; border: 2px dashed var(--primary); }
     </style>
@@ -77,18 +94,18 @@
 </div>
 
 <div id="sidebar">
-    <h3>管理システム</h3>
+    <h3>シフト管理システム</h3>
     <div class="nav-item nav-active" id="nav-projects" onclick="showSection('projects')">案件一覧</div>
-    <div id="sidebar-edit-related" style="display:none;">
-        <div class="nav-item" id="nav-edit-all" onclick="showSection('edit-all')">ページ内容・シフト枠</div>
-        <div class="nav-item" id="nav-qr-gen" onclick="showSection('qr-gen')">URL・QRコード</div>
-    </div>
+    <div class="nav-item" id="nav-edit-all" onclick="showSection('edit-all')">ページ内容・シフト枠</div>
+    <div class="nav-item" id="nav-qr-gen" onclick="showSection('qr-gen')">URL・QRコード</div>
     
-    <div class="sidebar-label">提出データを確認</div>
-    <div id="sidebar-admin-links"></div>
+    <div class="nav-external">
+        <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-bottom: 10px; padding-left: 10px;">データ確認</div>
+        <a href="admin.htm" target="_blank" class="nav-item" style="background: rgba(255,255,255,0.05);">提出一覧を表示 ?</a>
+    </div>
 
     <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-        <p id="user-display" style="font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-bottom: 15px; text-align:center;"></p>
+        <p id="user-display" style="font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-bottom: 15px;"></p>
         <button onclick="logout()" style="background:transparent; color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.2); width: 100%; padding: 8px;">ログアウト</button>
     </div>
 </div>
@@ -102,57 +119,64 @@
 
     <section id="sec-edit-all" style="display:none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <button onclick="showSection('projects')" style="background:none; color:var(--primary); font-weight:bold; cursor:pointer;">← 戻る</button>
-            <a id="preview-link" href="#" target="_blank" class="btn-preview">ページをプレビュー</a>
+            <h1>ページ内容とシフト枠の編集</h1>
+            <div style="text-align: right;">
+                <a id="preview-link" href="#" target="_blank" class="btn-preview">編集済みページをプレビュー ?</a>
+                <p style="font-size: 0.75rem; color: #ef4444; margin-top: 10px; font-weight: bold;">
+                    ※送信済み画面になる場合はURL末尾に「&◯（例：&1）」を付ければプレビューが見れます
+                </p>
+            </div>
         </div>
         <div id="current-pj-name" style="margin-bottom:20px; padding: 10px 15px; background: #ebf4ff; border-radius: 8px; color: var(--primary); font-weight: bold; display: inline-block;"></div>
         
         <div style="display: flex; gap: 30px; align-items: flex-start;">
             <div class="card" style="flex: 1.2;">
                 <h3>1. 表示テキストの設定</h3>
-                <div class="form-group"><label>管理用名称</label><input type="text" id="field-title_tag"></div>
+                <div class="description-text">
+                    ・フォーム編集でスタッフ用ページのテキストを自由に変えることができます。<br>
+                    ・文章が長くなるときは、右下の角をドラッグすることで枠を大きくできます。<br>
+                    ・一番下の「設定を保存して反映する」ボタンを押すと、すべての内容がスタッフ用ページに反映されます。
+                </div>
+                <div class="form-group">
+                    <label>管理用名称 <small>※スタッフがブックマークした時にこの名称になります</small></label>
+                    <input type="text" id="field-title_tag">
+                </div>
                 <div class="form-group"><label>画面トップの見出し</label><input type="text" id="field-h1_title"></div>
                 <div class="form-group"><label>冒頭メッセージ</label><textarea id="field-msg_top" rows="3"></textarea></div>
-                <div class="form-group"><label>カレンダー説明</label><textarea id="field-msg_calendar" rows="3"></textarea></div>
+                <div class="form-group"><label>カレンダー操作説明</label><textarea id="field-msg_calendar" rows="3"></textarea></div>
                 <div class="form-group"><label>フォーム説明</label><textarea id="field-msg_bottom" rows="3"></textarea></div>
                 <div class="form-group"><label>確認画面の注意書き</label><textarea id="field-msg_confirm" rows="3"></textarea></div>
             </div>
 
             <div class="card" style="flex: 0.8;">
                 <h3>2. シフト枠の種類</h3>
+                <div class="description-text">
+                    ・下の「＋枠を追加」ボタンで新しいシフト枠を追加できます。<br>
+                    ・左側の「?」をドラッグ＆ドロップして並べ替えが可能です。<br>
+                    ・スタッフ用ページでは上から順番に表示されます。<br>
+                    ・「設定を保存して反映する」ボタンを押すと変更が反映されます。
+                </div>
                 <div id="shift-list"></div>
                 <button class="btn-secondary" style="width: 100%; margin-top: 15px;" onclick="addShiftRow()">+ 枠を追加</button>
             </div>
         </div>
 
         <div class="action-area">
-            <button class="btn-save-all" onclick="saveAllSettings()">設定を保存して反映する</button><br>
-            <button class="btn-delete-project" onclick="deleteCurrentProject()">この案件を削除する</button>
+            <button class="btn-save-all" onclick="saveAllSettings()">設定を保存して反映する</button>
+            <br>
+            <button class="btn-delete-project" onclick="deleteCurrentProject()">この案件（プロジェクト）を削除する</button>
         </div>
     </section>
 
     <section id="sec-qr-gen" style="display:none;">
-    <h1>共有用URL・QRコード作成</h1>
-    <div style="display: flex; gap: 20px;">
-        <div class="card" style="flex: 1;">
-            <h3>1. 案件を選択</h3>
-            <div id="qr-project-selector" style="max-height: 400px; overflow-y: auto;">
-                </div>
+        <h1>共有用URL・QRコード</h1>
+        <div class="card" style="max-width: 500px;">
+            <p style="font-weight: bold; margin-bottom: 10px;">スタッフ配布用URL</p>
+            <input type="text" id="target-url" readonly style="width: 100%; padding: 12px; margin-bottom: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <button class="btn-primary" style="width:100%" onclick="generateQR()">QRコードを作成</button>
+            <div id="qrcode" style="margin-top:30px; display: flex; justify-content: center; background: white; padding: 20px; border: 1px solid #eee; border-radius: 10px;"></div>
         </div>
-
-        <div class="card" style="flex: 1.5; text-align: center;">
-            <h3>2. 印刷プレビュー</h3>
-            <div id="print-area" style="padding: 20px; border: 2px dashed #ccc; background: white; margin-bottom: 20px;">
-                <h2 id="qr-display-name" style="font-size: 1.8rem; margin-bottom: 20px; color: #333;">案件を選択してください</h2>
-                <div id="qrcode" style="display: flex; justify-content: center; margin-bottom: 20px;"></div>
-                <p id="qr-display-url" style="color: #666; font-size: 0.9rem; word-break: break-all;"></p>
-            </div>
-            <button class="btn-save-all" id="btn-print" onclick="printQRCode()" style="display:none;">
-                🖨️ A4縦で印刷する
-            </button>
-        </div>
-    </div>
-</section>
+    </section>
 </div>
 
 <script>
@@ -179,13 +203,6 @@
         }
     }
 
-    async function logout() { 
-        await client.auth.signOut(); 
-        // index.htmに行くと「送信済み」判定される可能性があるため、
-        // ログイン画面（自分自身）をリロードして表示させる
-        window.location.href = 'dashboard.htm'; 
-    }
-
     function togglePasswordResetMode() {
         isResetMode = !isResetMode;
         document.getElementById('auth-title').textContent = isResetMode ? "パスワード再設定" : "管理者ログイン";
@@ -194,18 +211,26 @@
         document.getElementById('auth-toggle-msg').textContent = isResetMode ? "ログイン画面に戻る" : "パスワードを忘れた場合";
     }
 
+    async function updatePassword() {
+        const newPassword = document.getElementById('password').value;
+        if (!newPassword || newPassword.length < 6) return alert("6文字以上のパスワードを入力してください");
+        const { error } = await client.auth.updateUser({ password: newPassword });
+        if (error) alert("更新失敗: " + error.message);
+        else { alert("パスワードを更新しました。再度ログインしてください。"); window.location.href = window.location.pathname; }
+    }
+
+    async function logout() { await client.auth.signOut(); location.reload(); }
+
+    function showSection(id) {
+        document.querySelectorAll('section').forEach(s => s.style.display = 'none');
+        document.getElementById('sec-' + id).style.display = 'block';
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('nav-active'));
+        document.getElementById('nav-' + id).classList.add('nav-active');
+    }
+
     async function loadProjectData() {
         const { data: projects, error } = await client.from('projects').select('*').order('created_at', { ascending: false });
         if(error) return;
-
-        // サイドバーの「提出一覧」リンク
-        // パスがズレないよう、直接 admin.htm を指定
-        const sidebarLinks = document.getElementById('sidebar-admin-links');
-        sidebarLinks.innerHTML = projects.map(pj => `
-            <a href="admin.htm?id=${pj.id}" target="_blank" class="nav-item admin-link">${pj.title_tag}</a>
-        `).join('');
-
-        // 案件一覧カード
         const container = document.getElementById('project-list-container');
         container.innerHTML = projects.map(pj => `
             <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
@@ -217,11 +242,10 @@
 
     async function selectProject(id) {
         currentProjectId = id;
-        document.getElementById('sidebar-edit-related').style.display = 'block';
         const { data: pj } = await client.from('projects').select('*').eq('id', id).single();
         if (!pj) return;
 
-        document.getElementById('current-pj-name').textContent = `案件: ${pj.title_tag}`;
+        document.getElementById('current-pj-name').textContent = `編集中の案件: ${pj.title_tag}`;
         document.getElementById('field-title_tag').value = pj.title_tag || '';
         document.getElementById('field-h1_title').value = pj.h1_title || '';
         document.getElementById('field-msg_top').value = pj.msg_top || '';
@@ -229,18 +253,18 @@
         document.getElementById('field-msg_bottom').value = pj.msg_bottom || '';
         document.getElementById('field-msg_confirm').value = pj.msg_confirm || '';
 
-        const baseUrl = window.location.href.split('dashboard.htm')[0];
-        document.getElementById('preview-link').href = baseUrl + 'index.htm?id=' + id + '&preview=true';
-        document.getElementById('target-url').value = baseUrl + 'index.htm?id=' + id;
+        const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
+        document.getElementById('preview-link').href = baseUrl + '/index.htm?id=' + id + '&preview=true';
+        document.getElementById('target-url').value = baseUrl + '/index.htm?id=' + id;
 
         const { data: shifts } = await client.from('shift_types').select('*').eq('project_id', id).order('display_order');
-        const list = document.getElementById('shift-list');
-        list.innerHTML = '';
+        document.getElementById('shift-list').innerHTML = '';
         if(shifts && shifts.length > 0) shifts.forEach(s => addShiftRow(s.name));
         else addShiftRow('休み');
 
+        const el = document.getElementById('shift-list');
         if (sortableInstance) sortableInstance.destroy();
-        sortableInstance = new Sortable(list, { handle: '.drag-handle', animation: 150, onEnd: updateShiftNumbers });
+        sortableInstance = new Sortable(el, { handle: '.drag-handle', animation: 150, ghostClass: 'ghost', onEnd: updateShiftNumbers });
         updateShiftNumbers();
         showSection('edit-all');
     }
@@ -248,13 +272,21 @@
     function addShiftRow(name = '') {
         const div = document.createElement('div');
         div.className = 'shift-item';
-        div.innerHTML = `<div class="drag-handle">☰ <span class="shift-index"></span></div><input type="text" class="shift-name-input" value="${name}"><button class="btn-danger-light" onclick="this.parentElement.remove(); updateShiftNumbers();">削除</button>`;
+        div.innerHTML = `<div class="drag-handle">? <span class="shift-index"></span></div><input type="text" class="shift-name-input" value="${name}"><button class="btn-danger-light" onclick="removeShiftRow(this)">削除</button>`;
         document.getElementById('shift-list').appendChild(div);
         updateShiftNumbers();
     }
 
+    function removeShiftRow(btn) {
+        if (confirm("このシフト枠を削除しますか？\n（保存ボタンを押すまでデータは消えません）")) {
+            btn.parentElement.remove();
+            updateShiftNumbers();
+        }
+    }
+
     function updateShiftNumbers() {
-        document.querySelectorAll('.shift-index').forEach((span, i) => { span.textContent = i + 1; });
+        const spans = document.querySelectorAll('.shift-index');
+        spans.forEach((span, i) => { span.textContent = i + 1; });
     }
 
     async function saveAllSettings() {
@@ -276,53 +308,69 @@
                 project_id: currentProjectId, name: row.querySelector('.shift-name-input').value, display_order: index
             })).filter(s => s.name.trim() !== '');
             if(newShifts.length > 0) await client.from('shift_types').insert(newShifts);
-            alert("保存しました");
-            loadProjectData();
+            alert("保存しました！");
         } catch (err) { alert(err.message); }
         btn.innerText = "設定を保存して反映する";
     }
 
-    async function createNewProject() {
-        const name = prompt("案件名を入力");
-        if (!name) return;
-        const { data, error } = await client.from('projects').insert([{ title_tag: name, h1_title: 'シフト希望提出' }]).select();
-        if(!error) { loadProjectData(); selectProject(data[0].id); }
-    }
-
     async function deleteCurrentProject() {
-        if (!confirm("本当に削除しますか？")) return;
-        await client.from('submissions').delete().eq('project_id', currentProjectId);
-        await client.from('shift_types').delete().eq('project_id', currentProjectId);
-        await client.from('projects').delete().eq('id', currentProjectId);
-        alert("削除完了");
-        loadProjectData();
-        showSection('projects');
+        if (!currentProjectId) return;
+        const msg = "【重要】本当にこの案件を削除しますか？\n\n" +
+                  "・この案件の設定（テキストやシフト枠）\n" +
+                  "・スタッフから提出されたすべてのデータ\n" +
+                  "が完全に削除され、二度と復元できません。";
+        
+        if (confirm(msg)) {
+            // 提出データの削除
+            await client.from('submissions').delete().eq('project_id', currentProjectId);
+            // シフト枠の削除
+            await client.from('shift_types').delete().eq('project_id', currentProjectId);
+            // プロジェクト自体の削除
+            const { error } = await client.from('projects').delete().eq('id', currentProjectId);
+            
+            if (error) {
+                alert("削除に失敗しました: " + error.message);
+            } else {
+                alert("案件および関連データをすべて削除しました。");
+                currentProjectId = null;
+                loadProjectData();
+                showSection('projects');
+            }
+        }
     }
 
-    function showSection(id) {
-        document.querySelectorAll('section').forEach(s => s.style.display = 'none');
-        document.getElementById('sec-' + id).style.display = 'block';
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('nav-active'));
-        const navBtn = document.getElementById('nav-' + id);
-        if(navBtn) navBtn.classList.add('nav-active');
+    async function createNewProject() {
+        const name = prompt("新しい案件名を入力");
+        if (!name) return;
+        await client.from('projects').insert([{ title_tag: name, h1_title: '月のシフト希望' }]);
+        loadProjectData();
     }
 
     function generateQR() {
         const url = document.getElementById('target-url').value;
+        if(!url) return alert("案件を選択してください");
         document.getElementById('qrcode').innerHTML = "";
         new QRCode(document.getElementById("qrcode"), { text: url, width: 180, height: 180 });
     }
 
     window.onload = async () => {
-        const { data: { session } } = await client.auth.getSession();
-        if (session) {
-            document.getElementById('auth-container').style.display = 'none';
-            document.getElementById('user-display').textContent = session.user.email;
-            loadProjectData();
+        const hash = window.location.hash;
+        if (hash && hash.includes('access_token=')) {
+            document.getElementById('auth-container').style.display = 'flex';
+            document.getElementById('auth-title').textContent = "新しいパスワードを設定";
+            document.getElementById('email').style.display = 'none';
+            document.getElementById('password').placeholder = "新しいパスワード";
+            document.getElementById('auth-submit-btn').textContent = "パスワードを保存";
+            document.getElementById('auth-toggle-msg').style.display = 'none';
+        } else {
+            const { data: { session } } = await client.auth.getSession();
+            if (session) {
+                document.getElementById('auth-container').style.display = 'none';
+                document.getElementById('user-display').textContent = `ログイン中: ${session.user.email}`;
+                loadProjectData();
+            }
         }
     };
 </script>
 </body>
 </html>
-
-
