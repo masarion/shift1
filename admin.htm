@@ -221,7 +221,26 @@
         });
         navigator.clipboard.writeText(text).then(() => alert("エクセル用にコピーしました。"));
     }
-    window.onload = startApp;
+    window.onload = async () => {
+    const { data: { session } } = await client.auth.getSession();
+    if (!session) {
+        window.location.href = 'dashboard.htm'; // 未ログインなら戻す
+        return;
+    }
+
+    // URLからIDを取得するコードを追加
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('id');
+
+    if (id) {
+        // IDがある場合：その案件のデータをロードする（既存の関数を呼び出す）
+        loadSubmissions(id); // 名前は既存の関数に合わせて調整してください
+    } else {
+        // IDがない場合：仕方ないのでdashboardへ
+        window.location.href = 'dashboard.htm';
+    }
+};
 </script>
 </body>
 </html>
+
