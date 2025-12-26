@@ -27,7 +27,7 @@
         #main-content { flex-grow: 1; overflow-y: auto; padding: 40px; }
         .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #edf2f7; margin-bottom: 25px; }
         
-        /* 2カラムレイアウト */
+        /* 編集グリッド */
         .edit-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 25px; align-items: start; }
         .section-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #f1f5f9; }
         
@@ -35,18 +35,18 @@
         .input-group label { display: block; font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 6px; }
         .input-group textarea, .input-group input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 0.95rem; }
         
-        /* シフト管理用 */
+        /* シフト行 */
         .shift-row { display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 10px; margin-bottom: 8px; border: 1px solid #e2e8f0; }
         .drag-handle { cursor: grab; color: #64748b; font-size: 1.2rem; user-select: none; }
         
         .btn-save-fixed { background: var(--success); color: white; padding: 12px 30px; font-size: 1rem; border-radius: 10px; cursor: pointer; border: none; font-weight: bold; }
         .btn-print { background: var(--primary); color: white; width: 100%; padding: 15px; font-size: 1rem; margin-top: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
 
-        /* プレビュー画面：全ての枠線を排除 */
+        /* プレビューエリア設定（枠線なし） */
         #preview-card-area { background: transparent; border: none; box-shadow: none; padding: 0; }
-        .print-config { background: #f1f5f9; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; justify-content: center; }
+        .print-config { background: #f1f5f9; padding: 15px; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; justify-content: center; }
         .print-config select { padding: 8px; border-radius: 5px; border: 1px solid #cbd5e1; }
-        #print-preview-box { text-align: center; padding: 30px; background: #fff; border-radius: 0; border: none; }
+        #print-preview-box { text-align: center; padding: 40px 20px; background: #fff; border: none; }
     </style>
 </head>
 <body>
@@ -98,7 +98,6 @@
             </div>
             <div class="card" id="preview-card-area">
                 <div class="section-title">掲示用プレビュー</div>
-                
                 <div id="print-config-area" class="print-config" style="display:none;">
                     <span>対象月：</span>
                     <select id="print-month-select" onchange="updatePreviewMonth()">
@@ -109,7 +108,6 @@
                         <option value="◯月" selected>指定なし</option>
                     </select>
                 </div>
-
                 <div id="print-preview-box">
                     <p id="preview-month-display" style="font-size: 1.5rem; font-weight: bold; margin: 0; color: #4361ee;">◯月</p>
                     <h2 id="qr-pj-name" style="margin:5px 0 0 0;">案件を選択してください</h2>
@@ -208,30 +206,31 @@
         const qrData = document.getElementById('qr-pj-url').textContent;
         const win = window.open('', '_blank');
         
-        win.document.write(`<html><head><title>印刷プレビュー</title>
+        win.document.write(`<html><head><title>印刷用</title>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
             <style>
-                body { text-align: center; padding-top: 30px; font-family: sans-serif; background: #f0f0f0; }
-                .no-print-area { margin-bottom: 30px; }
-                .btn-exec-print { background: #4361ee; color: white; padding: 15px 40px; font-size: 1.2rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-                .btn-exec-print:hover { background: #304cc0; }
-                .print-canvas { background: white; display: inline-block; padding: 60px; border: none; border-radius: 0; }
+                @page { margin: 0; }
+                body { text-align: center; font-family: sans-serif; background: #f0f0f0; margin: 0; padding: 0; }
+                .no-print-area { padding: 20px; background: #fff; border-bottom: 1px solid #ddd; }
+                .btn-exec-print { background: #4361ee; color: white; padding: 15px 40px; font-size: 1.2rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+                /* 印刷用キャンバス：上部余白を大きくして全体を下に下げる */
+                .print-canvas { background: white; display: inline-block; padding: 120px 60px 60px 60px; min-height: 100vh; box-sizing: border-box; }
                 .editable { cursor: pointer; border: 1px dashed transparent; }
                 .editable:hover { border-color: #ccc; background: #fafafa; }
-                h1 { font-size: 2.2rem; margin: 10px 0 40px 0; white-space: nowrap; }
-                p.month { font-size: 3rem; margin: 0; font-weight: bold; }
-                p.footer { font-size: 1.5rem; margin-top: 50px; font-weight: bold; }
-                #qrcode { display: flex; justify-content: center; margin: 20px auto; }
+                h1 { font-size: 2.8rem; margin: 20px 0 60px 0; }
+                p.month { font-size: 4rem; margin: 0; font-weight: bold; }
+                p.footer { font-size: 1.8rem; margin-top: 60px; font-weight: bold; }
+                #qrcode { display: flex; justify-content: center; margin: 30px auto; }
                 @media print { 
-                    body { background: white; padding: 0; }
                     .no-print-area { display: none; } 
-                    .print-canvas { padding: 0; margin: 0; }
+                    body { background: white; }
+                    .print-canvas { padding-top: 150px; } /* 印刷時にさらに少し下げる */
                 }
             </style>
         </head><body>
             <div class="no-print-area">
-                <p style="margin-bottom:15px; color:#555;">テキストをクリックして編集できます。準備ができたらボタンを押してください。</p>
-                <button class="btn-exec-print" onclick="window.print()">この内容で印刷する（PDF保存）</button>
+                <p style="margin-bottom:10px;">テキストをクリックして編集できます。準備ができたら下のボタンを押してください。</p>
+                <button class="btn-exec-print" onclick="window.print()">この内容で印刷する</button>
             </div>
             <div class="print-canvas">
                 <p class="month editable" contenteditable="true">${month}</p>
@@ -240,7 +239,7 @@
                 <p class="footer editable" contenteditable="true">シフト希望の提出はこちらから</p>
             </div>
             <script>
-                new QRCode(document.getElementById("qrcode"), { text: "${qrData}", width: 350, height: 350 });
+                new QRCode(document.getElementById("qrcode"), { text: "${qrData}", width: 400, height: 400 });
             <\/script>
         </body></html>`);
         win.document.close();
