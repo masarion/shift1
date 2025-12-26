@@ -29,10 +29,12 @@
         
         /* 編集グリッド */
         .edit-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 25px; align-items: start; }
-        .section-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #f1f5f9; }
+        .section-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #f1f5f9; }
+        .section-desc { font-size: 0.85rem; color: #64748b; margin-bottom: 20px; line-height: 1.5; }
         
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 6px; }
+        .input-group .field-desc { font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: normal; }
         .input-group textarea, .input-group input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 0.95rem; }
         
         /* シフト行 */
@@ -69,20 +71,30 @@
 
     <section id="sec-edit-all" style="display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
-            <h1 id="edit-page-title">案件の編集</h1>
+            <div>
+                <h1 id="edit-page-title" style="margin-bottom:5px;">案件の編集</h1>
+                <p style="font-size: 0.9rem; color: #64748b;">スタッフ用シフト希望ページのテキストを編集できます。「変更を保存して反映」ボタンを押すと反映されます。</p>
+            </div>
             <button class="btn-save-fixed" onclick="saveSettings()">変更を保存して反映</button>
         </div>
         <div class="edit-grid">
             <div class="card">
-                <div class="section-title">📝 1. 表示テキストの設定</div>
-                <div class="input-group"><label>案件名称（管理用）</label><input type="text" id="edit-title-tag"></div>
+                <div class="section-title">1. 表示テキストの設定</div>
+                <p class="section-desc">改行も反映されます。テキストが長くなる場合はフォームの右下角をドラッグして広げることで確認が容易になります。</p>
+                
+                <div class="input-group">
+                    <label>案件名称（管理用）</label>
+                    <p class="field-desc">スタッフがシフト希望ページをブックマークしたときの名称になります</p>
+                    <input type="text" id="edit-title-tag">
+                </div>
                 <div class="input-group"><label>画面トップの見出し</label><textarea id="edit-h1-title" rows="2"></textarea></div>
                 <div class="input-group"><label>冒頭メッセージ</label><textarea id="edit-msg-top" rows="3"></textarea></div>
                 <div class="input-group"><label>カレンダー操作説明</label><textarea id="edit-msg-calendar" rows="2"></textarea></div>
                 <div class="input-group"><label>確認画面の注意書き</label><textarea id="edit-msg-confirm" rows="2"></textarea></div>
             </div>
             <div class="card">
-                <div class="section-title">⠿ 2. シフト枠の種類</div>
+                <div class="section-title">2. シフト枠の種類</div>
+                <p class="section-desc">シフト枠の編集、削除ができます。⠿をクリックしてドラッグアンドドロップすると並べ替えができます。「＋枠を追加」ボタンをクリックすると新規でシフト枠を追加できます</p>
                 <div id="shift-manager-list"></div>
                 <button onclick="addShiftRow()" style="width:100%; padding:12px; margin-top:10px; background:#f1f5f9; border:1px dashed #cbd5e1; border-radius:8px; cursor:pointer;">+ 枠を追加</button>
             </div>
@@ -213,7 +225,6 @@
                 body { text-align: center; font-family: sans-serif; background: #f0f0f0; margin: 0; padding: 0; }
                 .no-print-area { padding: 20px; background: #fff; border-bottom: 1px solid #ddd; }
                 .btn-exec-print { background: #4361ee; color: white; padding: 15px 40px; font-size: 1.2rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-                /* 印刷用キャンバス：上部余白を大きくして全体を下に下げる */
                 .print-canvas { background: white; display: inline-block; padding: 120px 60px 60px 60px; min-height: 100vh; box-sizing: border-box; }
                 .editable { cursor: pointer; border: 1px dashed transparent; }
                 .editable:hover { border-color: #ccc; background: #fafafa; }
@@ -224,7 +235,7 @@
                 @media print { 
                     .no-print-area { display: none; } 
                     body { background: white; }
-                    .print-canvas { padding-top: 150px; } /* 印刷時にさらに少し下げる */
+                    .print-canvas { padding-top: 150px; }
                 }
             </style>
         </head><body>
