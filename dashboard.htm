@@ -35,16 +35,17 @@
         .input-group label { display: block; font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 6px; }
         .input-group textarea, .input-group input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 0.95rem; }
         
-        /* シフト操作 */
+        /* 正解の「⠿」アイコン */
         .shift-row { display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 10px; margin-bottom: 8px; border: 1px solid #e2e8f0; }
         .drag-handle { cursor: grab; color: #64748b; font-size: 1.2rem; user-select: none; }
         
         .btn-save-fixed { background: var(--success); color: white; padding: 12px 30px; font-size: 1rem; border-radius: 10px; cursor: pointer; border: none; font-weight: bold; }
         .btn-print { background: var(--primary); color: white; width: 100%; padding: 15px; font-size: 1rem; margin-top: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
-        
-        /* 印刷設定UI */
-        .print-config { background: #f1f5f9; padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; justify-content: center; border: 1px solid #e2e8f0; }
-        .print-config select { padding: 10px 15px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 1rem; cursor: pointer; }
+
+        /* 印刷プレビュー用コンテナ（枠線なし） */
+        #qr-preview-container { background: transparent; border: none; box-shadow: none; padding: 0; }
+        .print-config { background: #f1f5f9; padding: 15px; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; justify-content: center; }
+        .print-config select { padding: 8px; border-radius: 5px; border: 1px solid #cbd5e1; }
     </style>
 </head>
 <body>
@@ -80,7 +81,7 @@
                 <div class="input-group"><label>確認画面の注意書き</label><textarea id="edit-msg-confirm" rows="2"></textarea></div>
             </div>
             <div class="card">
-                <div class="section-title">☰ 2. シフト枠の種類</div>
+                <div class="section-title">⠿ 2. シフト枠の種類</div>
                 <div id="shift-manager-list"></div>
                 <button onclick="addShiftRow()" style="width:100%; padding:12px; margin-top:10px; background:#f1f5f9; border:1px dashed #cbd5e1; border-radius:8px; cursor:pointer;">+ 枠を追加</button>
             </div>
@@ -94,11 +95,11 @@
                 <div class="section-title">案件を選択</div>
                 <div id="qr-pj-list"></div>
             </div>
-            <div class="card" style="border:none; background:transparent; box-shadow:none; padding:0;">
+            <div class="card" id="qr-preview-container">
                 <div class="section-title">掲示用プレビュー</div>
                 
                 <div id="print-config-area" class="print-config" style="display:none;">
-                    <strong>印刷用：対象月を選択 ➔</strong>
+                    <span>印刷用：対象月を選択 ➜</span>
                     <select id="print-month-select" onchange="updatePreviewMonth()">
                         <option value="1月">1月</option><option value="2月">2月</option><option value="3月">3月</option>
                         <option value="4月">4月</option><option value="5月">5月</option><option value="6月">6月</option>
@@ -108,13 +109,12 @@
                     </select>
                 </div>
 
-                <div id="print-preview-box" style="text-align: center; padding: 20px; background: #fff; border-radius: 16px; border: 1px solid #edf2f7;">
-                    <p id="preview-month-display" style="font-size: 1.8rem; font-weight: bold; margin: 0; color: #4361ee;">◯月</p>
-                    <h2 id="qr-pj-name" style="margin:10px 0 0 0; font-size: 1.4rem;">案件を選択してください</h2>
-                    <div id="qrcode-area" style="display:flex; justify-content:center; margin:20px 0;"></div>
-                    <p id="qr-pj-url" style="font-size:0.8rem; color:#64748b; word-break:break-all; padding: 0 20px;"></p>
+                <div id="print-preview-box" style="text-align: center; padding: 30px; border-radius: 15px; background: #fff;">
+                    <p id="preview-month-display" style="font-size: 1.5rem; font-weight: bold; margin: 0; color: #4361ee;">◯月</p>
+                    <h2 id="qr-pj-name" style="margin:5px 0 0 0;">案件を選択してください</h2>
+                    <div id="qrcode-area" style="display:flex; justify-content:center; margin:25px 0;"></div>
+                    <p id="qr-pj-url" style="font-size:0.8rem; color:#64748b; word-break:break-all;"></p>
                 </div>
-                
                 <button id="btn-print-action" class="btn-print" style="display:none;" onclick="execPrint()">🖨️ このQRコードを印刷する</button>
             </div>
         </div>
@@ -177,7 +177,7 @@
     function addShiftRow(val = '') {
         const div = document.createElement('div');
         div.className = 'shift-row';
-        div.innerHTML = `<div class="drag-handle">☰</div><input type="text" value="${val}" style="flex:1; border:none; background:transparent;"><button onclick="this.parentElement.remove()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">削除</button>`;
+        div.innerHTML = `<div class="drag-handle">⠿</div><input type="text" value="${val}" style="flex:1; border:none; background:transparent;"><button onclick="this.parentElement.remove()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">削除</button>`;
         document.getElementById('shift-manager-list').appendChild(div);
     }
 
@@ -196,8 +196,6 @@
         document.getElementById('qr-pj-url').textContent = url;
         document.getElementById('qrcode-area').innerHTML = '';
         new QRCode(document.getElementById('qrcode-area'), { text: url, width: 200, height: 200 });
-        
-        // 案件選択時にボタン類を確実に表示
         document.getElementById('btn-print-action').style.display = 'block';
         document.getElementById('print-config-area').style.display = 'flex';
     }
@@ -228,7 +226,7 @@
             </style>
         </head><body>
             <div class="no-print" style="background:#fff3cd; padding:10px; margin-bottom:20px; border-radius:8px;">
-                💡 各テキストをクリックすると直接編集できます。準備ができたらブラウザの印刷機能を実行してください。
+                各テキストをクリックすると直接編集できます。準備ができたらブラウザの印刷機能を実行してください。
             </div>
             <div class="print-container">
                 <p class="month editable" contenteditable="true">${month}</p>
