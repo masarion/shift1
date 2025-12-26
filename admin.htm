@@ -2,13 +2,12 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>シフト調整システム</title>
+    <title>シフト調整・データ確認</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --sat: #007bff; --sun: #dc3545; --bg: #f4f7f9; --tag-bg: #e2e8f0; --danger: #e53e3e; --success: #38a169; --pdf: #6366f1; }
         body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 0; color: #2d3748; }
         
-        /* 土日の色分け */
         .txt-sat { color: var(--sat) !important; }
         .txt-sun { color: var(--sun) !important; }
 
@@ -23,51 +22,16 @@
         .btn-pdf { background: var(--pdf); color: white; border: none; }
         .btn-save { background: var(--success); color: white; border: none; }
 
-        /* 編集画面：日付行と左列を固定 */
         .table-area { padding: 20px; overflow: auto; height: calc(100vh - 240px); }
         .main-table { border-collapse: collapse; background: white; table-layout: fixed; width: max-content; }
-        .main-table th, .main-table td { 
-            border: 1px solid #cbd5e0; 
-            padding: 2px 4px; /* 1名時に高すぎない設定 */
-            text-align: center; 
-            vertical-align: top; 
-            width: 115px; 
-            min-width: 115px; 
-        }
-        .main-table thead th { 
-            background: #f7fafc; 
-            position: sticky; 
-            top: 0; 
-            z-index: 150; 
-            border-bottom: 2px solid #a0aec0; 
-            padding: 8px 4px; 
-        }
-        .shift-name-col { 
-            background: #edf2f7 !important; 
-            font-weight: bold; 
-            position: sticky; 
-            left: 0; 
-            z-index: 160; 
-            text-align: left !important; 
-            width: 140px !important; 
-            min-width: 140px !important; 
-            vertical-align: middle; 
-        }
+        .main-table th, .main-table td { border: 1px solid #cbd5e0; padding: 4px; text-align: center; vertical-align: top; width: 115px; min-width: 115px; }
+        .main-table thead th { background: #f7fafc; position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #a0aec0; padding: 8px 4px; }
+        
+        .shift-name-col { background: #edf2f7 !important; font-weight: bold; position: sticky; left: 0; z-index: 160; text-align: left !important; width: 140px !important; min-width: 140px !important; vertical-align: middle; }
         .main-table thead th.shift-name-col { z-index: 170; }
 
-        .name-tag { 
-            background: var(--tag-bg); 
-            border: 1px solid #cbd5e0; 
-            border-radius: 4px; 
-            padding: 2px 4px; 
-            margin: 1px 0; 
-            font-size: 12px; 
-            white-space: nowrap; 
-            display: block; 
-            cursor: grab; 
-        }
+        .name-tag { background: var(--tag-bg); border: 1px solid #cbd5e0; border-radius: 4px; padding: 2px 4px; margin: 2px 0; font-size: 12px; white-space: nowrap; display: block; cursor: grab; }
 
-        /* PDF設定：9px・分割・枠なし文字 */
         #print-container { display: none; }
         #print-loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 3000; align-items: center; justify-content: center; font-size: 1.5rem; }
 
@@ -76,11 +40,11 @@
             .header-content, .table-area, #print-loading { display: none !important; }
             #print-container { display: block !important; }
             .print-page { page-break-after: always; }
-            .print-table { border-collapse: collapse; width: 100%; table-layout: fixed; border: 2.2px solid #000; }
+            .print-table { border-collapse: collapse; width: 100%; table-layout: fixed; border: 2px solid #000; }
             .print-table th, .print-table td { border: 1px solid #000; padding: 4px 2px; text-align: center; vertical-align: middle; }
-            .print-table th { font-size: 9.5px; height: 28px; background: #eee !important; }
+            .print-table th { font-size: 10px; background: #eee !important; }
             .p-shift-col { width: 100px; font-size: 10px; font-weight: bold; background: #eee !important; text-align: left; }
-            .p-name { display: block; font-size: 9px; letter-spacing: -0.3px; white-space: nowrap; line-height: 1.2; margin: 1px 0; }
+            .p-name { display: block; font-size: 9px; line-height: 1.2; }
             h3 { font-size: 13px; margin: 5px 0; }
         }
     </style>
@@ -90,11 +54,10 @@
 <div id="print-loading">PDFを作成しています...</div>
 
 <div class="header-content">
-    <h2>シフト調整システム</h2>
+    <h2 id="project-title-display">提出データ確認</h2>
     <div class="how-to">
         【操作】移動：ドラッグ＆ドロップ ／ 削除：名前をクリック<br>
-        <span class="caution">【注意】「変更を保存」を押すとデータベースが上書きされ、それ以前の状態には戻せません。</span><br>
-        保存前に「エクセル用にコピー」でバックアップを取っておくことを推奨します。
+        <span class="caution">【注意】「変更を保存」を押すとスタッフの元データが上書きされます。</span>
     </div>
     <div class="actions">
         <div id="month-display" style="font-weight: bold; font-size: 1.1rem; margin-right: 10px;"></div>
@@ -104,6 +67,7 @@
         <button onclick="undoLastAction()">1つ前に戻る</button>
         <button onclick="resetToInitial()">全て元に戻す</button>
         <button class="btn-save" onclick="saveToDatabase()">変更を保存</button>
+        <button onclick="window.close()" style="margin-left:10px;">× 閉じる</button>
     </div>
 </div>
 
@@ -119,45 +83,75 @@
 <script>
     const S_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
     const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
-    const P_ID  = 'cabb1760-a320-4d61-82c8-c2c069768d35';
     const client = supabase.createClient(S_URL, S_KEY);
 
     let _MASTER_DATA = [], _INITIAL_DATA = [], _HISTORY = [], _SHIFT_TYPES = [], _CAL_DATES = [];
+    let currentProjectId = null;
 
-    async function startApp() {
-        const now = new Date();
-        const target = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-        document.getElementById('month-display').textContent = `${target.getFullYear()}年 ${target.getMonth()+1}月`;
-        const { data: t } = await client.from('shift_types').select('*').eq('project_id', P_ID).order('sort_order');
-        const { data: s } = await client.from('submissions').select('*').eq('project_id', P_ID);
+    async function startApp(projectId) {
+        currentProjectId = projectId;
+        
+        // 案件情報の取得
+        const { data: pj } = await client.from('projects').select('*').eq('id', projectId).single();
+        if (pj) document.getElementById('project-title-display').textContent = `データ確認：${pj.title_tag}`;
+
+        // シフト枠と提出データの取得
+        const { data: t } = await client.from('shift_types').select('*').eq('project_id', projectId).order('display_order');
+        const { data: s } = await client.from('submissions').select('*').eq('project_id', projectId);
+        
         _SHIFT_TYPES = t || [];
         _INITIAL_DATA = JSON.parse(JSON.stringify(s || []));
         _MASTER_DATA = JSON.parse(JSON.stringify(_INITIAL_DATA));
-        const last = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
-        _CAL_DATES = Array.from({length: last}, (_, i) => `${target.getFullYear()}-${String(target.getMonth()+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
+
+        // カレンダー設定（翌月分を表示するロジック）
+        const now = new Date();
+        const target = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        document.getElementById('month-display').textContent = `${target.getFullYear()}年 ${target.getMonth()+1}月`;
+        
+        const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+        _CAL_DATES = Array.from({length: lastDay}, (_, i) => {
+            const day = i + 1;
+            return `${target.getFullYear()}-${String(target.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        });
+
         renderAll();
     }
 
     function renderAll() {
         const h = document.getElementById('h-row'), b = document.getElementById('b-rows'), w = ["日","月","火","水","木","金","土"];
+        
         h.innerHTML = `<tr><th class="shift-name-col">シフト枠</th>${_CAL_DATES.map(d => {
-            const dt = new Date(d), dayIdx = dt.getDay(), cl = dayIdx === 0 ? 'txt-sun' : (dayIdx === 6 ? 'txt-sat' : '');
+            const dt = new Date(d.replace(/-/g, '/')); // iOS対策
+            const dayIdx = dt.getDay();
+            const cl = dayIdx === 0 ? 'txt-sun' : (dayIdx === 6 ? 'txt-sat' : '');
             return `<th><span class="${cl}">${dt.getMonth()+1}/${dt.getDate()}(${w[dayIdx]})</span></th>`;
         }).join('')}</tr>`;
+
         b.innerHTML = '';
         _SHIFT_TYPES.forEach(type => {
             const row = document.createElement('tr');
             row.innerHTML = `<td class="shift-name-col">${type.name}</td>`;
+            
             _CAL_DATES.forEach(date => {
                 const td = document.createElement('td');
                 td.ondragover = e => e.preventDefault();
-                td.ondrop = e => { e.preventDefault(); handleMove(JSON.parse(e.dataTransfer.getData("text/plain")), date, type.name); };
+                td.ondrop = e => { 
+                    e.preventDefault(); 
+                    const info = JSON.parse(e.dataTransfer.getData("text/plain"));
+                    handleMove(info, date, type.name); 
+                };
+
                 _MASTER_DATA.forEach(staff => {
-                    if ((staff.shift_data[date] || []).includes(type.name)) {
+                    const shiftsForDate = staff.shift_data[date] || [];
+                    if (shiftsForDate.includes(type.name)) {
                         const tag = document.createElement('div');
-                        tag.className = 'name-tag'; tag.textContent = staff.staff_name; tag.draggable = true;
+                        tag.className = 'name-tag'; 
+                        tag.textContent = staff.staff_name; 
+                        tag.draggable = true;
                         tag.onclick = () => handleDelete(staff.id, date, type.name, staff.staff_name);
-                        tag.ondragstart = e => { e.dataTransfer.setData("text/plain", JSON.stringify({ id: staff.id, d: date, t: type.name })); };
+                        tag.ondragstart = e => { 
+                            e.dataTransfer.setData("text/plain", JSON.stringify({ id: staff.id, d: date, t: type.name })); 
+                        };
                         td.appendChild(tag);
                     }
                 });
@@ -165,6 +159,47 @@
             });
             b.appendChild(row);
         });
+    }
+
+    // --- 各種操作関数 ---
+    function pushHistory() { _HISTORY.push(JSON.parse(JSON.stringify(_MASTER_DATA))); }
+    
+    function undoLastAction() { if (_HISTORY.length > 0) { _MASTER_DATA = _HISTORY.pop(); renderAll(); } }
+    
+    function resetToInitial() { if (confirm("保存前の状態に全て戻しますか？")) { _MASTER_DATA = JSON.parse(JSON.stringify(_INITIAL_DATA)); _HISTORY = []; renderAll(); } }
+    
+    function handleMove(info, toDate, toType) { 
+        pushHistory(); 
+        const s = _MASTER_DATA.find(st => String(st.id) === String(info.id)); 
+        if (s) { 
+            s.shift_data[info.d] = (s.shift_data[info.d] || []).filter(v => v !== info.t);
+            if (!s.shift_data[toDate]) s.shift_data[toDate] = [];
+            if (!s.shift_data[toDate].includes(toType)) s.shift_data[toDate].push(toType);
+            renderAll(); 
+        } 
+    }
+
+    function handleDelete(staffId, date, typeName, name) { 
+        if (confirm(`${name}さんのこのシフトを削除しますか？`)) { 
+            pushHistory(); 
+            const s = _MASTER_DATA.find(st => String(st.id) === String(staffId)); 
+            if (s && s.shift_data[date]) { 
+                s.shift_data[date] = s.shift_data[date].filter(v => v !== typeName); 
+                renderAll(); 
+            } 
+        } 
+    }
+
+    async function saveToDatabase() { 
+        if(!confirm("現在の調整内容でデータベースを更新しますか？")) return; 
+        try { 
+            for (const s of _MASTER_DATA) { 
+                await client.from('submissions').update({ shift_data: s.shift_data }).eq('id', s.id); 
+            } 
+            alert("保存完了しました。"); 
+            _INITIAL_DATA = JSON.parse(JSON.stringify(_MASTER_DATA)); 
+            _HISTORY = []; 
+        } catch (err) { alert("エラー: " + err.message); } 
     }
 
     function generateSplitPDF() {
@@ -175,10 +210,13 @@
         const w = ["日","月","火","水","木","金","土"];
         const monthTitle = document.getElementById('month-display').textContent;
         const chunks = [{ title: "前半(1-15日)", dates: _CAL_DATES.slice(0, 15) }, { title: "後半(16日-末)", dates: _CAL_DATES.slice(15) }];
+        
         chunks.forEach(chunk => {
             let html = `<div class="print-page"><h3>${monthTitle} ${chunk.title}</h3><table class="print-table"><thead><tr><th class="p-shift-col">シフト枠</th>`;
             chunk.dates.forEach(d => {
-                const dt = new Date(d), dayIdx = dt.getDay(), cl = dayIdx === 0 ? 'txt-sun' : (dayIdx === 6 ? 'txt-sat' : '');
+                const dt = new Date(d.replace(/-/g, '/'));
+                const dayIdx = dt.getDay();
+                const cl = dayIdx === 0 ? 'txt-sun' : (dayIdx === 6 ? 'txt-sat' : '');
                 html += `<th><span class="${cl}">${dt.getMonth()+1}/${dt.getDate()}(${w[dayIdx]})</span></th>`;
             });
             html += `</tr></thead><tbody>`;
@@ -201,12 +239,6 @@
         setTimeout(() => { loading.style.display = 'none'; window.print(); }, 800);
     }
 
-    function pushHistory() { _HISTORY.push(JSON.parse(JSON.stringify(_MASTER_DATA))); }
-    function undoLastAction() { if (_HISTORY.length > 0) { _MASTER_DATA = _HISTORY.pop(); renderAll(); } }
-    function resetToInitial() { if (confirm("全て元に戻しますか？")) { _MASTER_DATA = JSON.parse(JSON.stringify(_INITIAL_DATA)); _HISTORY = []; renderAll(); } }
-    function handleMove(info, toDate, toType) { pushHistory(); const s = _MASTER_DATA.find(st => String(st.id) === String(info.id)); if (s) { s.shift_data[info.d] = s.shift_data[info.d].filter(v => v !== info.t); if (!s.shift_data[toDate]) s.shift_data[toDate] = []; s.shift_data[toDate].push(toType); renderAll(); } }
-    function handleDelete(staffId, date, typeName, name) { if (confirm(`${name}さんを削除しますか？`)) { pushHistory(); const s = _MASTER_DATA.find(st => String(st.id) === String(staffId)); if (s && s.shift_data[date]) { s.shift_data[date] = s.shift_data[date].filter(v => v !== typeName); renderAll(); } } }
-    async function saveToDatabase() { if(!confirm("変更を保存しますか？")) return; try { for (const s of _MASTER_DATA) { await client.from('submissions').update({ shift_data: s.shift_data }).eq('id', s.id); } alert("保存完了しました。"); _INITIAL_DATA = JSON.parse(JSON.stringify(_MASTER_DATA)); _HISTORY = []; } catch (err) { alert(err.message); } }
     function copyTableForExcel() {
         const table = document.querySelector('.main-table');
         let text = "";
@@ -219,28 +251,27 @@
             });
             text += cells.join("\t") + "\n";
         });
-        navigator.clipboard.writeText(text).then(() => alert("エクセル用にコピーしました。"));
+        navigator.clipboard.writeText(text).then(() => alert("エクセル用にコピーしました。Excelを開いて貼り付けてください。"));
     }
+
+    // 起動時チェック
     window.onload = async () => {
-    const { data: { session } } = await client.auth.getSession();
-    if (!session) {
-        window.location.href = 'dashboard.htm'; // 未ログインなら戻す
-        return;
-    }
+        const { data: { session } } = await client.auth.getSession();
+        if (!session) {
+            window.location.href = 'dashboard.htm';
+            return;
+        }
 
-    // URLからIDを取得するコードを追加
-    const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id');
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
 
-    if (id) {
-        // IDがある場合：その案件のデータをロードする（既存の関数を呼び出す）
-        loadSubmissions(id); // 名前は既存の関数に合わせて調整してください
-    } else {
-        // IDがない場合：仕方ないのでdashboardへ
-        window.location.href = 'dashboard.htm';
-    }
-};
+        if (id) {
+            startApp(id);
+        } else {
+            alert("案件IDが指定されていません。ダッシュボードから開き直してください。");
+            window.location.href = 'dashboard.htm';
+        }
+    };
 </script>
 </body>
 </html>
-
