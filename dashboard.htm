@@ -19,9 +19,12 @@
         body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; color: var(--text); }
         
         /* サイドバー */
-        #sidebar { width: 260px; background: var(--sidebar-bg); color: white; padding: 25px 15px; flex-shrink: 0; display: flex; flex-direction: column; }
+        #sidebar { width: 260px; background: var(--sidebar-bg); color: white; padding: 25px 15px; flex-shrink: 0; display: flex; flex-direction: column; overflow-y: auto; }
         .nav-item { padding: 14px 18px; cursor: pointer; border-radius: 10px; margin-bottom: 8px; transition: 0.3s; text-decoration: none; color: white; display: block; }
         .nav-active { background: var(--active-bg); font-weight: bold; }
+        .nav-sub-list { margin-left: 15px; border-left: 2px solid rgba(255,255,255,0.2); padding-left: 10px; margin-bottom: 15px; font-size: 0.85rem; }
+        .nav-sub-item { padding: 8px; cursor: pointer; color: rgba(255,255,255,0.8); transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .nav-sub-item:hover { color: white; background: rgba(255,255,255,0.1); border-radius: 5px; }
 
         /* メインエリア */
         #main-content { flex-grow: 1; overflow-y: auto; padding: 40px; }
@@ -32,31 +35,33 @@
         .section-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #f1f5f9; }
         .section-desc { font-size: 0.85rem; color: #64748b; margin-bottom: 20px; line-height: 1.5; }
         
-        .input-group { margin-bottom: 15px; }
+        .input-group { margin-bottom: 20px; }
         .input-group label { display: block; font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 6px; }
-        .input-group .field-desc { font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: normal; }
-        .input-group textarea, .input-group input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 0.95rem; }
         
-        /* 下部アクションエリア（中央配置） */
+        /* リッチテキストツールバー */
+        .editor-toolbar { background: #f1f5f9; border: 1px solid #e2e8f0; border-bottom: none; border-radius: 8px 8px 0 0; padding: 8px; display: flex; gap: 8px; align-items: center; }
+        .editor-btn { background: white; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        .editor-btn:hover { background: #e2e8f0; }
+        .rich-editor { min-height: 100px; border: 1px solid #e2e8f0; border-radius: 0 0 8px 8px; padding: 12px; background: white; overflow-y: auto; }
+        
+        .input-group input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 0.95rem; box-sizing: border-box; }
+        
+        /* 下部アクションエリア */
         .action-area { text-align: center; margin-top: 20px; padding: 30px 0; }
-        
-        /* ボタン類 */
         .btn-save-fixed { background: var(--success); color: white; padding: 14px 60px; font-size: 1.1rem; border-radius: 12px; cursor: pointer; border: none; font-weight: bold; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2); }
         .btn-preview { background: white; color: var(--primary); border: 1.5px solid var(--primary); padding: 8px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
-        .btn-delete-pj { color: #94a3b8; background: none; border: none; font-size: 0.85rem; cursor: pointer; text-decoration: underline; margin-top: 25px; display: inline-block; }
-        .btn-delete-pj:hover { color: var(--danger); }
         
-        /* シフト行とゴミ箱アイコン */
+        /* シフト行 */
         .shift-row { display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 10px; margin-bottom: 8px; border: 1px solid #e2e8f0; }
-        .drag-handle { cursor: grab; color: #64748b; font-size: 1.2rem; user-select: none; }
-        .btn-trash { background: none; border: none; cursor: pointer; padding: 5px; color: #94a3b8; display: flex; align-items: center; transition: 0.2s; }
+        .shift-num { font-size: 0.85rem; color: #94a3b8; font-weight: bold; min-width: 20px; }
+        .drag-handle { cursor: grab; color: #64748b; font-size: 1.2rem; }
+        .btn-trash { background: none; border: none; cursor: pointer; color: #94a3b8; transition: 0.2s; }
         .btn-trash:hover { color: var(--danger); }
 
         /* QR・印刷系 */
         .btn-print { background: var(--primary); color: white; width: 100%; padding: 15px; font-size: 1rem; margin-top: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
-        #preview-card-area { background: transparent; border: none; box-shadow: none; padding: 0; }
         .print-config { background: #f1f5f9; padding: 15px; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; justify-content: center; }
-        #print-preview-box { text-align: center; padding: 40px 20px; background: #fff; border: none; }
+        #print-preview-box { text-align: center; padding: 40px 20px; background: #fff; }
     </style>
 </head>
 <body>
@@ -67,6 +72,7 @@
     <div class="nav-item" id="nav-edit-all" onclick="showSection('edit-all')">ページ内容・シフト編集</div>
     <div class="nav-item" id="nav-qr" onclick="showSection('qr'); loadQRProjectList();">URL・QRコード作成</div>
     <div class="nav-item" id="nav-responses" onclick="showSection('responses')">送信データ（回答）確認</div>
+    <div id="nav-response-list" class="nav-sub-list"></div>
 </div>
 
 <div id="main-content">
@@ -82,33 +88,55 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
             <div>
                 <h1 id="edit-page-title" style="margin-bottom:5px;">案件の編集</h1>
-                <p style="font-size: 0.9rem; color: #64748b; margin:0;">スタッフ用シフト希望ページのテキストを編集できます。「変更を保存して反映」ボタンを押すと反映されます。</p>
+                <p style="font-size: 0.9rem; color: #64748b; margin:0;">各項目は太字や色、サイズを変更できます。「保存」で反映されます。</p>
             </div>
             <div style="text-align: right;">
                 <button class="btn-preview" onclick="openLivePreview()">プレビュー</button>
-                <p style="font-size: 0.7rem; color: #94a3b8; margin: 5px 0 0 0;">提出済み画面が出るときはURL末尾に「&◯」を付けて確認してください</p>
             </div>
         </div>
 
         <div class="edit-grid">
             <div class="card">
                 <div class="section-title">1. 表示テキストの設定</div>
-                <p class="section-desc">改行も反映されます。テキストが長くなる場合はフォームの右下角をドラッグして広げることで確認が容易になります。</p>
-                
                 <div class="input-group">
                     <label>案件名称（管理用）</label>
-                    <p class="field-desc">スタッフがシフト希望ページをブックマークしたときの名称になります</p>
                     <input type="text" id="edit-title-tag">
                 </div>
-                <div class="input-group"><label>画面トップの見出し</label><textarea id="edit-h1-title" rows="2"></textarea></div>
-                <div class="input-group"><label>冒頭メッセージ</label><textarea id="edit-msg-top" rows="3"></textarea></div>
-                <div class="input-group"><label>カレンダー操作説明</label><textarea id="edit-msg-calendar" rows="2"></textarea></div>
-                <div class="input-group"><label>確認画面の注意書き</label><textarea id="edit-msg-confirm" rows="2"></textarea></div>
+                
+                <div class="input-group">
+                    <label>画面トップの見出し</label>
+                    <div class="editor-toolbar">
+                        <button class="editor-btn" onclick="execCmd('bold', 'edit-h1-title')">B</button>
+                        <input type="color" onchange="execCmd('foreColor', 'edit-h1-title', this.value)" title="文字色">
+                        <input type="number" placeholder="サイズ(px)" style="width:60px; padding:2px;" onchange="execCmd('fontSizeStyle', 'edit-h1-title', this.value)">
+                    </div>
+                    <div id="edit-h1-title" class="rich-editor" contenteditable="true"></div>
+                </div>
+
+                <div class="input-group">
+                    <label>冒頭メッセージ</label>
+                    <div class="editor-toolbar">
+                        <button class="editor-btn" onclick="execCmd('bold', 'edit-msg-top')">B</button>
+                        <input type="color" onchange="execCmd('foreColor', 'edit-msg-top', this.value)">
+                        <input type="number" placeholder="px" style="width:60px; padding:2px;" onchange="execCmd('fontSizeStyle', 'edit-msg-top', this.value)">
+                    </div>
+                    <div id="edit-msg-top" class="rich-editor" contenteditable="true"></div>
+                </div>
+
+                <div class="input-group">
+                    <label>カレンダー操作説明</label>
+                    <div id="edit-msg-calendar" class="rich-editor" contenteditable="true" style="min-height:60px;"></div>
+                </div>
+
+                <div class="input-group">
+                    <label>確認画面の注意書き</label>
+                    <div id="edit-msg-confirm" class="rich-editor" contenteditable="true" style="min-height:60px;"></div>
+                </div>
             </div>
             
             <div class="card">
                 <div class="section-title">2. シフト枠の種類</div>
-                <p class="section-desc">シフト枠の編集、削除ができます。⠿をドラッグして並べ替え、ゴミ箱アイコンをクリックして削除できます。「＋枠を追加」ボタンで新規追加できます。</p>
+                <p class="section-desc">ドラッグで順序変更。番号は自動で振り直されます。</p>
                 <div id="shift-manager-list"></div>
                 <button onclick="addShiftRow()" style="width:100%; padding:12px; margin-top:10px; background:#f1f5f9; border:1px dashed #cbd5e1; border-radius:8px; cursor:pointer;">+ 枠を追加</button>
             </div>
@@ -133,16 +161,13 @@
                 <div id="print-config-area" class="print-config" style="display:none;">
                     <span>対象月：</span>
                     <select id="print-month-select" onchange="updatePreviewMonth()">
-                        <option value="1月">1月</option><option value="2月">2月</option><option value="3月">3月</option>
-                        <option value="4月">4月</option><option value="5月">5月</option><option value="6月">6月</option>
-                        <option value="7月">7月</option><option value="8月">8月</option><option value="9月">9月</option>
-                        <option value="10月">10月</option><option value="11月">11月</option><option value="12月">12月</option>
                         <option value="◯月" selected>指定なし</option>
+                        <script>for(let i=1;i<=12;i++) document.write(`<option value="${i}月">${i}月</option>`)</script>
                     </select>
                 </div>
                 <div id="print-preview-box">
                     <p id="preview-month-display" style="font-size: 1.5rem; font-weight: bold; margin: 0; color: #4361ee;">◯月</p>
-                    <h2 id="qr-pj-name" style="margin:5px 0 0 0;">案件を選択してください</h2>
+                    <h2 id="qr-pj-name">案件を選択してください</h2>
                     <div id="qrcode-area" style="display:flex; justify-content:center; margin:25px 0;"></div>
                     <p id="qr-pj-url" style="font-size:0.8rem; color:#64748b; word-break:break-all;"></p>
                 </div>
@@ -153,9 +178,7 @@
 
     <section id="sec-responses" style="display:none;">
         <h1>送信データ（回答）確認</h1>
-        <div class="card">
-            <p>※回答一覧を表示する機能（ロード処理等）をここに実装します。</p>
-        </div>
+        <div class="card"><p>左メニューから案件名を選択して詳細を確認してください。</p></div>
     </section>
 </div>
 
@@ -166,31 +189,45 @@
     let currentId = null;
     let sortable = null;
 
+    // リッチテキスト操作用コマンド
+    function execCmd(cmd, targetId, val = null) {
+        document.getElementById(targetId).focus();
+        if (cmd === 'fontSizeStyle') {
+            document.execCommand('insertHTML', false, `<span style="font-size:${val}px;">${window.getSelection()}</span>`);
+        } else {
+            document.execCommand(cmd, false, val);
+        }
+    }
+
     function showSection(id) {
         document.querySelectorAll('section').forEach(s => s.style.display = 'none');
         document.getElementById('sec-' + id).style.display = 'block';
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('nav-active'));
-        
-        let navId = '';
-        if(id === 'projects') navId = 'nav-projects';
-        else if(id === 'edit-all') navId = 'nav-edit-all';
-        else if(id === 'qr') navId = 'nav-qr';
-        else if(id === 'responses') navId = 'nav-responses';
-        
-        const navEl = document.getElementById(navId);
+        const navEl = document.getElementById('nav-' + id);
         if(navEl) navEl.classList.add('nav-active');
     }
 
     async function loadProjects() {
         const { data: pjs, error } = await client.from('projects').select('*').order('created_at', { ascending: false });
         if(error) return;
-        const list = document.getElementById('project-list');
-        list.innerHTML = pjs.map(p => `
+        
+        // メイン一覧
+        document.getElementById('project-list').innerHTML = pjs.map(p => `
             <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:15px 25px;">
                 <strong>${p.title_tag || '無題の案件'}</strong>
                 <button onclick="editProject('${p.id}')" style="background:var(--primary); color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer;">編集する</button>
             </div>
         `).join('');
+
+        // サイドメニューの案件リスト（復旧・強化）
+        const subNav = document.getElementById('nav-response-list');
+        subNav.innerHTML = pjs.map(p => `
+            <div class="nav-sub-item" onclick="viewResponses('${p.id}')">└ ${p.title_tag}</div>
+        `).join('');
+    }
+
+    function viewResponses(id) {
+        alert("案件ID: " + id + " の回答一覧を表示する機能（別ファイル等の連携）へ遷移します");
     }
 
     async function editProject(id) {
@@ -198,10 +235,10 @@
         const { data: p } = await client.from('projects').select('*').eq('id', id).single();
         document.getElementById('edit-page-title').textContent = `「${p.title_tag}」の編集`;
         document.getElementById('edit-title-tag').value = p.title_tag || '';
-        document.getElementById('edit-h1-title').value = p.h1_title || '';
-        document.getElementById('edit-msg-top').value = p.msg_top || '';
-        document.getElementById('edit-msg-calendar').value = p.msg_calendar || '';
-        document.getElementById('edit-msg-confirm').value = p.msg_confirm || '';
+        document.getElementById('edit-h1-title').innerHTML = p.h1_title || '';
+        document.getElementById('edit-msg-top').innerHTML = p.msg_top || '';
+        document.getElementById('edit-msg-calendar').innerHTML = p.msg_calendar || '';
+        document.getElementById('edit-msg-confirm').innerHTML = p.msg_confirm || '';
         
         const { data: shifts } = await client.from('shift_types').select('*').eq('project_id', id).order('display_order');
         const container = document.getElementById('shift-manager-list');
@@ -209,8 +246,13 @@
         if(shifts && shifts.length > 0) shifts.forEach(s => addShiftRow(s.name));
         else addShiftRow('日勤');
         
+        updateShiftNumbers();
         if(sortable) sortable.destroy();
-        sortable = new Sortable(container, { handle: '.drag-handle', animation: 150 });
+        sortable = new Sortable(container, { 
+            handle: '.drag-handle', 
+            animation: 150,
+            onEnd: updateShiftNumbers 
+        });
         showSection('edit-all');
     }
 
@@ -218,23 +260,29 @@
         const div = document.createElement('div');
         div.className = 'shift-row';
         div.innerHTML = `
+            <div class="shift-num"></div>
             <div class="drag-handle">⠿</div>
             <input type="text" value="${val}" style="flex:1; border:none; background:transparent;">
-            <button class="btn-trash" onclick="if(confirm('このシフト枠を削除しますか？')){this.parentElement.remove()}" title="削除">
+            <button class="btn-trash" onclick="if(confirm('このシフト枠を削除しますか？')){this.parentElement.remove(); updateShiftNumbers();}">
                 <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
             </button>`;
         document.getElementById('shift-manager-list').appendChild(div);
+        updateShiftNumbers();
+    }
+
+    function updateShiftNumbers() {
+        document.querySelectorAll('.shift-num').forEach((el, i) => {
+            el.textContent = (i + 1) + '.';
+        });
     }
 
     function openLivePreview() {
         if(!currentId) return;
-        const url = window.location.href.split('dashboard.htm')[0] + 'index.htm?id=' + currentId + '&preview=1';
-        window.open(url, '_blank');
+        window.open(window.location.href.split('dashboard.htm')[0] + 'index.htm?id=' + currentId + '&preview=1', '_blank');
     }
 
     async function deleteCurrentProject() {
-        if(!currentId) return;
-        if(!confirm("この案件を削除すると、設定や送信データがすべて失われます。本当によろしいですか？")) return;
+        if(!currentId || !confirm("すべてのデータが消失します。よろしいですか？")) return;
         await client.from('projects').delete().eq('id', currentId);
         showSection('projects');
         loadProjects();
@@ -260,8 +308,7 @@
     }
 
     function updatePreviewMonth() {
-        const month = document.getElementById('print-month-select').value;
-        document.getElementById('preview-month-display').textContent = month;
+        document.getElementById('preview-month-display').textContent = document.getElementById('print-month-select').value;
     }
 
     function execPrint() {
@@ -274,29 +321,33 @@
             <style>
                 @page { margin: 0; }
                 body { text-align: center; font-family: sans-serif; background: #f0f0f0; margin: 0; padding: 0; }
-                .no-print-area { padding: 30px 20px; background: #fff; border-bottom: 1px solid #ddd; }
-                .guide-text { color: #666; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.5; }
-                .btn-exec-print { background: #4361ee; color: white; padding: 15px 40px; font-size: 1.2rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-right: 10px; }
-                .btn-close-win { background: #64748b; color: white; padding: 15px 25px; font-size: 1.1rem; border: none; border-radius: 8px; cursor: pointer; }
-                .print-canvas { background: white; display: inline-block; padding: 150px 60px 60px 60px; min-height: 100vh; box-sizing: border-box; }
-                .editable { cursor: pointer; border: 1px dashed transparent; }
+                .no-print { padding: 20px; background: #fff; border-bottom: 1px solid #ddd; position: sticky; top:0; z-index:100; }
+                .toolbar { margin: 10px 0; display: flex; justify-content: center; gap: 10px; align-items: center; }
+                .btn-exec { background: #4361ee; color: white; padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+                .print-canvas { background: white; display: inline-block; padding: 100px 60px; min-height: 100vh; width: 210mm; box-sizing: border-box; }
+                .editable { cursor: pointer; border: 1px dashed transparent; outline: none; }
+                .editable:hover { border-color: #ccc; }
                 h1 { font-size: 2.8rem; margin: 20px 0 60px 0; }
                 p.month { font-size: 4rem; margin: 0; font-weight: bold; }
-                p.footer { font-size: 1.8rem; margin-top: 60px; font-weight: bold; }
                 #qrcode { display: flex; justify-content: center; margin: 30px auto; }
-                @media print { .no-print-area { display: none; } body { background: white; } }
+                @media print { .no-print { display: none; } body { background: white; } .print-canvas { padding: 100px 0; } }
             </style>
         </head><body>
-            <div class="no-print-area">
-                <p class="guide-text">この内容でよろしければ、下のボタンを押して印刷してください。<br>文字の部分をクリックすると、印刷前に内容を自由に書き換えることができます。</p>
-                <button class="btn-exec-print" onclick="window.print()">この内容で印刷する</button>
-                <button class="btn-close-win" onclick="window.close()">閉じる</button>
+            <div class="no-print">
+                <p style="font-size:0.8rem;color:#666;margin:0;">文字を選択して装飾できます。サイズは数値で調整してください。</p>
+                <div class="toolbar">
+                    <button onclick="document.execCommand('bold')"><b>B</b></button>
+                    <input type="color" onchange="document.execCommand('foreColor', false, this.value)">
+                    <span>サイズ(px):</span><input type="number" style="width:50px" onchange="document.execCommand('insertHTML', false, '<span style=\'font-size:'+this.value+'px\'>'+window.getSelection()+'</span>')">
+                    <button class="btn-exec" onclick="window.print()">印刷する</button>
+                    <button onclick="window.close()">閉じる</button>
+                </div>
             </div>
             <div class="print-canvas">
                 <p class="month editable" contenteditable="true">${month}</p>
                 <h1 class="editable" contenteditable="true">${title}</h1>
                 <div id="qrcode"></div>
-                <p class="footer editable" contenteditable="true">シフト希望の提出はこちらから</p>
+                <p class="editable" style="font-size:1.8rem; font-weight:bold;" contenteditable="true">シフト希望の提出はこちらから</p>
             </div>
             <script>new QRCode(document.getElementById("qrcode"), { text: "${qrData}", width: 400, height: 400 });<\/script>
         </body></html>`);
@@ -304,7 +355,7 @@
     }
 
     async function createNewProject() {
-        const name = prompt("新しい案件の名称を入力してください");
+        const name = prompt("新しい案件の名称");
         if(!name) return;
         await client.from('projects').insert([{ title_tag: name, h1_title: name }]);
         loadProjects();
@@ -314,10 +365,10 @@
         if(!currentId) return;
         await client.from('projects').update({
             title_tag: document.getElementById('edit-title-tag').value,
-            h1_title: document.getElementById('edit-h1-title').value,
-            msg_top: document.getElementById('edit-msg-top').value,
-            msg_calendar: document.getElementById('edit-msg-calendar').value,
-            msg_confirm: document.getElementById('edit-msg-confirm').value
+            h1_title: document.getElementById('edit-h1-title').innerHTML,
+            msg_top: document.getElementById('edit-msg-top').innerHTML,
+            msg_calendar: document.getElementById('edit-msg-calendar').innerHTML,
+            msg_confirm: document.getElementById('edit-msg-confirm').innerHTML
         }).eq('id', currentId);
         
         await client.from('shift_types').delete().eq('project_id', currentId);
@@ -325,9 +376,9 @@
             project_id: currentId, name: el.value, display_order: i
         })).filter(s => s.name !== '');
         await client.from('shift_types').insert(shifts);
-        alert("設定を保存しました。");
-        // 保存後も現在の編集画面を維持するため showSection('projects') を呼びません
-        loadProjects(); 
+        
+        alert("保存完了しました。");
+        loadProjects(); // サイドリスト等の更新
     }
 
     window.onload = loadProjects;
