@@ -149,7 +149,16 @@
     </label>
     <input type="text" id="edit-title-tag">
 </div>
-                <div class="input-group"><label>画面トップの見出し</label><div id="edit-h1-title" class="rich-editor" contenteditable="true"></div></div>
+                <div class="input-group">
+    <label>
+        画面トップの見出し
+        <span style="display: block; font-weight: normal; color: #94a3b8; font-size: 0.75rem; margin-top: 2px; line-height: 1.4;">
+            ※翌月が自動で表示されるのでそれ以降を編集してください<br>
+            （例：「月のシフト」と入力すると「◯月のシフト」と表示されます）
+        </span>
+    </label>
+    <div id="edit-h1-title" class="rich-editor" contenteditable="true" style="margin-top: 8px;"></div>
+</div>
                 <div class="input-group"><label>冒頭メッセージ</label><div id="edit-msg-top" class="rich-editor" contenteditable="true"></div></div>
                 <div class="input-group"><label>カレンダー操作説明</label><div id="edit-msg-calendar" class="rich-editor" contenteditable="true"></div></div>
                 <div class="input-group"><label>確認画面の注意書き</label><div id="edit-msg-confirm" class="rich-editor" contenteditable="true"></div></div>
@@ -472,6 +481,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
