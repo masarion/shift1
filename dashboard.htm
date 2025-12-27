@@ -65,6 +65,26 @@
         #preview-card-area { background: transparent; border: none; box-shadow: none; padding: 0; }
         .print-config { background: #f1f5f9; padding: 15px; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; justify-content: center; }
         #print-preview-box { text-align: center; padding: 40px 20px; background: #fff; border: none; }
+        /* 共通ツールバーのスタイル */
+.floating-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #fff;
+    padding: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+.toolbar-group { display: flex; gap: 5px; align-items: center; border-right: 1px solid #eee; padding-right: 15px; }
+.toolbar-group:last-child { border-right: none; }
+.toolbar-icon-btn { background: none; border: 1px solid transparent; padding: 5px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; }
+.toolbar-icon-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
+.toolbar-select { padding: 4px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -88,6 +108,33 @@
     </section>
 
     <section id="sec-edit-all" style="display:none;">
+        <div class="floating-toolbar">
+    
+    <div class="toolbar-group">
+        <button class="toolbar-icon-btn" onclick="document.execCommand('bold')" title="太字">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path></svg>
+        </button>
+        <button class="toolbar-icon-btn" onclick="document.execCommand('underline')" title="下線">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"></path><line x1="4" y1="21" x2="20" y2="21"></line></svg>
+        </button>
+    </div>
+
+    <div class="toolbar-group">
+        <select class="toolbar-select" onchange="document.execCommand('fontSize', false, this.value); this.value='';" title="文字サイズ">
+            <option value="">サイズ</option>
+            <option value="1">極小</option>
+            <option value="3">標準</option>
+            <option value="5">大</option>
+            <option value="7">特大</option>
+        </select>
+    </div>
+
+    <div class="toolbar-group">
+        <input type="color" onchange="document.execCommand('foreColor', false, this.value)" style="width:30px; height:30px; border:none; cursor:pointer; background:none;" title="文字色変更">
+        <span style="font-size:0.8rem; color:#64748b;">文字色</span>
+    </div>
+
+</div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
             <div>
                 <h1 id="edit-page-title" style="margin-bottom:5px;">案件の編集</h1>
@@ -321,13 +368,26 @@
                 h1 { font-size: 2.8rem; margin: 20px 0 60px 0; }
                 p.month { font-size: 4rem; margin: 0; font-weight: bold; }
                 #qrcode { display: flex; justify-content: center; margin: 30px auto; }
+                /* --- 修正箇所：印刷画面用のツールバースタイル --- */
+.no-print { padding: 15px; background: #fff; border-bottom: 1px solid #ddd; position: sticky; top:0; z-index:100; display:flex; gap:15px; justify-content:center; align-items:center; flex-wrap: wrap; }
+.toolbar-icon-btn { background: none; border: 1px solid #ddd; padding: 5px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; }
+.toolbar-select { padding: 4px; border: 1px solid #ddd; border-radius: 4px; }
+/* ------------------------------------------ */
                 @media print { .no-print { display: none; } body { background: white; } }
             </style>
         </head><body>
             <div class="no-print">
-                <button class="btn-exec" onclick="window.print()">印刷する</button>
-                <button onclick="window.close()">閉じる</button>
-            </div>
+    <button class="toolbar-icon-btn" onclick="document.execCommand('bold')" title="太字">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path></svg>
+    </button>
+    <button class="toolbar-icon-btn" onclick="document.execCommand('underline')" title="下線">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"></path><line x1="4" y1="21" x2="20" y2="21"></line></svg>
+    </button>
+    <input type="color" onchange="document.execCommand('foreColor', false, this.value)" style="width:30px; height:30px; border:none; cursor:pointer; background:none;">
+    
+    <button class="btn-exec" onclick="window.print()">印刷を実行する</button>
+    <button onclick="window.close()" style="padding: 10px 20px; border-radius: 8px; cursor: pointer;">閉じる</button>
+</div>
             <p class="no-print" style="color: #64748b; font-size: 0.9rem; margin-top: 10px;">
                 テキストをクリックして編集できます。よろしければ「印刷する」ボタンをクリックしてください
             </p>
@@ -353,6 +413,7 @@
 </script>
 </body>
 </html>
+
 
 
 
