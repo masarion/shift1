@@ -376,21 +376,23 @@
                 @media print { .no-print { display: none; } body { background: white; } }
             </style>
         </head><body>
-            <div class="no-print">
-    <button class="toolbar-icon-btn" onclick="document.execCommand('bold')" title="太字">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path></svg>
-    </button>
-    <button class="toolbar-icon-btn" onclick="document.execCommand('underline')" title="下線">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"></path><line x1="4" y1="21" x2="20" y2="21"></line></svg>
-    </button>
-    <input type="color" onchange="document.execCommand('foreColor', false, this.value)" style="width:30px; height:30px; border:none; cursor:pointer; background:none;">
-    
-    <button class="btn-exec" onclick="window.print()">印刷を実行する</button>
-    <button onclick="window.close()" style="padding: 10px 20px; border-radius: 8px; cursor: pointer;">閉じる</button>
-</div>
-            <p class="no-print" style="color: #64748b; font-size: 0.9rem; margin-top: 10px;">
+            <p class="no-print" style="color: #64748b; font-size: 0.9rem; margin-top: 20px; text-align: center;">
                 テキストをクリックして編集できます。よろしければ「印刷する」ボタンをクリックしてください
             </p>
+
+            <div class="no-print" style="margin-bottom: 20px;">
+                <button class="toolbar-icon-btn" onclick="document.execCommand('bold')" title="太字">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path></svg>
+                </button>
+                <button class="toolbar-icon-btn" onclick="document.execCommand('underline')" title="下線">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"></path><line x1="4" y1="21" x2="20" y2="21"></line></svg>
+                </button>
+                <input type="color" onchange="document.execCommand('foreColor', false, this.value)" style="width:30px; height:30px; border:none; cursor:pointer; background:none;" title="文字色">
+                
+                <button class="btn-exec" onclick="window.print()">印刷を実行する</button>
+                <button onclick="window.close()" style="padding: 10px 20px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; background: white;">閉じる</button>
+            </div>
+
             <div class="print-canvas">
                 <p class="month editable" contenteditable="true">${month}</p>
                 <h1 class="editable" contenteditable="true">${title}</h1>
@@ -413,6 +415,7 @@
 </script>
 </body>
 </html>
+
 
 
 
