@@ -18,6 +18,7 @@
         }
         body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; color: var(--text); }
         
+        /* サイドバー */
         #sidebar { width: 260px; background: var(--sidebar-bg); color: white; padding: 25px 15px; flex-shrink: 0; display: flex; flex-direction: column; overflow-y: auto; }
         .nav-item { padding: 14px 18px; cursor: pointer; border-radius: 10px; margin-bottom: 8px; transition: 0.3s; text-decoration: none; color: white; display: block; }
         .nav-active { background: var(--active-bg); font-weight: bold; }
@@ -25,33 +26,45 @@
         .nav-sub-item { padding: 6px 8px; cursor: pointer; color: rgba(255,255,255,0.7); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .nav-sub-item:hover { color: white; background: rgba(255,255,255,0.1); border-radius: 4px; }
 
+        /* メインエリア */
         #main-content { flex-grow: 1; overflow-y: auto; padding: 40px; }
         .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #edf2f7; margin-bottom: 25px; }
         
+        /* 編集エリア */
         .edit-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 25px; align-items: start; }
         .section-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #f1f5f9; }
+        .section-desc { font-size: 0.85rem; color: #64748b; margin-bottom: 20px; line-height: 1.5; }
         
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 6px; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 0.95rem; box-sizing: border-box; }
 
+        /* 共通ツールバーのスタイル */
         .floating-toolbar {
             position: sticky; top: 0; z-index: 100; background: #fff; padding: 10px; border: 1px solid #e2e8f0;
             border-radius: 10px; display: flex; gap: 10px; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px;
         }
         .toolbar-group { display: flex; gap: 5px; align-items: center; border-right: 1px solid #eee; padding-right: 10px; }
         .toolbar-icon-btn { background: white; border: 1px solid #ddd; padding: 5px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; }
+        .toolbar-icon-btn:hover { background: #f1f5f9; }
+        .color-bar { width: 16px; height: 3px; margin-top: 1px; }
 
+        /* エディタ本体 */
         .rich-editor { min-height: 80px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; background: white; outline: none; line-height: 1.5; }
         
+        /* ボタン・アクション */
         .action-area { text-align: center; margin-top: 20px; padding: 30px 0; }
         .btn-save-fixed { background: var(--success); color: white; padding: 14px 60px; font-size: 1.1rem; border-radius: 12px; cursor: pointer; border: none; font-weight: bold; }
         .btn-preview { background: white; color: var(--primary); border: 1.5px solid var(--primary); padding: 8px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         
+        /* シフト行 */
         .shift-row { display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 10px; margin-bottom: 8px; border: 1px solid #e2e8f0; }
         .drag-handle { cursor: grab; color: #64748b; }
 
+        /* QR・印刷系 */
         .btn-print { background: var(--primary); color: white; width: 100%; padding: 15px; font-size: 1rem; margin-top: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
         .print-config { background: #f1f5f9; padding: 15px; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; justify-content: center; }
+        #print-preview-box { text-align: center; padding: 40px 20px; background: #fff; border: none; }
     </style>
 </head>
 <body>
@@ -76,21 +89,24 @@
 
     <section id="sec-edit-all" style="display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
-            <h1>案件の編集</h1>
+            <div>
+                <h1 id="edit-page-title" style="margin-bottom:5px;">案件の編集</h1>
+                <p style="font-size: 0.9rem; color: #64748b; margin:0;">各項目をクリックして入力してください。上のツールバーで装飾できます。</p>
+            </div>
             <button class="btn-preview" onclick="openLivePreview()">プレビュー</button>
         </div>
 
         <div class="floating-toolbar">
             <div class="toolbar-group">
-                <button class="toolbar-icon-btn" onmousedown="event.preventDefault(); document.execCommand('bold')" title="太字">
+                <button class="toolbar-icon-btn" onclick="document.execCommand('bold')" title="太字">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path></svg>
                 </button>
-                <button class="toolbar-icon-btn" onmousedown="event.preventDefault(); document.execCommand('underline')" title="下線">
+                <button class="toolbar-icon-btn" onclick="document.execCommand('underline')" title="下線">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"></path><line x1="4" y1="21" x2="20" y2="21"></line></svg>
                 </button>
             </div>
             <div class="toolbar-group">
-                <select onchange="document.execCommand('fontSize', false, this.value); this.value='';" onmousedown="const sel=window.getSelection().rangeCount > 0" style="padding:4px; border-radius:4px; border:1px solid #ddd;">
+                <select onchange="document.execCommand('fontSize', false, this.value); this.value='';" style="padding:4px; border-radius:4px; border:1px solid #ddd;">
                     <option value="">サイズ</option>
                     <option value="3">標準</option>
                     <option value="5">大</option>
@@ -98,16 +114,16 @@
                 </select>
             </div>
             <div class="toolbar-group" style="position:relative; border-right:none;">
-                <button onmousedown="event.preventDefault(); const p=document.getElementById('edit-color-panel'); p.style.display=p.style.display==='grid'?'none':'grid'" style="background:white; border:1px solid #ddd; padding:4px 8px; border-radius:4px; cursor:pointer; display:flex; flex-direction:column; align-items:center;">
+                <button onclick="const p=document.getElementById('edit-color-panel'); p.style.display=p.style.display==='grid'?'none':'grid'" style="background:white; border:1px solid #ddd; padding:4px 8px; border-radius:4px; cursor:pointer; display:flex; flex-direction:column; align-items:center;">
                     <span style="font-weight:bold; font-family:serif; font-size:14px; line-height:1;">A</span>
                     <div id="edit-color-bar" style="width:16px; height:3px; background:red;"></div>
                 </button>
                 <div id="edit-color-panel" style="display:none; position:absolute; top:100%; left:0; grid-template-columns:repeat(5, 1fr); gap:4px; background:white; padding:8px; border:1px solid #ccc; box-shadow:0 4px 10px rgba(0,0,0,0.1); z-index:1000; width:120px;">
-                    <div onmousedown="event.preventDefault(); applyColor('#000000')" style="width:20px; height:20px; background:#000; cursor:pointer; border:1px solid #ddd;"></div>
-                    <div onmousedown="event.preventDefault(); applyColor('#ff0000')" style="width:20px; height:20px; background:#ff0000; cursor:pointer; border:1px solid #ddd;"></div>
-                    <div onmousedown="event.preventDefault(); applyColor('#0000ff')" style="width:20px; height:20px; background:#0000ff; cursor:pointer; border:1px solid #ddd;"></div>
-                    <div onmousedown="event.preventDefault(); applyColor('#059669')" style="width:20px; height:20px; background:#059669; cursor:pointer; border:1px solid #ddd;"></div>
-                    <div onmousedown="event.preventDefault(); applyColor('#ff9900')" style="width:20px; height:20px; background:#ff9900; cursor:pointer; border:1px solid #ddd;"></div>
+                    <div onclick="applyColor('#000000')" style="width:20px; height:20px; background:#000; cursor:pointer; border:1px solid #ddd;"></div>
+                    <div onclick="applyColor('#ff0000')" style="width:20px; height:20px; background:#ff0000; cursor:pointer; border:1px solid #ddd;"></div>
+                    <div onclick="applyColor('#0000ff')" style="width:20px; height:20px; background:#0000ff; cursor:pointer; border:1px solid #ddd;"></div>
+                    <div onclick="applyColor('#059669')" style="width:20px; height:20px; background:#059669; cursor:pointer; border:1px solid #ddd;"></div>
+                    <div onclick="applyColor('#ff9900')" style="width:20px; height:20px; background:#ff9900; cursor:pointer; border:1px solid #ddd;"></div>
                 </div>
             </div>
         </div>
@@ -129,15 +145,20 @@
         </div>
 
         <div class="action-area">
-            <button class="btn-save-fixed" onclick="saveSettings()">変更を保存して反映</button>
+            <button class="btn-save-fixed" onclick="saveSettings()">変更を保存して反映</button><br>
+            <button class="btn-delete-pj" onclick="deleteCurrentProject()" style="background:none; border:none; color:#94a3b8; text-decoration:underline; cursor:pointer; margin-top:20px;">この案件を完全に削除する</button>
         </div>
     </section>
 
     <section id="sec-qr" style="display:none;">
         <h1>URL・QRコード作成</h1>
         <div class="edit-grid">
-            <div class="card"><div id="qr-pj-list"></div></div>
             <div class="card">
+                <div class="section-title">案件を選択</div>
+                <div id="qr-pj-list"></div>
+            </div>
+            <div class="card" id="preview-card-area">
+                <div class="section-title">掲示用プレビュー</div>
                 <div class="print-config" id="print-config-area" style="display:none;">
                     <span>対象月：</span>
                     <select id="print-month-select" onchange="updatePreviewMonth()">
@@ -145,15 +166,20 @@
                         <script>for(let i=1;i<=12;i++) document.write(`<option value="${i}月">${i}月</option>`);</script>
                     </select>
                 </div>
-                <div id="print-preview-box" style="text-align:center; padding:20px;">
-                    <p id="preview-month-display" style="font-size: 1.5rem; font-weight: bold; color: #4361ee;">◯月</p>
-                    <h2 id="qr-pj-name">案件を選択してください</h2>
-                    <div id="qrcode-area" style="display:flex; justify-content:center; margin:20px;"></div>
+                <div id="print-preview-box">
+                    <p id="preview-month-display" style="font-size: 1.5rem; font-weight: bold; margin: 0; color: #4361ee;">◯月</p>
+                    <h2 id="qr-pj-name" style="margin:5px 0 0 0;">案件を選択してください</h2>
+                    <div id="qrcode-area" style="display:flex; justify-content:center; margin:25px 0;"></div>
                     <p id="qr-pj-url" style="font-size:0.8rem; color:#64748b; word-break:break-all;"></p>
                 </div>
                 <button id="btn-print-action" class="btn-print" style="display:none;" onclick="execPrint()">印刷用画面を開く</button>
             </div>
         </div>
+    </section>
+
+    <section id="sec-responses" style="display:none;">
+        <h1>送信データ（回答）確認</h1>
+        <div class="card"><p>左メニューの案件リストから確認したい案件を選択してください。</p></div>
     </section>
 </div>
 
@@ -162,6 +188,7 @@
     const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     const client = supabase.createClient(S_URL, S_KEY);
     let currentId = null;
+    let sortable = null;
 
     function applyColor(c) {
         document.execCommand('foreColor', false, c);
@@ -173,31 +200,42 @@
         document.querySelectorAll('section').forEach(s => s.style.display = 'none');
         document.getElementById('sec-' + id).style.display = 'block';
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('nav-active'));
-        if(document.getElementById('nav-' + id)) document.getElementById('nav-' + id).classList.add('nav-active');
+        const navEl = document.getElementById('nav-' + id);
+        if(navEl) navEl.classList.add('nav-active');
     }
 
     async function loadProjects() {
         const { data: pjs } = await client.from('projects').select('*').order('created_at', { ascending: false });
         if(!pjs) return;
         document.getElementById('project-list').innerHTML = pjs.map(p => `
-            <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:15px;">
+            <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:15px 25px;">
                 <strong>${p.title_tag || '無題'}</strong>
                 <button onclick="editProject('${p.id}')" style="background:var(--primary); color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer;">編集する</button>
             </div>
+        `).join('');
+        document.getElementById('nav-response-list').innerHTML = pjs.map(p => `
+            <div class="nav-sub-item" onclick="location.href='admin.htm?id=${p.id}'">└ ${p.title_tag}</div>
         `).join('');
     }
 
     async function editProject(id) {
         currentId = id;
         const { data: p } = await client.from('projects').select('*').eq('id', id).single();
+        document.getElementById('edit-page-title').textContent = `「${p.title_tag}」の編集`;
         document.getElementById('edit-title-tag').value = p.title_tag || '';
         document.getElementById('edit-h1-title').innerHTML = p.h1_title || '';
         document.getElementById('edit-msg-top').innerHTML = p.msg_top || '';
         document.getElementById('edit-msg-calendar').innerHTML = p.msg_calendar || '';
         document.getElementById('edit-msg-confirm').innerHTML = p.msg_confirm || '';
+        
         const { data: shifts } = await client.from('shift_types').select('*').eq('project_id', id).order('display_order');
-        document.getElementById('shift-manager-list').innerHTML = '';
-        if(shifts && shifts.length > 0) shifts.forEach(s => addShiftRow(s.name)); else addShiftRow('日勤');
+        const container = document.getElementById('shift-manager-list');
+        container.innerHTML = '';
+        if(shifts && shifts.length > 0) shifts.forEach(s => addShiftRow(s.name));
+        else addShiftRow('日勤');
+        
+        if(sortable) sortable.destroy();
+        sortable = new Sortable(container, { handle: '.drag-handle', animation: 150 });
         showSection('edit-all');
     }
 
@@ -218,6 +256,7 @@
             msg_calendar: document.getElementById('edit-msg-calendar').innerHTML,
             msg_confirm: document.getElementById('edit-msg-confirm').innerHTML
         }).eq('id', currentId);
+        
         await client.from('shift_types').delete().eq('project_id', currentId);
         const shifts = Array.from(document.querySelectorAll('.shift-row input')).map((el, i) => ({
             project_id: currentId, name: el.value, display_order: i
@@ -267,31 +306,31 @@
                 .btn-exec { background: #4361ee; color: white; padding: 10px 30px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
                 .print-canvas { background: white; display: inline-block; padding: 100px 60px; min-height: 100vh; width: 210mm; box-sizing: border-box; }
                 .editable { cursor: pointer; border: 1px dashed transparent; outline: none; }
-                .toolbar-btn { background: white; border: 1px solid #ddd; padding: 5px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; }
+                .toolbar-icon-btn { background: white; border: 1px solid #ddd; padding: 5px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; }
                 @media print { .no-print { display: none; } body { background: white; } }
             </style>
         </head><body>
-            <p class="no-print" style="color: #64748b; font-size: 0.9rem; margin-top: 15px;">テキストを選択して装飾してください</p>
-            <div class="no-print">
-                <button class="toolbar-btn" onmousedown="event.preventDefault(); document.execCommand('bold')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path></svg></button>
-                <button class="toolbar-btn" onmousedown="event.preventDefault(); document.execCommand('underline')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"></path><line x1="4" y1="21" x2="20" y2="21"></line></svg></button>
-                <div style="display:flex; align-items:center; border:1px solid #ddd; border-radius:4px; background:#f8f9fa;">
-                    <button onmousedown="event.preventDefault(); changeFS('smaller')" style="border:none; background:none; cursor:pointer; padding:5px 10px; font-weight:bold;">-</button>
+            <p class="no-print" style="color: #64748b; font-size: 0.9rem; margin-top: 15px;">テキストをクリックして編集できます。よろしければ「印刷を実行」してください</p>
+            <div class="no-print" style="margin-bottom:20px;">
+                <button class="toolbar-icon-btn" onclick="document.execCommand('bold')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path></svg></button>
+                <button class="toolbar-icon-btn" onclick="document.execCommand('underline')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"></path><line x1="4" y1="21" x2="20" y2="21"></line></svg></button>
+                <div style="display:flex; align-items:center; border:1px solid #ddd; border-radius:4px; background:#f8f9fa; padding:2px;">
+                    <button onclick="changeFS('smaller')" style="border:none; background:none; cursor:pointer; padding:2px 8px; font-weight:bold;">-</button>
                     <select id="fs-select" onchange="document.execCommand('fontSize', false, this.value)" style="border:none; background:none; font-size:13px; width:60px;">
                         <option value="3">100%</option><option value="4">120%</option><option value="5">150%</option><option value="6">200%</option><option value="7">300%</option>
                     </select>
-                    <button onmousedown="event.preventDefault(); changeFS('bigger')" style="border:none; background:none; cursor:pointer; padding:5px 10px; font-weight:bold;">+</button>
+                    <button onclick="changeFS('bigger')" style="border:none; background:none; cursor:pointer; padding:2px 8px; font-weight:bold;">+</button>
                 </div>
                 <div style="position:relative;">
-                    <button onmousedown="event.preventDefault(); const p=document.getElementById('p-col'); p.style.display=p.style.display==='grid'?'none':'grid'" style="background:white; border:1px solid #ddd; padding:4px 8px; border-radius:4px; cursor:pointer; display:flex; flex-direction:column; align-items:center;">
+                    <button onclick="const p=document.getElementById('p-col'); p.style.display=p.style.display==='grid'?'none':'grid'" style="background:white; border:1px solid #ddd; padding:4px 8px; border-radius:4px; cursor:pointer; display:flex; flex-direction:column; align-items:center;">
                         <span style="font-weight:bold; font-size:15px; line-height:1;">A</span><div id="p-bar" style="width:16px; height:3px; background:red;"></div>
                     </button>
                     <div id="p-col" style="display:none; position:absolute; top:100%; left:0; grid-template-columns:repeat(5, 1fr); gap:4px; background:white; padding:8px; border:1px solid #ccc; width:120px; z-index:1000;">
-                        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#000'); document.getElementById('p-bar').style.backgroundColor='#000'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#000; cursor:pointer; border:1px solid #ddd;"></div>
-                        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#ff0000'); document.getElementById('p-bar').style.backgroundColor='#ff0000'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#ff0000; cursor:pointer; border:1px solid #ddd;"></div>
-                        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#0000ff'); document.getElementById('p-bar').style.backgroundColor='#0000ff'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#0000ff; cursor:pointer; border:1px solid #ddd;"></div>
-                        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#059669'); document.getElementById('p-bar').style.backgroundColor='#059669'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#059669; cursor:pointer; border:1px solid #ddd;"></div>
-                        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#ff9900'); document.getElementById('p-bar').style.backgroundColor='#ff9900'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#ff9900; cursor:pointer; border:1px solid #ddd;"></div>
+                        <div onclick="document.execCommand('foreColor', false, '#000'); document.getElementById('p-bar').style.backgroundColor='#000'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#000; cursor:pointer; border:1px solid #ddd;"></div>
+                        <div onclick="document.execCommand('foreColor', false, '#ff0000'); document.getElementById('p-bar').style.backgroundColor='#ff0000'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#ff0000; cursor:pointer; border:1px solid #ddd;"></div>
+                        <div onclick="document.execCommand('foreColor', false, '#0000ff'); document.getElementById('p-bar').style.backgroundColor='#0000ff'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#0000ff; cursor:pointer; border:1px solid #ddd;"></div>
+                        <div onclick="document.execCommand('foreColor', false, '#059669'); document.getElementById('p-bar').style.backgroundColor='#059669'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#059669; cursor:pointer; border:1px solid #ddd;"></div>
+                        <div onclick="document.execCommand('foreColor', false, '#ff9900'); document.getElementById('p-bar').style.backgroundColor='#ff9900'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#ff9900; cursor:pointer; border:1px solid #ddd;"></div>
                     </div>
                 </div>
                 <button class="btn-exec" onclick="window.print()">印刷を実行</button>
