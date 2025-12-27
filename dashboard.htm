@@ -41,9 +41,14 @@
 
         /* 共通ツールバーのスタイル */
         .floating-toolbar {
-            position: sticky; top: 0; z-index: 100; background: #fff; padding: 10px; border: 1px solid #e2e8f0;
-            border-radius: 10px; display: flex; gap: 10px; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px;
-        }
+    position: sticky; top: 0; z-index: 100; background: #fff; padding: 10px; border: 1px solid #e2e8f0;
+    border-radius: 10px; display: flex; gap: 10px; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+    margin-bottom: 20px;
+    
+    /* 追加：幅を制限し、はみ出さないようにする */
+    max-width: fit-content; 
+    flex-wrap: wrap;
+}
         .toolbar-group { display: flex; gap: 5px; align-items: center; border-right: 1px solid #eee; padding-right: 10px; }
         .toolbar-icon-btn { background: white; border: 1px solid #ddd; padding: 5px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; }
         .toolbar-icon-btn:hover { background: #f1f5f9; }
@@ -481,6 +486,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
