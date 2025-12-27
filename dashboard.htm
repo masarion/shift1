@@ -217,15 +217,57 @@
         const { data: pjs } = await client.from('projects').select('*').order('created_at', { ascending: false });
         if(!pjs) return;
         document.getElementById('project-list').innerHTML = pjs.map(p => `
-            <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:15px 25px;">
-                <strong>${p.title_tag || '無題'}</strong>
-                <button onclick="editProject('${p.id}')" style="background:var(--primary); color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer;">編集する</button>
-            </div>
-        `).join('');
-        document.getElementById('nav-response-list').innerHTML = pjs.map(p => `
-            <div class="nav-sub-item" onclick="location.href='admin.htm?id=${p.id}'">└ ${p.title_tag}</div>
-        `).join('');
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:15px 25px;">
+        <strong>${p.title_tag || '無題'}</strong>
+        <div style="display:flex; gap:10px;">
+            <button onclick="duplicateProject('${p.id}')" style="background:#f1f5f9; color:var(--text); border:1px solid #cbd5e1; padding:8px 15px; border-radius:8px; cursor:pointer; font-size:0.85rem;">コピーを作成</button>
+            <button onclick="editProject('${p.id}')" style="background:var(--primary); color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer;">編集する</button>
+        </div>
+    </div>
+`).join('');
     }
+
+    // 案件のコピー（複製）処理
+async function duplicateProject(sourceId) {
+    if (!confirm("この案件の設定をコピーして新規作成しますか？")) return;
+
+    try {
+        // 1. 元の案件データを取得
+        const { data: p, error: pErr } = await client.from('projects').select('*').eq('id', sourceId).single();
+        if (pErr) throw pErr;
+
+        // 2. 複製用の新しい案件を作成（IDは自動生成されるため除外）
+        const { data: newP, error: insErr } = await client.from('projects').insert([{
+            title_tag: p.title_tag + " のコピー",
+            h1_title: p.h1_title,
+            msg_top: p.msg_top,
+            msg_calendar: p.msg_calendar,
+            msg_confirm: p.msg_confirm
+        }]).select().single();
+        if (insErr) throw insErr;
+
+        // 3. 元の案件に紐付くシフト枠を取得
+        const { data: shifts, error: sErr } = await client.from('shift_types').select('*').eq('project_id', sourceId);
+        if (sErr) throw sErr;
+
+        // 4. シフト枠があれば、新しい案件IDに紐付けて一括保存
+        if (shifts && shifts.length > 0) {
+            const newShifts = shifts.map(s => ({
+                project_id: newP.id,
+                name: s.name,
+                display_order: s.display_order
+            }));
+            const { error: insSErr } = await client.from('shift_types').insert(newShifts);
+            if (insSErr) throw insSErr;
+        }
+
+        alert("コピーを作成しました。");
+        loadProjects(); // 一覧を再読み込み
+    } catch (e) {
+        console.error(e);
+        alert("コピーに失敗しました。");
+    }
+}
 
     async function editProject(id) {
         currentId = id;
@@ -398,6 +440,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
