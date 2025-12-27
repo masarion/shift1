@@ -325,7 +325,6 @@
                     <button onclick="const p=document.getElementById('p-col'); p.style.display=p.style.display==='grid'?'none':'grid'" style="background:white; border:1px solid #ddd; padding:4px 8px; border-radius:4px; cursor:pointer; display:flex; flex-direction:column; align-items:center;">
                         <span style="font-weight:bold; font-size:15px; line-height:1;">A</span><div id="p-bar" style="width:16px; height:3px; background:red;"></div>
                     </button>
-                        // execPrint関数内の該当箇所を以下のように書き換えてください
 <div id="p-col" style="display:none; position:absolute; top:100%; left:0; grid-template-columns:repeat(5, 1fr); gap:4px; background:white; padding:8px; border:1px solid #ccc; width:120px; z-index:1000;">
     <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#000'); document.getElementById('p-bar').style.backgroundColor='#000'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#000; cursor:pointer; border:1px solid #ddd;"></div>
     <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#ff0000'); document.getElementById('p-bar').style.backgroundColor='#ff0000'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#ff0000; cursor:pointer; border:1px solid #ddd;"></div>
@@ -365,5 +364,6 @@
 </script>
 </body>
 </html>
+
 
 
