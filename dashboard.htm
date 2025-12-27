@@ -140,7 +140,15 @@
         <div class="edit-grid">
             <div class="card">
                 <div class="section-title">1. 表示テキストの設定</div>
-                <div class="input-group"><label>案件名称（管理用）</label><input type="text" id="edit-title-tag"></div>
+                <div class="input-group">
+    <label>
+        案件名称（管理用） 
+        <span style="font-weight: normal; color: #94a3b8; font-size: 0.75rem; margin-left: 8px;">
+            ※スタッフがブックマークしたときの名称になります
+        </span>
+    </label>
+    <input type="text" id="edit-title-tag">
+</div>
                 <div class="input-group"><label>画面トップの見出し</label><div id="edit-h1-title" class="rich-editor" contenteditable="true"></div></div>
                 <div class="input-group"><label>冒頭メッセージ</label><div id="edit-msg-top" class="rich-editor" contenteditable="true"></div></div>
                 <div class="input-group"><label>カレンダー操作説明</label><div id="edit-msg-calendar" class="rich-editor" contenteditable="true"></div></div>
@@ -464,6 +472,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
