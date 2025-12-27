@@ -10,17 +10,27 @@
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #333; font-size: 18px; }
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); box-sizing: border-box; }
         
-        /* 画面トップの見出し（h1）：改行を反映させる */
-        h1 { 
-            text-align: center; 
-            font-size: 1.6rem; 
-            color: #222; 
-            margin-bottom: 20px; 
-            white-space: pre-wrap; /* 改行を有効にする */
-            line-height: 1.3;      /* 改行した時の行間を調整 */
-        }
+       h1 { 
+    text-align: center; 
+    font-size: 1.6rem; 
+    color: #222; 
+    margin-bottom: 20px; 
+    line-height: 1.4;
+    white-space: normal; /* タグの改行に任せる */
+}
 
-        .msg-box { background: #f0f7ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 1rem; white-space: pre-wrap; border-left: 5px solid var(--primary); }
+        .msg-box { 
+    background: #f0f7ff; 
+    padding: 15px; 
+    border-radius: 8px; 
+    margin-bottom: 20px; 
+    font-size: 1rem; 
+    border-left: 5px solid var(--primary); 
+    white-space: normal; /* タグの改行に任せる */
+}
+
+/* リッチエディタ内の改行(div)による余分な隙間を消す */
+h1 div, .msg-box div { margin: 0; padding: 0; }
         
         input[type="text"], textarea { width: 100%; padding: 15px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 20px; font-size: 18px; }
         
@@ -152,15 +162,20 @@
 
             const proj = pRes.data;
             shiftTypes = sRes.data;
-            document.getElementById('h1-title').textContent = m + (proj.h1_title || "月のシフト希望");
+            document.getElementById('h1-title').innerHTML = m + (proj.h1_title || "月のシフト希望");
             document.title = proj.title_tag || document.getElementById('h1-title').textContent;
 
             const config = { 'msg-top': proj.msg_top, 'msg-calendar': proj.msg_calendar, 'msg-bottom': proj.msg_bottom, 'msg-confirm': proj.msg_confirm };
             Object.keys(config).forEach(id => {
-                const el = document.getElementById(id);
-                if (config[id]) { el.textContent = config[id]; el.style.display = 'block'; }
-                else el.style.display = 'none';
-            });
+    const el = document.getElementById(id);
+    if (config[id]) { 
+        // .textContent から .innerHTML に変更
+        el.innerHTML = config[id]; 
+        el.style.display = 'block'; 
+    } else {
+        el.style.display = 'none';
+    }
+});
             renderCalendar(nextMonthDate);
         } catch (e) { 
             document.getElementById('h1-title').textContent = "読み込みエラー";
@@ -286,5 +301,6 @@
 </script>
 </body>
 </html>
+
 
 
