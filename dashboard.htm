@@ -509,6 +509,9 @@ function copyToClipboard() {
     const urlText = document.getElementById('qr-pj-url').innerText;
     if (!urlText) return;
 
+    // 案件が選ばれたらURLと一緒にコピーボタンも表示する
+document.getElementById('btn-copy-url').style.display = 'flex';
+
     navigator.clipboard.writeText(urlText).then(() => {
         const btn = document.getElementById('btn-copy-url');
         const originalContent = btn.innerHTML;
@@ -623,6 +626,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
