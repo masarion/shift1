@@ -41,23 +41,13 @@
 
         /* 共通ツールバーのスタイル */
         .floating-toolbar {
-    position: sticky; 
-    top: 0; 
-    z-index: 100; 
-    background: #fff; 
-    padding: 10px; 
-    border: 1px solid #e2e8f0;
-    border-radius: 10px; 
-    display: flex; 
-    gap: 10px; 
-    align-items: center; 
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+    position: sticky; top: 0; z-index: 100; background: #fff; padding: 10px; border: 1px solid #e2e8f0;
+    border-radius: 10px; display: flex; gap: 10px; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
     margin-bottom: 20px;
     
-    /* 以下を追加：画面幅に合わせて折り返し、右側に突き抜けないようにする */
-    max-width: 100%; 
-    box-sizing: border-box;
-    flex-wrap: wrap; 
+    /* 追加：幅を制限し、はみ出さないようにする */
+    max-width: fit-content; 
+    flex-wrap: wrap;
 }
         .toolbar-group { display: flex; gap: 5px; align-items: center; border-right: 1px solid #eee; padding-right: 10px; }
         .toolbar-icon-btn { background: white; border: 1px solid #ddd; padding: 5px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; }
@@ -353,8 +343,8 @@ async function duplicateProject(sourceId) {
     function addShiftRow(val = '') {
         const div = document.createElement('div');
         div.className = 'shift-row';
-        div.innerHTML = `<div class="drag-handle">⠿</div><input type="text" value="${val}" style="flex:1; border:none; background:transparent;">
-            <button onclick="this.parentElement.remove()" style="background:none; border:none; cursor:pointer; color:#94a3b8;">✕</button>`;
+        div.innerHTML = `<div class="drag-handle">?</div><input type="text" value="${val}" style="flex:1; border:none; background:transparent;">
+            <button onclick="this.parentElement.remove()" style="background:none; border:none; cursor:pointer; color:#94a3b8;">?</button>`;
         document.getElementById('shift-manager-list').appendChild(div);
     }
 
@@ -501,21 +491,3 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
