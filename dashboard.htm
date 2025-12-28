@@ -491,32 +491,27 @@ function deleteShiftRow(btn) {
     }
 
     function generateQR(id, title) {
-        const url = window.location.href.split('dashboard.htm')[0] + 'index.htm?id=' + id;
-        document.getElementById('qr-pj-name').textContent = title;
-        document.getElementById('qr-pj-url').textContent = url;
-        document.getElementById('qrcode-area').innerHTML = '';
-        new QRCode(document.getElementById('qrcode-area'), { text: url, width: 200, height: 200 });
-        document.getElementById('btn-print-action').style.display = 'block';
-        document.getElementById('print-config-area').style.display = 'flex';
-    }
+    const url = window.location.href.split('dashboard.htm')[0] + 'index.htm?id=' + id;
+    document.getElementById('qr-pj-name').textContent = title;
+    document.getElementById('qr-pj-url').textContent = url;
+    document.getElementById('qrcode-area').innerHTML = '';
+    new QRCode(document.getElementById('qrcode-area'), { text: url, width: 200, height: 200 });
+    
+    // ここに書きます！
+    document.getElementById('btn-print-action').style.display = 'block'; // 印刷ボタン表示
+    document.getElementById('print-config-area').style.display = 'flex'; // 設定エリア表示
+    document.getElementById('btn-copy-url').style.display = 'flex';      // ★コピーボタンも表示！
+}
 
-    function updatePreviewMonth() {
-        document.getElementById('preview-month-display').textContent = document.getElementById('print-month-select').value;
-    }
-
-    // URLをクリップボードにコピーする関数
+// こちらの関数からは、さきほど追記した display = 'flex' の1行を削除してください
 function copyToClipboard() {
     const urlText = document.getElementById('qr-pj-url').innerText;
     if (!urlText) return;
-
-    // 案件が選ばれたらURLと一緒にコピーボタンも表示する
-document.getElementById('btn-copy-url').style.display = 'flex';
 
     navigator.clipboard.writeText(urlText).then(() => {
         const btn = document.getElementById('btn-copy-url');
         const originalContent = btn.innerHTML;
         
-        // 見た目のフィードバック
         btn.innerHTML = '✅ コピーしました！';
         btn.style.backgroundColor = '#d1fae5';
         btn.style.color = '#065f46';
@@ -626,6 +621,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
