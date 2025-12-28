@@ -129,9 +129,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
             <div>
                 <h1 id="edit-page-title" style="margin-bottom:5px;">案件の編集</h1>
-                <p style="font-size: 0.9rem; color: #64748b; margin:0;">スタッフ用ページの編集ができます。各項目のフォームをクリックして入力してください。テキストは上のツールバーで装飾できます。<br>
-                    編集が済んだら内容をよく確認の上、最下部の「変更を保存して反映」をクリックしてください
-                    <br>※最下部の「この案件を完全に削除する」をクリックする際は本当に削除をするか、よく確認してください</p>
+                <p style="font-size: 0.9rem; color: #64748b; margin:0;">スタッフ用ページの編集ができます。</p>
             </div>
             <button class="btn-preview" onclick="openLivePreview()">スタッフ用ページを見る</button>
         </div>
@@ -169,9 +167,21 @@
         </div>
 
         <div class="edit-grid">
-            <div class="card">
-                <div class="section-title">1. 表示テキストの設定</div>
-                <div class="input-group">
+    <div class="card">
+        <div class="section-title">1. 表示テキストの設定</div>
+
+        <div class="operation-guide">
+            <div class="guide-title">操作説明</div>
+            <ul>
+                <li><strong>編集：</strong> 各入力欄を書き換えられます。<strong>改行もそのまま反映されます。</strong></li>
+                <li><strong>装飾：</strong> 文字を選択し、<strong>上のツールバー</strong>（Bや色など）で見た目を整えられます。</li>
+                <li><strong>確定：</strong> 完了後、必ずページ最下部の<strong>「変更を保存して反映」</strong>を押してください。</li>
+            </ul>
+            <div style="margin-top: 8px; font-size: 0.8rem; color: #e11d48; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
+                ※最下部の「この案件を完全に削除する」は、案件自体が消えるためご注意ください。
+            </div>
+        </div>
+        <div class="input-group">
     <label>
         案件名称（管理用） 
         <span style="font-weight: normal; color: #94a3b8; font-size: 0.75rem; margin-left: 8px;">
@@ -579,6 +589,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
