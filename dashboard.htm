@@ -336,17 +336,42 @@ async function duplicateProject(sourceId) {
         else addShiftRow('日勤');
         
         if(sortable) sortable.destroy();
-        sortable = new Sortable(container, { handle: '.drag-handle', animation: 150 });
+        sortable = new Sortable(container, { 
+            handle: '.drag-handle', 
+            animation: 150,
+            onEnd: function() {
+                updateShiftNumbers(); // 並べ替えが終わったら番号を振り直す
+            }
+        });
         showSection('edit-all');
     }
 
+    function updateShiftNumbers() {
+    const rows = document.querySelectorAll('.shift-row');
+    rows.forEach((row, index) => {
+        // 各行の中にある「number-badge」というクラスの要素を探して数字を入れる
+        const numBadge = row.querySelector('.number-badge');
+        if (numBadge) {
+            numBadge.textContent = index + 1;
+        }
+    });
+}
+
     function addShiftRow(val = '') {
-        const div = document.createElement('div');
-        div.className = 'shift-row';
-        div.innerHTML = `<div class="drag-handle">?</div><input type="text" value="${val}" style="flex:1; border:none; background:transparent;">
-            <button onclick="this.parentElement.remove()" style="background:none; border:none; cursor:pointer; color:#94a3b8;">?</button>`;
-        document.getElementById('shift-manager-list').appendChild(div);
-    }
+    const div = document.createElement('div');
+    div.className = 'shift-row';
+    // 行の先頭に <span class="number-badge"></span> を追加
+    div.innerHTML = `
+        <div class="drag-handle">⠿</div>
+        <span class="number-badge" style="font-weight:bold; margin:0 10px; color:#64748b; min-width:20px;"></span>
+        <input type="text" value="${val}" style="flex:1; border:none; background:transparent;">
+        <button onclick="this.parentElement.remove(); updateShiftNumbers();" style="background:none; border:none; cursor:pointer; color:#94a3b8;">✕</button>`;
+    
+    document.getElementById('shift-manager-list').appendChild(div);
+    
+    // 追加した後に番号を更新
+    updateShiftNumbers();
+}
 
     async function saveSettings() {
         if(!currentId) return;
@@ -491,3 +516,4 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
