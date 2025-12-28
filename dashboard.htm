@@ -357,6 +357,18 @@ async function duplicateProject(sourceId) {
     });
 }
 
+    // シフト枠の削除を実行する関数
+function deleteShiftRow(btn) {
+    // 1. 確認ダイアログを表示
+    const confirmed = confirm("このシフト枠を削除しますか？\n\n※まだこの時点ではデータベースからは削除されません。\n最下部の「変更を保存して反映」を押すと確定します。");
+
+    // 2. 「OK」が押された場合のみ削除を実行
+    if (confirmed) {
+        btn.parentElement.remove(); // ボタンの親要素（shift-row全体）を消す
+        updateShiftNumbers();       // 残った枠の番号を上から振り直す
+    }
+}
+
     function addShiftRow(val = '') {
     const div = document.createElement('div');
     div.className = 'shift-row';
@@ -532,6 +544,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
