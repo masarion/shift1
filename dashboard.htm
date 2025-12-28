@@ -77,6 +77,32 @@
     text-shadow: 0 0 8px rgba(225, 29, 72, 0.3);
     font-weight: bold;
 }
+
+        .operation-guide {
+    border: 1px solid #e2e8f0;
+    background-color: #fcfcfc;
+    padding: 12px 15px;
+    margin-bottom: 15px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+.guide-title {
+    font-weight: bold;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    display: inline-block;
+}
+.operation-guide ul {
+    margin: 0;
+    padding-left: 1.2rem;
+    color: #64748b;
+}
+.operation-guide li {
+    margin-bottom: 2px;
+}
     </style>
 </head>
 <body>
@@ -173,6 +199,15 @@
             </div>
             <div class="card">
                 <div class="section-title">2. シフト枠の種類</div>
+                <div class="operation-guide">
+    <div class="guide-title">操作説明</div>
+    <ul>
+        <li><strong>並べ替え：</strong> 左のマークをドラッグすると並び替えができて、番号も同時に入れ替わります</li>
+        <li><strong>テキスト：</strong> 各枠内をクリックして直接編集できます</li>
+        <li><strong>削除：</strong> 右のゴミ箱アイコンから削除（確認ダイアログが表示されます）</li>
+        <li><strong>確定：</strong> 完了後、必ずページ最下部の<strong>「変更を保存して反映」</strong>を押してください</li>
+    </ul>
+</div>
                 <div id="shift-manager-list"></div>
                 <button onclick="addShiftRow()" style="width:100%; padding:12px; margin-top:10px; background:#f1f5f9; border:1px dashed #cbd5e1; border-radius:8px; cursor:pointer;">+ 枠を追加</button>
             </div>
@@ -544,6 +579,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
