@@ -362,7 +362,16 @@ async function duplicateProject(sourceId) {
     div.className = 'shift-row';
     // 行の先頭に <span class="number-badge"></span> を追加
     div.innerHTML = `
-        <div class="drag-handle">⠿</div>
+        <div class="drag-handle" style="cursor:grab; display:flex; align-items:center; color:#94a3b8;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="12" r="1"></circle>
+        <circle cx="9" cy="5" r="1"></circle>
+        <circle cx="9" cy="19" r="1"></circle>
+        <circle cx="15" cy="12" r="1"></circle>
+        <circle cx="15" cy="5" r="1"></circle>
+        <circle cx="15" cy="19" r="1"></circle>
+    </svg>
+</div>
         <span class="number-badge" style="font-weight:bold; margin:0 10px; color:#64748b; min-width:20px;"></span>
         <input type="text" value="${val}" style="flex:1; border:none; background:transparent;">
         <button onclick="this.parentElement.remove(); updateShiftNumbers();" style="background:none; border:none; cursor:pointer; color:#94a3b8;">✕</button>`;
@@ -516,4 +525,5 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
