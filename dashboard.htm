@@ -504,12 +504,27 @@ function deleteShiftRow(btn) {
         document.getElementById('preview-month-display').textContent = document.getElementById('print-month-select').value;
     }
 
-    <p id="qr-pj-url" style="font-size:0.8rem; color:#64748b; word-break:break-all;"></p>
+    // URLをクリップボードにコピーする関数
+function copyToClipboard() {
+    const urlText = document.getElementById('qr-pj-url').innerText;
+    if (!urlText) return;
 
-<button id="btn-copy-url" onclick="copyToClipboard()" style="display:none; margin: 10px auto; padding: 6px 12px; background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 0.8rem; align-items: center; gap: 5px;">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-    URLをコピー
-</button>
+    navigator.clipboard.writeText(urlText).then(() => {
+        const btn = document.getElementById('btn-copy-url');
+        const originalContent = btn.innerHTML;
+        
+        // 見た目のフィードバック
+        btn.innerHTML = '✅ コピーしました！';
+        btn.style.backgroundColor = '#d1fae5';
+        btn.style.color = '#065f46';
+        
+        setTimeout(() => {
+            btn.innerHTML = originalContent;
+            btn.style.backgroundColor = '#f1f5f9';
+            btn.style.color = '#475569';
+        }, 2000);
+    });
+}
 
     function execPrint() {
         const month = document.getElementById('preview-month-display').textContent;
@@ -608,6 +623,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
