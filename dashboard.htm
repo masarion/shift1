@@ -503,6 +503,10 @@ function deleteShiftRow(btn) {
     document.getElementById('btn-print-action').style.display = 'block'; // 印刷ボタン表示
     document.getElementById('print-config-area').style.display = 'flex'; // 設定エリア表示
     document.getElementById('btn-copy-url').style.display = 'flex';      // ★コピーボタンも表示！
+        
+// ★ここを追記：別の案件を選んだら月の表示を「◯月」に戻す
+    document.getElementById('print-month-select').value = '◯月';
+    document.getElementById('preview-month-display').textContent = '◯月';
 }
 
 // こちらの関数からは、さきほど追記した display = 'flex' の1行を削除してください
@@ -526,15 +530,15 @@ function copyToClipboard() {
     });
 }
 
-    // プルダウンで月を選択した時にプレビューの「◯月」を書き換える関数
-    function updatePreviewMonth() {
-        const selectEl = document.getElementById('print-month-select');
-        const displayEl = document.getElementById('preview-month-display');
-        
-        if (selectEl && displayEl) {
-            displayEl.textContent = selectEl.value;
-        }
+    // プルダウンの選択をプレビューに反映させる
+function updatePreviewMonth() {
+    const selectEl = document.getElementById('print-month-select');
+    const displayEl = document.getElementById('preview-month-display');
+    
+    if (selectEl && displayEl) {
+        displayEl.textContent = selectEl.value;
     }
+}
 
     function execPrint() {
         const month = document.getElementById('preview-month-display').textContent;
@@ -745,6 +749,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
