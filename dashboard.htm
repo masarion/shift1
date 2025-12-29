@@ -535,64 +535,57 @@ function copyToClipboard() {
             <style>
                 @page { margin: 0; }
                 body { text-align: center; font-family: sans-serif; background: #f0f0f0; margin: 0; padding: 0; }
-                .no-print { padding: 12px; background: #fff; border-bottom: 1px solid #ddd; position: sticky; top:0; z-index:100; display:flex; gap:10px; justify-content:center; align-items:center; }
-                .btn-exec { background: #4361ee; color: white; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-                .print-canvas { background: white; display: inline-block; padding: 60px; min-height: 100vh; width: 210mm; box-sizing: border-box; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin: 20px auto; }
-                .editable { outline: none; border: 1px dashed transparent; width: 100%; display: block; }
-                .editable:hover { border: 1px dashed #4361ee; }
-                .size-input { width: 65px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-size: 14px; }
-                @media print { .no-print { display: none; } body { background: white; } .print-canvas { box-shadow: none; margin: 0; } }
+                .no-print { padding: 12px; background: #fff; border-bottom: 1px solid #ddd; position: sticky; top:0; z-index:100; display:flex; gap:12px; justify-content:center; align-items:center; flex-wrap:wrap; }
+                .btn-exec { background: #4361ee; color: white; padding: 10px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+                .print-canvas { background: white; display: inline-block; padding: 60px; min-height: 100vh; width: 210mm; box-sizing: border-box; box-shadow: 0 0 20px rgba(0,0,0,0.1); margin: 20px auto; }
+                .editable { outline: none; border: 1px dashed transparent; width: 100%; display: block; transition: 0.2s; }
+                .editable:hover { border: 1px dashed #4361ee; background: #f8f9ff; }
+                .size-input { width: 65px; padding: 6px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-weight: bold; font-size: 14px; }
+                .guide-text { color: #64748b; font-size: 0.85rem; width: 100%; margin-bottom: 5px; }
+                @media print { .no-print { display: none; } body { background: white; } .print-canvas { box-shadow: none; margin: 0; padding: 60px; } }
             </style>
         </head><body>
             <div class="no-print">
-                <button onclick="document.execCommand('bold', false, null)" style="padding:5px 10px; cursor:pointer;"><b>B</b></button>
-                <div style="display:flex; align-items:center; gap:8px; border-left:1px solid #eee; padding-left:10px;">
+                <div class="guide-text">サイズ変更は「文字を選択してから」数値を入力してください</div>
+                <button onclick="document.execCommand('bold')" style="padding:6px 12px; cursor:pointer; background:white; border:1px solid #ddd; border-radius:4px;"><b>B</b></button>
+                <div style="display:flex; align-items:center; gap:8px; border-left:1px solid #eee; padding-left:12px;">
                     <span style="font-size:13px; color:#555;">サイズ:</span>
-                    <input type="number" id="manual-size" class="size-input" value="48">
-                    <button id="apply-btn" style="padding:5px 10px; background:#f0f0f0; border:1px solid #ccc; border-radius:4px; cursor:pointer; font-size:12px;">適用</button>
+                    <input type="number" id="f-size" class="size-input" value="48" oninput="applyFontSize(this.value)">
                     <span style="font-size:13px;">px</span>
                 </div>
                 <button class="btn-exec" onclick="window.print()" style="margin-left:20px;">印刷を実行</button>
+                <button onclick="window.close()" style="margin-left:10px; padding:8px 15px; border:1px solid #ddd; background:white; border-radius:8px; cursor:pointer;">閉じる</button>
             </div>
 
             <div class="print-canvas">
                 <div class="editable" contenteditable="true" style="font-size: 64px; font-weight: bold; margin-bottom: 20px;">${month}</div>
                 <div class="editable" contenteditable="true" style="font-size: 40px; font-weight: bold; margin-bottom: 40px;">${title}</div>
                 <div id="qrcode" style="display:flex; justify-content:center; margin:30px auto;"></div>
-                <div class="editable" contenteditable="true" style="font-size: 24px;">シフト希望の提出はこちらから</div>
+                <div class="editable" contenteditable="true" style="font-size: 24px; font-weight: bold;">シフト希望の提出はこちらから</div>
             </div>
 
             <script>
-                // 確実に動作させるため、ボタンクリックで適用する方式
-                document.getElementById('apply-btn').addEventListener('click', function() {
-                    const size = document.getElementById('manual-size').value;
+                function applyFontSize(px) {
+                    if (!px) return;
                     const sel = window.getSelection();
                     if (!sel.rangeCount || sel.isCollapsed) return;
 
                     const range = sel.getRangeAt(0);
                     
-                    // 1. 選択された中身を抜き出す
-                    const fragment = range.extractContents();
+                    // 1. スプレッドシートに近い挙動：一度標準コマンドで囲ってからスタイルを上書き
+                    document.execCommand('fontSize', false, '7');
                     
-                    // 2. 新しいスパンを作成しサイズを指定
-                    const span = document.createElement('span');
-                    span.style.fontSize = size + 'px';
-                    span.style.lineHeight = '1.2';
-                    span.appendChild(fragment);
-                    
-                    // 3. 元の場所に挿入
-                    range.insertNode(span);
-                    
-                    // 選択を解除して反映を確定
-                    sel.removeAllRanges();
-                });
+                    const fontTags = document.getElementsByTagName('font');
+                    for (let i = 0; i < fontTags.length; i++) {
+                        if (fontTags[i].size === "7") {
+                            fontTags[i].removeAttribute('size');
+                            fontTags[i].style.fontSize = px + 'px';
+                            fontTags[i].style.lineHeight = '1.2';
+                        }
+                    }
+                }
 
-                // QRコード生成
-                new QRCode(document.getElementById("qrcode"), { 
-                    text: "${qrData}", 
-                    width: 300, 
-                    height: 300 
-                });
+                new QRCode(document.getElementById("qrcode"), { text: "${qrData}", width: 300, height: 300 });
             <\/script>
         </body></html>`);
         win.document.close();
@@ -632,6 +625,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
