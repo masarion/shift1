@@ -807,9 +807,12 @@ async function deleteCurrentProject() {
         }
     }
 
-    // 状態変化を監視
+    // 状態変化を監視（リロードループを防ぐ修正版）
     client.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_IN') location.reload();
+        // ログインした「瞬間」だけリロードし、それ以外（すでにログイン中など）は無視する
+        if (event === 'SIGNED_IN' && !currentId) { 
+            location.reload();
+        }
     });
 
     // 起動時に実行
@@ -818,4 +821,5 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
