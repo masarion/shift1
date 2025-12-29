@@ -529,6 +529,7 @@ function copyToClipboard() {
         const title = document.getElementById('qr-pj-name').textContent;
         const qrData = document.getElementById('qr-pj-url').textContent;
         const win = window.open('', '_blank');
+        
         win.document.write(`<html><head><title>印刷</title>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
             <style>
@@ -539,6 +540,8 @@ function copyToClipboard() {
                 .print-canvas { background: white; display: inline-block; padding: 100px 60px; min-height: 100vh; width: 210mm; box-sizing: border-box; }
                 .editable { cursor: pointer; border: 1px dashed transparent; outline: none; }
                 .toolbar-icon-btn { background: white; border: 1px solid #ddd; padding: 5px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; }
+                /* 数値入力欄のスタイル */
+                .size-input { width: 60px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-weight: bold; }
                 @media print { .no-print { display: none; } body { background: white; } }
             </style>
         </head><body>
@@ -546,43 +549,58 @@ function copyToClipboard() {
             <div class="no-print" style="margin-bottom:20px;">
                 <button class="toolbar-icon-btn" onclick="document.execCommand('bold')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path></svg></button>
                 <button class="toolbar-icon-btn" onclick="document.execCommand('underline')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"></path><line x1="4" y1="21" x2="20" y2="21"></line></svg></button>
-                <div style="display:flex; align-items:center; border:1px solid #ddd; border-radius:4px; background:#f8f9fa; padding:2px;">
-                    <button onclick="changeFS('smaller')" style="border:none; background:none; cursor:pointer; padding:2px 8px; font-weight:bold;">-</button>
-                    <select id="fs-select" onchange="document.execCommand('fontSize', false, this.value)" style="border:none; background:none; font-size:13px; width:60px;">
-                        <option value="3">100%</option><option value="4">120%</option><option value="5">150%</option><option value="6">200%</option><option value="7">300%</option>
-                    </select>
-                    <button onclick="changeFS('bigger')" style="border:none; background:none; cursor:pointer; padding:2px 8px; font-weight:bold;">+</button>
+                
+                <div style="display:flex; align-items:center; gap:5px; border-left:1px solid #ddd; border-right:1px solid #ddd; padding:0 10px;">
+                    <span style="font-size:12px;">サイズ:</span>
+                    <input type="number" id="font-size-input" class="size-input" value="32" onchange="applyFontSize(this.value)">
+                    <span style="font-size:12px;">px</span>
                 </div>
+
                 <div style="position:relative;">
                     <button onclick="const p=document.getElementById('p-col'); p.style.display=p.style.display==='grid'?'none':'grid'" style="background:white; border:1px solid #ddd; padding:4px 8px; border-radius:4px; cursor:pointer; display:flex; flex-direction:column; align-items:center;">
                         <span style="font-weight:bold; font-size:15px; line-height:1;">A</span><div id="p-bar" style="width:16px; height:3px; background:red;"></div>
                     </button>
-<div id="p-col" style="display:none; position:absolute; top:100%; left:0; grid-template-columns:repeat(5, 1fr); gap:4px; background:white; padding:8px; border:1px solid #ccc; width:120px; z-index:1000;">
-    <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#000'); document.getElementById('p-bar').style.backgroundColor='#000'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#000; cursor:pointer; border:1px solid #ddd;"></div>
-    <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#ff0000'); document.getElementById('p-bar').style.backgroundColor='#ff0000'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#ff0000; cursor:pointer; border:1px solid #ddd;"></div>
-    <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#0000ff'); document.getElementById('p-bar').style.backgroundColor='#0000ff'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#0000ff; cursor:pointer; border:1px solid #ddd;"></div>
-    <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#059669'); document.getElementById('p-bar').style.backgroundColor='#059669'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#059669; cursor:pointer; border:1px solid #ddd;"></div>
-    <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#ff9900'); document.getElementById('p-bar').style.backgroundColor='#ff9900'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#ff9900; cursor:pointer; border:1px solid #ddd;"></div>
-</div>
+                    <div id="p-col" style="display:none; position:absolute; top:100%; left:0; grid-template-columns:repeat(5, 1fr); gap:4px; background:white; padding:8px; border:1px solid #ccc; width:120px; z-index:1000;">
+                        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#000'); document.getElementById('p-bar').style.backgroundColor='#000'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#000; cursor:pointer; border:1px solid #ddd;"></div>
+                        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#ff0000'); document.getElementById('p-bar').style.backgroundColor='#ff0000'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#ff0000; cursor:pointer; border:1px solid #ddd;"></div>
+                        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#0000ff'); document.getElementById('p-bar').style.backgroundColor='#0000ff'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#0000ff; cursor:pointer; border:1px solid #ddd;"></div>
+                        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#059669'); document.getElementById('p-bar').style.backgroundColor='#059669'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#059669; cursor:pointer; border:1px solid #ddd;"></div>
+                        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#ff9900'); document.getElementById('p-bar').style.backgroundColor='#ff9900'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#ff9900; cursor:pointer; border:1px solid #ddd;"></div>
+                    </div>
                 </div>
                 <button class="btn-exec" onclick="window.print()">印刷を実行</button>
                 <button onclick="window.close()" style="padding:8px 15px; border-radius:8px; border:1px solid #ddd; background:#fff; cursor:pointer;">閉じる</button>
             </div>
-            <script>
-                function changeFS(dir) {
-                    const s = document.getElementById('fs-select');
-                    if(dir==='bigger' && s.selectedIndex < s.options.length-1) s.selectedIndex++;
-                    else if(dir==='smaller' && s.selectedIndex > 0) s.selectedIndex--;
-                    document.execCommand('fontSize', false, s.value);
-                }
-            <\/script>
+
             <div class="print-canvas">
                 <p class="editable" style="font-size:4rem; font-weight:bold; margin:0;" contenteditable="true">${month}</p>
                 <h1 class="editable" style="font-size:2.8rem; margin:20px 0 60px 0;" contenteditable="true">${title}</h1>
                 <div id="qrcode" style="display:flex; justify-content:center; margin:30px auto;"></div>
                 <p class="editable" style="font-size:1.8rem; font-weight:bold;" contenteditable="true">シフト希望の提出はこちらから</p>
             </div>
-            <script>new QRCode(document.getElementById("qrcode"), { text: "${qrData}", width: 400, height: 400 });<\/script>
+
+            <script>
+                // 指定したpxサイズを適用する関数
+                function applyFontSize(px) {
+                    const sel = window.getSelection();
+                    if (!sel.rangeCount) return;
+                    const range = sel.getRangeAt(0);
+                    const span = document.createElement("span");
+                    span.style.fontSize = px + "px";
+                    
+                    // 選択範囲をspanで囲む
+                    if (!sel.isCollapsed) {
+                        try {
+                            range.surroundContents(span);
+                        } catch (e) {
+                            // 複雑な選択範囲（複数のタグを跨ぐ場合など）のフォールバック
+                            document.execCommand('insertHTML', false, '<span style="font-size:'+px+'px">' + sel.toString() + '</span>');
+                        }
+                    }
+                }
+
+                new QRCode(document.getElementById("qrcode"), { text: "${qrData}", width: 400, height: 400 });
+            <\/script>
         </body></html>`);
         win.document.close();
     }
@@ -621,3 +639,4 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
