@@ -526,6 +526,16 @@ function copyToClipboard() {
     });
 }
 
+    // プルダウンで月を選択した時にプレビューの「◯月」を書き換える関数
+    function updatePreviewMonth() {
+        const selectEl = document.getElementById('print-month-select');
+        const displayEl = document.getElementById('preview-month-display');
+        
+        if (selectEl && displayEl) {
+            displayEl.textContent = selectEl.value;
+        }
+    }
+
     function execPrint() {
         const month = document.getElementById('preview-month-display').textContent;
         const title = document.getElementById('qr-pj-name').textContent;
@@ -735,6 +745,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
