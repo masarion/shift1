@@ -767,32 +767,34 @@ async function deleteCurrentProject() {
 
     window.onload = loadProjects;
 
-    // --- ログイン・認証制御 (安定化修正版) ---
+    // --- ログイン・認証制御 (レイアウト崩れ対策版) ---
     async function checkAuth() {
-        // 現在のURLからログイン用のトークン（#access_token等）を取り除くクリーンアップ
+        // URLのトークンクリーンアップ
         if (location.hash && location.hash.includes('access_token')) {
-            // トークンがある場合は少し待ってから履歴を書き換えてURLを綺麗にする
             setTimeout(() => {
                 history.replaceState(null, null, window.location.pathname);
-            }, 1000);
+            }, 500);
         }
 
         const { data: { session }, error } = await client.auth.getSession();
         const overlay = document.getElementById('login-overlay');
         
         if (session && !error) {
-            // ログイン成功時：オーバーレイ（カーテン）を隠す
+            // ログイン成功時：オーバーレイを完全に消す
             overlay.style.display = 'none';
-            // 既にコンテンツが隠されている可能性（innerHTML上書き等）を考慮し、
-            // もしメインコンテンツが見えない状態なら表示を戻すための念押し
-            document.body.style.display = 'block'; 
+            
+            // 重要：bodyのスタイルを直接変更せず、
+            // もし「ログイン画面でbodyごと消していた」場合に備えて元の状態（空文字）に戻す
+            if (document.body.style.display === 'none') {
+                document.body.style.display = '';
+            }
             
             loadProjects();
         } else {
-            // 未ログイン時：オーバーレイを表示してログインUIを挿入
+            // 未ログイン時：オーバーレイを表示
             overlay.style.display = 'flex';
             overlay.innerHTML = `
-                <div style="text-align:center; padding:40px; border:1px solid #ddd; border-radius:15px; background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.1); font-family:sans-serif;">
+                <div style="text-align:center; padding:40px; border:1px solid #ddd; border-radius:15px; background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.1); font-family:sans-serif; z-index:10000;">
                     <h2 style="color:#2b3a67; margin-top:0;">管理パネル ログイン</h2>
                     <p style="font-size:13px; color:#666; margin-bottom:20px;">登録メールアドレスへログイン用リンクを送信します。</p>
                     <input type="email" id="login-email" placeholder="メールアドレス" style="padding:12px; width:260px; border:1px solid #ccc; border-radius:8px; font-size:16px;"><br><br>
@@ -844,6 +846,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
