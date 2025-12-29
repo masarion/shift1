@@ -764,6 +764,58 @@ async function deleteCurrentProject() {
 }
 
     window.onload = loadProjects;
+
+    // --- ログイン・認証制御 (ここから追加) ---
+    async function checkAuth() {
+        const { data: { session } } = await client.auth.getSession();
+        
+        // body全体を最初は見えないようにし、判定後に表示させる
+        if (session) {
+            document.body.style.display = 'block'; // ログイン済みなら表示
+            loadProjects();
+        } else {
+            // 未ログインなら、画面を真っ白にしてログイン画面へ飛ばすか、
+            // 簡易的なログインUIを表示する
+            document.body.innerHTML = `
+                <div style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
+                    <div style="text-align:center; padding:40px; border:1px solid #ddd; border-radius:15px; background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                        <h2>管理パネル ログイン</h2>
+                        <input type="email" id="login-email" placeholder="メールアドレス" style="padding:10px; width:250px; border:1px solid #ccc; border-radius:5px;"><br><br>
+                        <button id="login-btn" onclick="login()" style="padding:10px 20px; background:#4361ee; color:white; border:none; border-radius:5px; cursor:pointer;">ログインメールを送信</button>
+                        <p id="auth-msg" style="margin-top:15px; color:green; font-size:14px;"></p>
+                    </div>
+                </div>`;
+        }
+    }
+
+    async function login() {
+        const email = document.getElementById('login-email').value;
+        const btn = document.getElementById('login-btn');
+        if (!email) return alert("メールアドレスを入力してください");
+        btn.disabled = true;
+        btn.textContent = "送信中...";
+        const { error } = await client.auth.signInWithOtp({
+            email: email,
+            options: { emailRedirectTo: window.location.href }
+        });
+        if (error) {
+            alert("エラー: " + error.message);
+            btn.disabled = false;
+            btn.textContent = "ログインメールを送信";
+        } else {
+            document.getElementById('auth-msg').textContent = "メールを送信しました！";
+        }
+    }
+
+    // 状態変化を監視
+    client.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN') location.reload();
+    });
+
+    // 起動時に実行
+    window.onload = checkAuth;
+    // --- ログイン・認証制御 (ここまで) ---
 </script>
 </body>
 </html>
+
