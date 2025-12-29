@@ -111,19 +111,7 @@
 }
     </style>
 </head>
-<body style="background: var(--bg); margin: 0; padding: 0;">
-
-    <section id="auth-section" style="display:none; height:100vh; width:100%; align-items:center; justify-content:center; background:#f0f2f5;">
-        <div class="card" style="width:350px; text-align:center; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-            <h2 style="margin-bottom:20px; color:var(--sidebar-bg);">管理パネル ログイン</h2>
-            <p style="font-size:0.85rem; color:#64748b; margin-bottom:20px;">登録したメールアドレスを入力してください。<br>ログイン用メールが届きます。</p>
-            <input type="email" id="login-email" placeholder="mail@example.com" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-bottom:15px; box-sizing:border-box; font-size:16px;">
-            <button onclick="login()" id="login-btn" style="width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.3s;">ログインメールを送信</button>
-            <div id="auth-msg" style="margin-top:15px; font-size:0.85rem; color:var(--success); min-height:1.2em;"></div>
-        </div>
-    </section>
-
-    <div id="admin-content" style="display:none; width:100%; height:100vh; flex-direction: row;">
+<body>
 
 <div id="sidebar">
     <h3 style="padding-left:10px;">管理システム</h3>
@@ -265,7 +253,7 @@
                     <span>対象月：</span>
                     <select id="print-month-select" onchange="updatePreviewMonth()">
                         <option value="◯月">指定なし</option>
-                        <>for(let i=1;i<=12;i++) document.write(`<option value="${i}月">${i}月</option>`);</>
+                        <script>for(let i=1;i<=12;i++) document.write(`<option value="${i}月">${i}月</option>`);</script>
                     </select>
                 </div>
                 <div id="print-preview-box">
@@ -292,86 +280,11 @@
 </div>
 
 <script>
-    console.log("スクリプトの読み込み自体は成功しています");
     const S_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
     const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     const client = supabase.createClient(S_URL, S_KEY);
-
     let currentId = null;
     let sortable = null;
-
-    // --- 認証状態による表示・非表示の強制制御 ---
-    async function checkAuth() {
-        const authSec = document.getElementById('auth-section');
-        const adminContent = document.getElementById('admin-content');
-        
-        const { data: { session } } = await client.auth.getSession();
-        console.log("セッション確認:", session ? "ログイン中" : "未ログイン");
-
-        if (session) {
-            // ログイン済み：管理画面を表示
-            if (authSec) authSec.style.setProperty('display', 'none', 'important');
-            if (adminContent) adminContent.style.setProperty('display', 'flex', 'important');
-            
-            // 少し待ってから案件一覧を読み込む
-            setTimeout(() => {
-                if (typeof loadProjects === 'function') loadProjects();
-            }, 100);
-        } else {
-            // 未ログイン：ログイン画面を表示
-            if (authSec) authSec.style.setProperty('display', 'flex', 'important');
-            if (adminContent) adminContent.style.setProperty('display', 'none', 'important');
-        }
-    }
-
-    // ページ読み込み完了時
-    window.onload = async () => {
-        console.log("window.onload開始");
-        await checkAuth();
-        if (typeof showSection === 'function') {
-            console.log("showSection('list')を実行します");
-            showSection('list');
-        } else {
-            console.error("showSection関数が見つかりません");
-        }
-    };
-
-    // 状態変化時（ログイン直後など）
-    client.auth.onAuthStateChange(async (event, session) => {
-        console.log("状態変化イベント:", event);
-        await checkAuth();
-        if (session && typeof showSection === 'function') {
-            showSection('list');
-        }
-    });
-    // --- ログイン処理（マジックリンク） ---
-    async function login() {
-        const email = document.getElementById('login-email').value;
-        const btn = document.getElementById('login-btn');
-        const msg = document.getElementById('auth-msg');
-        
-        if (!email) return alert("メールアドレスを入力してください");
-
-        btn.disabled = true;
-        btn.textContent = "送信中...";
-        msg.textContent = "";
-
-        const { error } = await client.auth.signInWithOtp({
-            email: email,
-            options: { emailRedirectTo: window.location.href }
-        });
-
-        if (error) {
-            alert("エラーが発生しました: " + error.message);
-            btn.disabled = false;
-            btn.textContent = "ログインメールを送信";
-        } else {
-            msg.textContent = "メールを送信しました！受信トレイを確認してください。";
-            btn.textContent = "メールを確認してください";
-        }
-    }
-
-    // --- 以下、既存の関数（showSection, loadProjects等）を続けてください ---
 
     function applyColor(c) {
         document.execCommand('foreColor', false, c);
@@ -826,32 +739,31 @@ function updatePreviewMonth() {
     }
     
     // 案件削除の実行関数
-    async function deleteCurrentProject() {
-        if (!currentId) return;
+async function deleteCurrentProject() {
+    if (!currentId) return;
 
-        const confirmed = confirm(
-            "【警告】この案件を削除すると、設定内容および関連するシフトデータがデータベースから完全に消去されます。復元はできません。\n\n本当に削除しますか？"
-        );
+    const confirmed = confirm(
+        "【警告】この案件を削除すると、設定内容および関連するシフトデータがデータベースから完全に消去されます。復元はできません。\n\n本当に削除しますか？"
+    );
 
-        if (confirmed) {
-            try {
-                await client.from('shift_types').delete().eq('project_id', currentId);
-                const { error } = await client.from('projects').delete().eq('id', currentId);
+    if (confirmed) {
+        try {
+            // 関連データの削除（外部キー制約がある場合はshift_types等から削除）
+            await client.from('shift_types').delete().eq('project_id', currentId);
+            const { error } = await client.from('projects').delete().eq('id', currentId);
 
-                if (error) throw error;
+            if (error) throw error;
 
-                alert("案件を削除しました。");
-                location.reload(); 
-            } catch (e) {
-                console.error(e);
-                alert("削除に失敗しました。");
-            }
+            alert("案件を削除しました。");
+            location.reload(); // 一覧に戻るためにリロード
+        } catch (e) {
+            console.error(e);
+            alert("削除に失敗しました。");
         }
     }
+}
+
+    window.onload = loadProjects;
 </script>
-
-    </div> </body>
+</body>
 </html>
-
-
-
