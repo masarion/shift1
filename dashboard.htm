@@ -540,8 +540,11 @@ function copyToClipboard() {
                 .no-print { padding: 15px; background: #fff; border-bottom: 1px solid #ddd; position: sticky; top:0; z-index:100; display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap; }
                 .btn-exec { background: #4361ee; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
                 .print-canvas { background: white; display: inline-block; padding: 60px; min-height: 100vh; width: 210mm; box-sizing: border-box; box-shadow: 0 0 20px rgba(0,0,0,0.1); margin: 20px auto; text-align: center; }
-                .editable { outline: none; border: 1px dashed transparent; width: 100%; display: block; transition: 0.1s; word-break: break-all; margin-top: 0px; }
-                .editable:hover { border: 1px dashed #4361ee; background: #f8f9ff; }
+                /* 個別移動のための設定 */
+                .editable-block { outline: none; border: 1px dashed transparent; width: 100%; display: flex; transition: 0.1s; margin-top: 0px; margin-bottom: 10px; }
+                .editable-block:hover { border: 1px dashed #4361ee; background: #f8f9ff; }
+                .content-inner { width: 100%; outline: none; word-break: break-all; }
+                
                 .toolbar-btn { background: white; border: 1px solid #ddd; padding: 5px 8px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 13px; min-width: 32px; }
                 .toolbar-btn:hover { background: #f0f0f0; }
                 .guide-text { color: #64748b; font-size: 0.8rem; width: 100%; margin-bottom: 5px; text-align: center; font-weight: bold; }
@@ -550,11 +553,12 @@ function copyToClipboard() {
             </style>
         </head><body>
             <div class="no-print">
-                <p class="guide-text">テキストをクリックして編集できます。ツールバーで位置や装飾を調整してください</p>
+                <p class="guide-text">テキストをクリックして編集できます。ツールバーでテキストの装飾ができます。よろしければ「印刷を実行」してください</p>
                 
                 <div style="display:flex; gap:5px; align-items:center; border-right:1px solid #eee; padding-right:8px;">
                     <span class="group-label">装飾:</span>
                     <button class="toolbar-btn" onclick="document.execCommand('bold')"><b>B</b></button>
+                    <button class="toolbar-btn" onclick="document.execCommand('underline')"><u>U</u></button>
                     <select onchange="document.execCommand('fontSize', false, this.value)" style="padding:4px; border-radius:4px; border:1px solid #ddd;">
                         <option value="1">極小</option><option value="2">小</option><option value="3" selected>標準</option>
                         <option value="4">中</option><option value="5">大</option><option value="6">特大</option><option value="7">超特大</option>
@@ -575,36 +579,41 @@ function copyToClipboard() {
                 </div>
 
                 <div style="display:flex; gap:5px; align-items:center; border-right:1px solid #eee; padding-right:8px;">
-                    <span class="group-label">左右:</span>
-                    <button class="toolbar-btn" onclick="document.execCommand('justifyLeft')">左</button>
-                    <button class="toolbar-btn" onclick="document.execCommand('justifyCenter')">中</button>
-                    <button class="toolbar-btn" onclick="document.execCommand('justifyRight')">右</button>
+                    <span class="group-label">配置:</span>
+                    <button class="toolbar-btn" onclick="execAlign('justifyLeft')">左</button>
+                    <button class="toolbar-btn" onclick="execAlign('justifyCenter')">中</button>
+                    <button class="toolbar-btn" onclick="execAlign('justifyRight')">右</button>
+                    <button class="toolbar-btn" onclick="moveElement(-10)">↑</button>
+                    <button class="toolbar-btn" onclick="moveElement(10)">↓</button>
                 </div>
 
                 <div style="display:flex; gap:5px; align-items:center; border-right:1px solid #eee; padding-right:8px;">
-                    <span class="group-label">上下位置:</span>
-                    <button class="toolbar-btn" onclick="moveElement(10)">↓ 下へ</button>
-                    <button class="toolbar-btn" onclick="moveElement(-10)">↑ 上へ</button>
-                </div>
-
-                <div style="display:flex; gap:5px; align-items:center;">
-                    <span class="group-label">QR大:</span>
+                    <span class="group-label">QR:</span>
                     <button class="toolbar-btn" onclick="changeQRSize(20)">＋</button>
                     <button class="toolbar-btn" onclick="changeQRSize(-20)">－</button>
                 </div>
 
-                <button class="btn-exec" onclick="window.print()" style="margin-left:15px;">印刷実行</button>
+                <button class="toolbar-btn" onclick="addTextArea()" style="background:#f8f9ff; border-color:#4361ee; color:#4361ee;">＋テキスト追加</button>
+
+                <button class="btn-exec" onclick="window.print()" style="margin-left:15px;">印刷を実行</button>
+                <button onclick="window.close()" style="margin-left:8px; padding:8px; border:none; background:none; cursor:pointer; color:#999;">✕</button>
             </div>
 
             <div class="print-canvas" id="main-canvas">
-                <div class="editable" contenteditable="true" style="font-size: 2.5rem; font-weight: bold; margin-bottom: 20px;">${month}</div>
-                <div class="editable" contenteditable="true" style="font-size: 2rem; font-weight: bold; margin-bottom: 30px;">${title}</div>
+                <div class="editable-block" style="margin-top:0px; justify-content:center;">
+                    <div class="content-inner" contenteditable="true" style="font-size: 2.5rem; font-weight: bold;">${month}</div>
+                </div>
+                <div class="editable-block" style="margin-top:10px; justify-content:center;">
+                    <div class="content-inner" contenteditable="true" style="font-size: 1.8rem; font-weight: bold;">${title}</div>
+                </div>
                 
-                <div id="qr-container" style="display:flex; justify-content:center; margin:20px 0; transition: 0.1s;">
+                <div id="qr-block" class="editable-block" style="margin-top:20px; justify-content:center;">
                     <div id="qrcode"></div>
                 </div>
                 
-                <div class="editable" contenteditable="true" style="font-size: 1.4rem; font-weight: bold; margin-top: 20px;">シフト希望の提出はこちらから</div>
+                <div class="editable-block" style="margin-top:20px; justify-content:center;">
+                    <div class="content-inner" contenteditable="true" style="font-size: 1.3rem; font-weight: bold;">シフト希望の提出はこちらから</div>
+                </div>
             </div>
 
             <script>
@@ -617,40 +626,46 @@ function copyToClipboard() {
                     new QRCode(qrElem, { text: "${qrData}", width: currentQRSize, height: currentQRSize });
                 }
 
-                // 上下配置の調整（マージンによる移動）
+                // 各ブロック単体での上下移動
                 function moveElement(delta) {
                     const sel = window.getSelection();
                     let target = sel.anchorNode;
                     if (!target) return;
                     if (target.nodeType === 3) target = target.parentNode;
-                    const el = target.closest('.editable') || target.closest('#qr-container');
-                    if (el) {
-                        const style = window.getComputedStyle(el);
-                        const currentTop = parseInt(style.marginTop) || 0;
-                        el.style.marginTop = (currentTop + delta) + "px";
+                    const block = target.closest('.editable-block');
+                    if (block) {
+                        const currentTop = parseInt(window.getComputedStyle(block).marginTop) || 0;
+                        block.style.marginTop = (currentTop + delta) + "px";
                     }
                 }
 
-                new QRCode(document.getElementById("qrcode"), { text: "${qrData}", width: currentQRSize, height: currentQRSize });
-                
-                // 配置コマンドの拡張
-                const originalExec = document.execCommand;
-                document.execCommand = function(name, ui, val) {
-                    if (name === 'justifyLeft' || name === 'justifyCenter' || name === 'justifyRight') {
-                        const sel = window.getSelection();
-                        let target = sel.anchorNode;
-                        if (target) {
-                            if (target.nodeType === 3) target = target.parentNode;
-                            const qrCont = target.closest('#qr-container');
-                            if (qrCont) {
-                                const align = name === 'justifyLeft' ? 'flex-start' : name === 'justifyCenter' ? 'center' : 'flex-end';
-                                qrCont.style.justifyContent = align;
-                                return;
-                            }
-                        }
+                // 各ブロック単体での左右配置
+                function execAlign(cmd) {
+                    const sel = window.getSelection();
+                    let target = sel.anchorNode;
+                    if (!target) return;
+                    if (target.nodeType === 3) target = target.parentNode;
+                    const block = target.closest('.editable-block');
+                    if (block) {
+                        const align = cmd === 'justifyLeft' ? 'flex-start' : cmd === 'justifyCenter' ? 'center' : 'flex-end';
+                        block.style.justifyContent = align;
+                        const inner = block.querySelector('.content-inner');
+                        if(inner) inner.style.textAlign = cmd === 'justifyLeft' ? 'left' : cmd === 'justifyCenter' ? 'center' : 'right';
                     }
-                    return originalExec.apply(document, arguments);
-                };
+                }
+
+                // テキストエリア追加
+                function addTextArea() {
+                    const canvas = document.getElementById('main-canvas');
+                    const newBlock = document.createElement('div');
+                    newBlock.className = 'editable-block';
+                    newBlock.style.justifyContent = 'center';
+                    newBlock.style.marginTop = '10px';
+                    newBlock.innerHTML = '<div class="content-inner" contenteditable="true" style="font-size: 1.2rem;">新しいテキスト</div>';
+                    canvas.appendChild(newBlock);
+                }
+
+                new QRCode(document.getElementById("qrcode"), { text: "${qrData}", width: currentQRSize, height: currentQRSize });
             <\/script>
         </body></html>`);
         win.document.close();
@@ -690,6 +705,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
