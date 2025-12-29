@@ -767,21 +767,34 @@ async function deleteCurrentProject() {
 
     window.onload = loadProjects;
 
-    // --- ログイン・認証制御 (オーバーレイ方式) ---
+    // --- ログイン・認証制御 (安定化修正版) ---
     async function checkAuth() {
-        const { data: { session } } = await client.auth.getSession();
+        // 現在のURLからログイン用のトークン（#access_token等）を取り除くクリーンアップ
+        if (location.hash && location.hash.includes('access_token')) {
+            // トークンがある場合は少し待ってから履歴を書き換えてURLを綺麗にする
+            setTimeout(() => {
+                history.replaceState(null, null, window.location.pathname);
+            }, 1000);
+        }
+
+        const { data: { session }, error } = await client.auth.getSession();
         const overlay = document.getElementById('login-overlay');
         
-        if (session) {
-            // ログイン済み：被せものを消す
+        if (session && !error) {
+            // ログイン成功時：オーバーレイ（カーテン）を隠す
             overlay.style.display = 'none';
+            // 既にコンテンツが隠されている可能性（innerHTML上書き等）を考慮し、
+            // もしメインコンテンツが見えない状態なら表示を戻すための念押し
+            document.body.style.display = 'block'; 
+            
             loadProjects();
         } else {
-            // 未ログイン：被せものを表示してログイン画面を中に入れる
+            // 未ログイン時：オーバーレイを表示してログインUIを挿入
             overlay.style.display = 'flex';
             overlay.innerHTML = `
                 <div style="text-align:center; padding:40px; border:1px solid #ddd; border-radius:15px; background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.1); font-family:sans-serif;">
                     <h2 style="color:#2b3a67; margin-top:0;">管理パネル ログイン</h2>
+                    <p style="font-size:13px; color:#666; margin-bottom:20px;">登録メールアドレスへログイン用リンクを送信します。</p>
                     <input type="email" id="login-email" placeholder="メールアドレス" style="padding:12px; width:260px; border:1px solid #ccc; border-radius:8px; font-size:16px;"><br><br>
                     <button id="login-btn" onclick="login()" style="padding:12px 24px; background:#4361ee; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">ログインメールを送信</button>
                     <p id="auth-msg" style="margin-top:15px; color:#059669; font-size:14px; min-height:1.2em;"></p>
@@ -793,12 +806,18 @@ async function deleteCurrentProject() {
         const email = document.getElementById('login-email').value;
         const btn = document.getElementById('login-btn');
         if (!email) return alert("メールアドレスを入力してください");
+        
         btn.disabled = true;
         btn.textContent = "送信中...";
+        
         const { error } = await client.auth.signInWithOtp({
             email: email,
-            options: { emailRedirectTo: window.location.href }
+            options: { 
+                // ログイン後の戻り先を明示的に指定（現在のURL）
+                emailRedirectTo: window.location.origin + window.location.pathname 
+            }
         });
+
         if (error) {
             alert("エラー: " + error.message);
             btn.disabled = false;
@@ -808,8 +827,16 @@ async function deleteCurrentProject() {
         }
     }
 
+    // 認証状態の変化を監視
     client.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_IN') checkAuth();
+        console.log("Auth Event:", event);
+        if (event === 'SIGNED_IN') {
+            // ログイン完了時はオーバーレイを消して情報を読み込む
+            checkAuth();
+        } else if (event === 'SIGNED_OUT') {
+            // ログアウト時は画面をリロードして初期状態（ログイン画面）に戻す
+            location.href = window.location.pathname; 
+        }
     });
 
     window.onload = checkAuth;
@@ -817,6 +844,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
