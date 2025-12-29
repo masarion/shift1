@@ -535,24 +535,28 @@ function copyToClipboard() {
             <style>
                 @page { margin: 0; }
                 body { text-align: center; font-family: sans-serif; background: #f0f0f0; margin: 0; padding: 0; }
-                .no-print { padding: 12px; background: #fff; border-bottom: 1px solid #ddd; position: sticky; top:0; z-index:100; display:flex; gap:12px; justify-content:center; align-items:center; flex-wrap:wrap; }
+                .no-print { padding: 15px; background: #fff; border-bottom: 1px solid #ddd; position: sticky; top:0; z-index:100; display:flex; gap:12px; justify-content:center; align-items:center; flex-wrap:wrap; }
                 .btn-exec { background: #4361ee; color: white; padding: 10px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
                 .print-canvas { background: white; display: inline-block; padding: 60px; min-height: 100vh; width: 210mm; box-sizing: border-box; box-shadow: 0 0 20px rgba(0,0,0,0.1); margin: 20px auto; }
-                .editable { outline: none; border: 1px dashed transparent; width: 100%; display: block; transition: 0.2s; }
+                .editable { outline: none; border: 1px dashed transparent; width: 100%; display: block; cursor: text; }
                 .editable:hover { border: 1px dashed #4361ee; background: #f8f9ff; }
-                .size-input { width: 65px; padding: 6px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-weight: bold; font-size: 14px; }
-                .guide-text { color: #64748b; font-size: 0.85rem; width: 100%; margin-bottom: 5px; }
+                .size-input { width: 70px; padding: 6px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-weight: bold; }
+                .guide-text { color: #64748b; font-size: 0.9rem; width: 100%; margin-bottom: 5px; text-align: center; }
                 @media print { .no-print { display: none; } body { background: white; } .print-canvas { box-shadow: none; margin: 0; padding: 60px; } }
             </style>
         </head><body>
             <div class="no-print">
-                <div class="guide-text">サイズ変更は「文字を選択してから」数値を入力してください</div>
+                <p class="guide-text">テキストをクリックして編集できます。ツールバーでテキストの装飾ができます。よろしければ「印刷を実行」してください</p>
+                
                 <button onclick="document.execCommand('bold')" style="padding:6px 12px; cursor:pointer; background:white; border:1px solid #ddd; border-radius:4px;"><b>B</b></button>
+                <button onclick="document.execCommand('underline')" style="padding:6px 12px; cursor:pointer; background:white; border:1px solid #ddd; border-radius:4px;"><u>U</u></button>
+                
                 <div style="display:flex; align-items:center; gap:8px; border-left:1px solid #eee; padding-left:12px;">
                     <span style="font-size:13px; color:#555;">サイズ:</span>
-                    <input type="number" id="f-size" class="size-input" value="48" oninput="applyFontSize(this.value)">
+                    <input type="number" id="f-size" class="size-input" value="48" onchange="applyFontSize(this.value)">
                     <span style="font-size:13px;">px</span>
                 </div>
+                
                 <button class="btn-exec" onclick="window.print()" style="margin-left:20px;">印刷を実行</button>
                 <button onclick="window.close()" style="margin-left:10px; padding:8px 15px; border:1px solid #ddd; background:white; border-radius:8px; cursor:pointer;">閉じる</button>
             </div>
@@ -570,17 +574,16 @@ function copyToClipboard() {
                     const sel = window.getSelection();
                     if (!sel.rangeCount || sel.isCollapsed) return;
 
-                    const range = sel.getRangeAt(0);
-                    
-                    // 1. スプレッドシートに近い挙動：一度標準コマンドで囲ってからスタイルを上書き
+                    // 一旦ブラウザ標準の最大サイズ(size=7)を適用して目印を作る
                     document.execCommand('fontSize', false, '7');
                     
-                    const fontTags = document.getElementsByTagName('font');
-                    for (let i = 0; i < fontTags.length; i++) {
-                        if (fontTags[i].size === "7") {
-                            fontTags[i].removeAttribute('size');
-                            fontTags[i].style.fontSize = px + 'px';
-                            fontTags[i].style.lineHeight = '1.2';
+                    // 生成されたfontタグをすべて探し、px指定のインラインスタイルに書き換える
+                    const fonts = document.getElementsByTagName('font');
+                    for (let i = 0; i < fonts.length; i++) {
+                        if (fonts[i].size === "7") {
+                            fonts[i].removeAttribute('size');
+                            fonts[i].style.fontSize = px + 'px';
+                            fonts[i].style.lineHeight = '1.2';
                         }
                     }
                 }
@@ -625,6 +628,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
