@@ -265,7 +265,7 @@
                     <span>対象月：</span>
                     <select id="print-month-select" onchange="updatePreviewMonth()">
                         <option value="◯月">指定なし</option>
-                        <script>for(let i=1;i<=12;i++) document.write(`<option value="${i}月">${i}月</option>`);</script>
+                        <>for(let i=1;i<=12;i++) document.write(`<option value="${i}月">${i}月</option>`);</>
                     </select>
                 </div>
                 <div id="print-preview-box">
@@ -295,21 +295,38 @@
     const S_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
     const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     const client = supabase.createClient(S_URL, S_KEY);
-    // --- 認証状態の監視 ---
-    client.auth.onAuthStateChange((event, session) => {
+
+    let currentId = null;
+    let sortable = null;
+
+    // --- 【最重要】認証状態による画面制御 ---
+    async function checkAuth() {
         const authSec = document.getElementById('auth-section');
         const adminContent = document.getElementById('admin-content');
-
+        
+        // 現在のログイン状態を取得
+        const { data: { session } } = await client.auth.getSession();
+        
         if (session) {
-            // ログイン成功時
+            // ログイン済み：管理画面を表示
             authSec.style.display = 'none';
             adminContent.style.display = 'flex';
-            loadProjects(); // ログインしてからデータを読み込む
+            loadProjects(); // データを読み込む
         } else {
-            // 未ログイン時
+            // 未ログイン：ログイン画面を表示
             authSec.style.display = 'flex';
             adminContent.style.display = 'none';
         }
+    }
+
+    // ページ読み込み完了時に実行
+    document.addEventListener('DOMContentLoaded', () => {
+        checkAuth();
+
+        // ログイン状態の変化（メールのリンククリック時など）を監視
+        client.auth.onAuthStateChange((event, session) => {
+            checkAuth();
+        });
     });
 
     // --- ログイン処理（マジックリンク） ---
@@ -338,8 +355,8 @@
             btn.textContent = "メールを確認してください";
         }
     }
-    let currentId = null;
-    let sortable = null;
+
+    // --- 以下、既存の関数（showSection, loadProjects等）を続けてください ---
 
     function applyColor(c) {
         document.execCommand('foreColor', false, c);
@@ -823,6 +840,7 @@ async function deleteCurrentProject() {
     </div>
 </body>
 </html>
+
 
 
 
