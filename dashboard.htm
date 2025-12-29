@@ -829,15 +829,17 @@ async function deleteCurrentProject() {
         }
     }
 
-    // 認証状態の変化を監視
+    // 認証状態の変化を監視（完全リセット版）
     client.auth.onAuthStateChange((event, session) => {
         console.log("Auth Event:", event);
+        
         if (event === 'SIGNED_IN') {
-            // ログイン完了時はオーバーレイを消して情報を読み込む
+            // ログインしたときは、状態をチェックして画面を表示
             checkAuth();
         } else if (event === 'SIGNED_OUT') {
-            // ログアウト時は画面をリロードして初期状態（ログイン画面）に戻す
-            location.href = window.location.pathname; 
+            // ログアウトした瞬間、URLからパラメータを完全に消した状態でページを強制再読み込み
+            // これにより、CSSやHTMLの状態が「初訪問時」と同じ真っ新な状態に戻ります
+            window.location.href = window.location.origin + window.location.pathname;
         }
     });
 
@@ -846,6 +848,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
