@@ -319,9 +319,17 @@
             }, 100);
         }
 
-    // 読み込み完了時と状態変化時に実行
-    document.addEventListener('DOMContentLoaded', checkAuth);
-    client.auth.onAuthStateChange(() => { checkAuth(); });
+    // ページ読み込み完了時
+    document.addEventListener('DOMContentLoaded', async () => {
+        await checkAuth(); // 1. まずログインチェック
+        showSection('list'); // 2. ログインしてれば「案件一覧」を強制表示
+    });
+
+    // 状態変化時（ログイン直後など）
+    client.auth.onAuthStateChange(async (event, session) => {
+        await checkAuth();
+        if (session) showSection('list'); // ログインした瞬間に一覧を表示
+    });
 
     // --- ログイン処理（マジックリンク） ---
     async function login() {
@@ -834,6 +842,7 @@ async function deleteCurrentProject() {
     </div>
 </body>
 </html>
+
 
 
 
