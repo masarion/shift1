@@ -113,6 +113,18 @@
 </head>
 <body>
 
+    <section id="auth-section" style="display:none; height:100vh; width:100%; align-items:center; justify-content:center; background:#f0f2f5;">
+    <div class="card" style="width:350px; text-align:center; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+        <h2 style="margin-bottom:20px; color:var(--sidebar-bg);">管理パネル ログイン</h2>
+        <p style="font-size:0.85rem; color:#64748b; margin-bottom:20px;">登録したメールアドレスを入力してください。<br>ログイン用メールが届きます。</p>
+        <input type="email" id="login-email" placeholder="mail@example.com" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-bottom:15px; box-sizing:border-box; font-size:16px;">
+        <button onclick="login()" id="login-btn" style="width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.3s;">ログインメールを送信</button>
+        <div id="auth-msg" style="margin-top:15px; font-size:0.85rem; color:var(--success); min-height:1.2em;"></div>
+    </div>
+</section>
+
+<div id="admin-content" style="display:none; width:100%; height:100vh;">
+
 <div id="sidebar">
     <h3 style="padding-left:10px;">管理システム</h3>
     <div class="nav-item nav-active" id="nav-projects" onclick="showSection('projects')">案件一覧</div>
@@ -283,6 +295,49 @@
     const S_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
     const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     const client = supabase.createClient(S_URL, S_KEY);
+    // --- 認証状態の監視 ---
+    client.auth.onAuthStateChange((event, session) => {
+        const authSec = document.getElementById('auth-section');
+        const adminContent = document.getElementById('admin-content');
+
+        if (session) {
+            // ログイン成功時
+            authSec.style.display = 'none';
+            adminContent.style.display = 'flex';
+            loadProjects(); // ログインしてからデータを読み込む
+        } else {
+            // 未ログイン時
+            authSec.style.display = 'flex';
+            adminContent.style.display = 'none';
+        }
+    });
+
+    // --- ログイン処理（マジックリンク） ---
+    async function login() {
+        const email = document.getElementById('login-email').value;
+        const btn = document.getElementById('login-btn');
+        const msg = document.getElementById('auth-msg');
+        
+        if (!email) return alert("メールアドレスを入力してください");
+
+        btn.disabled = true;
+        btn.textContent = "送信中...";
+        msg.textContent = "";
+
+        const { error } = await client.auth.signInWithOtp({
+            email: email,
+            options: { emailRedirectTo: window.location.href }
+        });
+
+        if (error) {
+            alert("エラーが発生しました: " + error.message);
+            btn.disabled = false;
+            btn.textContent = "ログインメールを送信";
+        } else {
+            msg.textContent = "メールを送信しました！受信トレイを確認してください。";
+            btn.textContent = "メールを確認してください";
+        }
+    }
     let currentId = null;
     let sortable = null;
 
@@ -763,29 +818,11 @@ async function deleteCurrentProject() {
     }
 }
 
-    window.onload = loadProjects;
+    
 </script>
+    </div>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
