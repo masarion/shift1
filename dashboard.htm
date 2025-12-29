@@ -112,6 +112,7 @@
     </style>
 </head>
 <body>
+    <div id="login-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#f0f2f5; z-index:9999; align-items:center; justify-content:center;"></div>
 
 <div id="sidebar">
     <h3 style="padding-left:10px;">管理システム</h3>
@@ -765,25 +766,24 @@ async function deleteCurrentProject() {
 
     window.onload = loadProjects;
 
-    // --- ログイン・認証制御 (リロードループ対策版) ---
+    // --- ログイン・認証制御 (オーバーレイ方式) ---
     async function checkAuth() {
         const { data: { session } } = await client.auth.getSession();
+        const overlay = document.getElementById('login-overlay');
         
         if (session) {
-            // ログイン済み：通常の画面を表示
-            document.body.style.display = 'block';
+            // ログイン済み：被せものを消す
+            overlay.style.display = 'none';
             loadProjects();
         } else {
-            // 未ログイン：ログインUIのみを表示（元のHTMLは隠す）
-            document.body.style.display = 'block'; // body自体は見せる
-            document.body.innerHTML = `
-                <div style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; background:#f0f2f5;">
-                    <div style="text-align:center; padding:40px; border:1px solid #ddd; border-radius:15px; background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
-                        <h2 style="color:#2b3a67;">管理パネル ログイン</h2>
-                        <input type="email" id="login-email" placeholder="メールアドレス" style="padding:12px; width:260px; border:1px solid #ccc; border-radius:8px; font-size:16px;"><br><br>
-                        <button id="login-btn" onclick="login()" style="padding:12px 24px; background:#4361ee; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">ログインメールを送信</button>
-                        <p id="auth-msg" style="margin-top:15px; color:#059669; font-size:14px; min-height:1.2em;"></p>
-                    </div>
+            // 未ログイン：被せものを表示してログイン画面を中に入れる
+            overlay.style.display = 'flex';
+            overlay.innerHTML = `
+                <div style="text-align:center; padding:40px; border:1px solid #ddd; border-radius:15px; background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.1); font-family:sans-serif;">
+                    <h2 style="color:#2b3a67; margin-top:0;">管理パネル ログイン</h2>
+                    <input type="email" id="login-email" placeholder="メールアドレス" style="padding:12px; width:260px; border:1px solid #ccc; border-radius:8px; font-size:16px;"><br><br>
+                    <button id="login-btn" onclick="login()" style="padding:12px 24px; background:#4361ee; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">ログインメールを送信</button>
+                    <p id="auth-msg" style="margin-top:15px; color:#059669; font-size:14px; min-height:1.2em;"></p>
                 </div>`;
         }
     }
@@ -807,21 +807,16 @@ async function deleteCurrentProject() {
         }
     }
 
-    // 状態変化の監視（★重要：自動リロードを削除しました）
     client.auth.onAuthStateChange((event, session) => {
-        console.log("Auth event:", event);
-        if (event === 'SIGNED_IN') {
-            // ログインしたときは、リロードではなくcheckAuthを再実行するだけにする
-            checkAuth();
-        }
+        if (event === 'SIGNED_IN') checkAuth();
     });
 
-    // 起動時に実行
     window.onload = checkAuth;
     // --- ログイン・認証制御 (ここまで) ---
 </script>
 </body>
 </html>
+
 
 
 
