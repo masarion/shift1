@@ -535,59 +535,49 @@ function copyToClipboard() {
             <style>
                 @page { margin: 0; }
                 body { text-align: center; font-family: sans-serif; background: #f0f0f0; margin: 0; padding: 0; }
-                .no-print { padding: 15px; background: #fff; border-bottom: 1px solid #ddd; position: sticky; top:0; z-index:100; display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; }
+                .no-print { padding: 15px; background: #fff; border-bottom: 1px solid #ddd; position: sticky; top:0; z-index:100; display:flex; gap:10px; justify-content:center; align-items:center; }
                 .btn-exec { background: #4361ee; color: white; padding: 10px 30px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
                 .print-canvas { background: white; display: inline-block; padding: 100px 60px; min-height: 100vh; width: 210mm; box-sizing: border-box; }
-                .editable { cursor: pointer; border: 1px dashed transparent; outline: none; display: block; width: 100%; }
-                .editable:hover { border: 1px dashed #4361ee; }
-                .toolbar-icon-btn { background: white; border: 1px solid #ddd; padding: 5px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; }
+                .editable { outline: none; display: block; width: 100%; }
                 .size-input { width: 60px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-weight: bold; }
                 @media print { .no-print { display: none; } body { background: white; } }
             </style>
         </head><body>
             <div class="no-print">
-                <button class="toolbar-icon-btn" onclick="document.execCommand('bold')"><b>B</b></button>
-                <button class="toolbar-icon-btn" onclick="document.execCommand('underline')"><u>U</u></button>
-                
-                <div style="display:flex; align-items:center; gap:5px; border-left:1px solid #ddd; border-right:1px solid #ddd; padding:0 10px;">
+                <button onclick="document.execCommand('bold')"><b>B</b></button>
+                <div style="display:flex; align-items:center; gap:5px; border-left:1px solid #eee; padding-left:10px;">
                     <span style="font-size:12px;">サイズ:</span>
                     <input type="number" id="f-size" class="size-input" value="48" onchange="applyFontSize(this.value)">
-                    <span style="font-size:12px;">px</span>
+                    <span>px</span>
                 </div>
-
-                <button class="btn-exec" onclick="window.print()">印刷を実行</button>
-                <button onclick="window.close()" style="margin-left:10px;">閉じる</button>
+                <button class="btn-exec" onclick="window.print()" style="margin-left:20px;">印刷を実行</button>
             </div>
 
-            <div class="print-canvas" id="canvas">
+            <div class="print-canvas">
                 <div class="editable" contenteditable="true" style="font-size: 64px; font-weight: bold; margin-bottom: 20px;">${month}</div>
                 <div class="editable" contenteditable="true" style="font-size: 40px; font-weight: bold; margin-bottom: 40px;">${title}</div>
                 <div id="qrcode" style="display:flex; justify-content:center; margin:30px auto;"></div>
-                <div class="editable" contenteditable="true" style="font-size: 24px; font-weight: bold;">シフト希望の提出はこちらから</div>
+                <div class="editable" contenteditable="true" style="font-size: 24px;">シフト希望の提出はこちらから</div>
             </div>
 
             <script>
                 function applyFontSize(px) {
                     const selection = window.getSelection();
-                    if (!selection.rangeCount || selection.toString() === "") {
-                        alert("サイズを変更したい文字をマウスで選択してから数値を入力してください。");
-                        return;
-                    }
-                    
+                    if (!selection.rangeCount || selection.isCollapsed) return;
+
                     const range = selection.getRangeAt(0);
+                    // 1. 選択範囲を抜き出す
+                    const contents = range.extractContents();
+                    // 2. 新しい span を作ってサイズを指定
                     const span = document.createElement("span");
                     span.style.fontSize = px + "px";
-                    span.style.display = "inline-block"; // スタイルを確実に適用させる
-                    
-                    // 選択範囲を新しいspanで置き換える
-                    range.surroundContents(span);
+                    span.appendChild(contents);
+                    // 3. 抜き出した場所に新しい span を挿入
+                    range.insertNode(span);
+                    selection.removeAllRanges();
                 }
 
-                new QRCode(document.getElementById("qrcode"), { 
-                    text: "${qrData}", 
-                    width: 300, 
-                    height: 300 
-                });
+                new QRCode(document.getElementById("qrcode"), { text: "${qrData}", width: 300, height: 300 });
             <\/script>
         </body></html>`);
         win.document.close();
@@ -627,6 +617,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
