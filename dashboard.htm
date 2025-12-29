@@ -537,19 +537,27 @@ function copyToClipboard() {
             <style>
                 @page { margin: 0; }
                 body { text-align: center; font-family: sans-serif; background: #f0f0f0; margin: 0; padding: 0; }
+                /* 操作説明を最上部に固定 */
                 .no-print { padding: 15px; background: #fff; border-bottom: 1px solid #ddd; position: sticky; top:0; z-index:100; display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap; }
                 .btn-exec { background: #4361ee; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-                .print-canvas { background: white; display: inline-block; padding: 60px; min-height: 100vh; width: 210mm; box-sizing: border-box; box-shadow: 0 0 20px rgba(0,0,0,0.1); margin: 20px auto; text-align: center; }
-                /* 個別移動のための設定 */
-                .editable-block { outline: none; border: 1px dashed transparent; width: 100%; display: flex; transition: 0.1s; margin-top: 0px; margin-bottom: 10px; }
+                .print-canvas { background: white; display: inline-block; padding: 60px; min-height: 100vh; width: 210mm; box-sizing: border-box; box-shadow: 0 0 20px rgba(0,0,0,0.1); margin: 20px auto; text-align: center; position: relative; }
+                
+                /* 個別移動・編集ブロック */
+                .editable-block { outline: none; border: 1px dashed transparent; width: 100%; display: flex; align-items: center; position: relative; transition: 0.1s; margin-bottom: 10px; }
                 .editable-block:hover { border: 1px dashed #4361ee; background: #f8f9ff; }
+                .editable-block.selected { border: 1px solid #4361ee; background: #f0f4ff; }
                 .content-inner { width: 100%; outline: none; word-break: break-all; }
+                
+                /* 削除ボタン */
+                .del-btn { position: absolute; right: -40px; background: #ff4d4f; color: white; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 12px; display: none; }
+                .editable-block:hover .del-btn { display: block; }
                 
                 .toolbar-btn { background: white; border: 1px solid #ddd; padding: 5px 8px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 13px; min-width: 32px; }
                 .toolbar-btn:hover { background: #f0f0f0; }
                 .guide-text { color: #64748b; font-size: 0.8rem; width: 100%; margin-bottom: 5px; text-align: center; font-weight: bold; }
                 .group-label { font-size: 11px; color: #94a3b8; margin-right: 2px; }
-                @media print { .no-print { display: none; } body { background: white; } .print-canvas { box-shadow: none; margin: 0; padding: 60px; } }
+                
+                @media print { .no-print, .del-btn { display: none !important; } body { background: white; } .print-canvas { box-shadow: none; margin: 0; padding: 60px; border:none; } }
             </style>
         </head><body>
             <div class="no-print">
@@ -569,11 +577,11 @@ function copyToClipboard() {
                             <div id="p-bar" style="width:14px; height:3px; background:#000; margin-top:1px;"></div>
                         </button>
                         <div id="p-col" style="display:none; position:absolute; top:100%; left:0; grid-template-columns:repeat(5, 1fr); gap:4px; background:white; padding:8px; border:1px solid #ccc; width:120px; z-index:1000; box-shadow:0 4px 10px rgba(0,0,0,0.1);">
-                            <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#000000'); document.getElementById('p-bar').style.backgroundColor='#000000'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#000000; cursor:pointer; border:1px solid #eee;"></div>
-                            <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#ff0000'); document.getElementById('p-bar').style.backgroundColor='#ff0000'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#ff0000; cursor:pointer; border:1px solid #eee;"></div>
-                            <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#0000ff'); document.getElementById('p-bar').style.backgroundColor='#0000ff'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#0000ff; cursor:pointer; border:1px solid #eee;"></div>
-                            <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#059669'); document.getElementById('p-bar').style.backgroundColor='#059669'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#059669; cursor:pointer; border:1px solid #eee;"></div>
-                            <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#ff9900'); document.getElementById('p-bar').style.backgroundColor='#ff9900'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#ff9900; cursor:pointer; border:1px solid #eee;"></div>
+                            <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#000000'); document.getElementById('p-bar').style.backgroundColor='#000000'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#000000; cursor:pointer;"></div>
+                            <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#ff0000'); document.getElementById('p-bar').style.backgroundColor='#ff0000'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#ff0000; cursor:pointer;"></div>
+                            <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#0000ff'); document.getElementById('p-bar').style.backgroundColor='#0000ff'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#0000ff; cursor:pointer;"></div>
+                            <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#059669'); document.getElementById('p-bar').style.backgroundColor='#059669'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#059669; cursor:pointer;"></div>
+                            <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#ff9900'); document.getElementById('p-bar').style.backgroundColor='#ff9900'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#ff9900; cursor:pointer;"></div>
                         </div>
                     </div>
                 </div>
@@ -596,28 +604,41 @@ function copyToClipboard() {
                 <button class="toolbar-btn" onclick="addTextArea()" style="background:#f8f9ff; border-color:#4361ee; color:#4361ee;">＋テキスト追加</button>
 
                 <button class="btn-exec" onclick="window.print()" style="margin-left:15px;">印刷を実行</button>
-                <button onclick="window.close()" style="margin-left:8px; padding:8px; border:none; background:none; cursor:pointer; color:#999;">✕</button>
+                <button class="toolbar-btn" onclick="window.close()" style="margin-left:8px; background:#f0f0f0; border:1px solid #ccc;">閉じる</button>
             </div>
 
             <div class="print-canvas" id="main-canvas">
-                <div class="editable-block" style="margin-top:0px; justify-content:center;">
+                <div class="editable-block" style="justify-content:center;">
                     <div class="content-inner" contenteditable="true" style="font-size: 2.5rem; font-weight: bold;">${month}</div>
+                    <button class="del-btn" onclick="this.parentElement.remove()">削除</button>
                 </div>
                 <div class="editable-block" style="margin-top:10px; justify-content:center;">
                     <div class="content-inner" contenteditable="true" style="font-size: 1.8rem; font-weight: bold;">${title}</div>
+                    <button class="del-btn" onclick="this.parentElement.remove()">削除</button>
                 </div>
                 
-                <div id="qr-block" class="editable-block" style="margin-top:20px; justify-content:center;">
-                    <div id="qrcode"></div>
+                <div id="qr-block" class="editable-block" style="margin-top:20px; justify-content:center;" onclick="selectQR(this)">
+                    <div id="qrcode" style="pointer-events:none;"></div>
+                    <button class="del-btn" onclick="this.parentElement.remove()">削除</button>
                 </div>
                 
                 <div class="editable-block" style="margin-top:20px; justify-content:center;">
                     <div class="content-inner" contenteditable="true" style="font-size: 1.3rem; font-weight: bold;">シフト希望の提出はこちらから</div>
+                    <button class="del-btn" onclick="this.parentElement.remove()">削除</button>
                 </div>
             </div>
 
             <script>
                 let currentQRSize = 220;
+                let selectedBlock = null;
+
+                // QRコードをクリックで選択状態にする
+                function selectQR(el) {
+                    document.querySelectorAll('.editable-block').forEach(b => b.classList.remove('selected'));
+                    el.classList.add('selected');
+                    selectedBlock = el;
+                }
+
                 function changeQRSize(delta) {
                     currentQRSize += delta;
                     if(currentQRSize < 50) currentQRSize = 50;
@@ -626,26 +647,16 @@ function copyToClipboard() {
                     new QRCode(qrElem, { text: "${qrData}", width: currentQRSize, height: currentQRSize });
                 }
 
-                // 各ブロック単体での上下移動
                 function moveElement(delta) {
-                    const sel = window.getSelection();
-                    let target = sel.anchorNode;
-                    if (!target) return;
-                    if (target.nodeType === 3) target = target.parentNode;
-                    const block = target.closest('.editable-block');
+                    const block = getActiveBlock();
                     if (block) {
                         const currentTop = parseInt(window.getComputedStyle(block).marginTop) || 0;
                         block.style.marginTop = (currentTop + delta) + "px";
                     }
                 }
 
-                // 各ブロック単体での左右配置
                 function execAlign(cmd) {
-                    const sel = window.getSelection();
-                    let target = sel.anchorNode;
-                    if (!target) return;
-                    if (target.nodeType === 3) target = target.parentNode;
-                    const block = target.closest('.editable-block');
+                    const block = getActiveBlock();
                     if (block) {
                         const align = cmd === 'justifyLeft' ? 'flex-start' : cmd === 'justifyCenter' ? 'center' : 'flex-end';
                         block.style.justifyContent = align;
@@ -654,16 +665,35 @@ function copyToClipboard() {
                     }
                 }
 
-                // テキストエリア追加
+                function getActiveBlock() {
+                    const sel = window.getSelection();
+                    if (sel.rangeCount > 0 && !sel.isCollapsed) {
+                        let target = sel.anchorNode;
+                        if (target.nodeType === 3) target = target.parentNode;
+                        return target.closest('.editable-block');
+                    }
+                    return selectedBlock || document.querySelector('.editable-block.selected');
+                }
+
                 function addTextArea() {
                     const canvas = document.getElementById('main-canvas');
                     const newBlock = document.createElement('div');
                     newBlock.className = 'editable-block';
                     newBlock.style.justifyContent = 'center';
                     newBlock.style.marginTop = '10px';
-                    newBlock.innerHTML = '<div class="content-inner" contenteditable="true" style="font-size: 1.2rem;">新しいテキスト</div>';
+                    newBlock.innerHTML = '<div class="content-inner" contenteditable="true" style="font-size: 1.2rem;">新しいテキスト</div><button class="del-btn" onclick="this.parentElement.remove()">削除</button>';
                     canvas.appendChild(newBlock);
                 }
+
+                // 全体のクリック判定で選択解除を制御
+                document.addEventListener('mousedown', (e) => {
+                    const block = e.target.closest('.editable-block');
+                    if (block) {
+                        document.querySelectorAll('.editable-block').forEach(b => b.classList.remove('selected'));
+                        block.classList.add('selected');
+                        selectedBlock = block;
+                    }
+                });
 
                 new QRCode(document.getElementById("qrcode"), { text: "${qrData}", width: currentQRSize, height: currentQRSize });
             <\/script>
@@ -705,6 +735,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
