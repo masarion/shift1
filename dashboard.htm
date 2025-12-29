@@ -324,17 +324,25 @@
     }
 
     // ページ読み込み完了時
-    document.addEventListener('DOMContentLoaded', async () => {
-        await checkAuth(); // 1. まずログインチェック
-        showSection('list'); // 2. ログインしてれば「案件一覧」を強制表示
-    });
+    window.onload = async () => {
+        console.log("window.onload開始");
+        await checkAuth();
+        if (typeof showSection === 'function') {
+            console.log("showSection('list')を実行します");
+            showSection('list');
+        } else {
+            console.error("showSection関数が見つかりません");
+        }
+    };
 
     // 状態変化時（ログイン直後など）
     client.auth.onAuthStateChange(async (event, session) => {
+        console.log("状態変化イベント:", event);
         await checkAuth();
-        if (session) showSection('list'); // ログインした瞬間に一覧を表示
+        if (session && typeof showSection === 'function') {
+            showSection('list');
+        }
     });
-
     // --- ログイン処理（マジックリンク） ---
     async function login() {
         const email = document.getElementById('login-email').value;
@@ -846,6 +854,7 @@ async function deleteCurrentProject() {
     </div>
 </body>
 </html>
+
 
 
 
