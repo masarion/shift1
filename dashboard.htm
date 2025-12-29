@@ -150,27 +150,29 @@
                 </button>
             </div>
             <div class="toolbar-group">
-                <select onchange="document.execCommand('fontSize', false, this.value); this.value='';" style="padding:4px; border-radius:4px; border:1px solid #ddd;">
-                    <option value="">サイズ</option>
-                    <option value="3">標準</option>
-                    <option value="5">大</option>
-                    <option value="7">特大</option>
-                </select>
-            </div>
-            <div class="toolbar-group" style="position:relative; border-right:none;">
-                <button onclick="const p=document.getElementById('edit-color-panel'); p.style.display=p.style.display==='grid'?'none':'grid'" style="background:white; border:1px solid #ddd; padding:4px 8px; border-radius:4px; cursor:pointer; display:flex; flex-direction:column; align-items:center;">
-                    <span style="font-weight:bold; font-family:serif; font-size:14px; line-height:1;">A</span>
-                    <div id="edit-color-bar" style="width:16px; height:3px; background:red;"></div>
-                </button>
-                <div id="edit-color-panel" style="display:none; position:absolute; top:100%; left:0; grid-template-columns:repeat(5, 1fr); gap:4px; background:white; padding:8px; border:1px solid #ccc; box-shadow:0 4px 10px rgba(0,0,0,0.1); z-index:1000; width:120px;">
-    <div onmousedown="event.preventDefault(); applyColor('#000000')" style="width:20px; height:20px; background:#000; cursor:pointer; border:1px solid #ddd;"></div>
-    <div onmousedown="event.preventDefault(); applyColor('#ff0000')" style="width:20px; height:20px; background:#ff0000; cursor:pointer; border:1px solid #ddd;"></div>
-    <div onmousedown="event.preventDefault(); applyColor('#0000ff')" style="width:20px; height:20px; background:#0000ff; cursor:pointer; border:1px solid #ddd;"></div>
-    <div onmousedown="event.preventDefault(); applyColor('#059669')" style="width:20px; height:20px; background:#059669; cursor:pointer; border:1px solid #ddd;"></div>
-    <div onmousedown="event.preventDefault(); applyColor('#ff9900')" style="width:20px; height:20px; background:#ff9900; cursor:pointer; border:1px solid #ddd;"></div>
-</div>
-            </div>
-        </div>
+    <select onchange="document.execCommand('fontSize', false, this.value); this.value='';" style="padding:4px; border-radius:4px; border:1px solid #ddd; cursor:pointer;">
+        <option value="">サイズ</option>
+        <option value="1">極小</option>
+        <option value="2">小</option>
+        <option value="3">標準</option>
+        <option value="4">中</option>
+        <option value="5">大</option>
+        <option value="6">特大</option>
+        <option value="7">超特大</option>
+    </select>
+</div> <div class="toolbar-group" style="position:relative; border-right:none;">
+    <button onclick="const p=document.getElementById('edit-color-panel'); p.style.display=p.style.display==='grid'?'none':'grid'" style="background:white; border:1px solid #ddd; padding:4px 8px; border-radius:4px; cursor:pointer; display:flex; flex-direction:column; align-items:center;">
+        <span style="font-weight:bold; font-family:serif; font-size:14px; line-height:1;">A</span>
+        <div id="edit-color-bar" style="width:16px; height:3px; background:#000;"></div>
+    </button>
+
+    <div id="edit-color-panel" style="display:none; position:absolute; top:100%; left:0; grid-template-columns:repeat(5, 1fr); gap:4px; background:white; padding:8px; border:1px solid #ccc; box-shadow:0 4px 10px rgba(0,0,0,0.1); z-index:1000; width:120px;">
+        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#000000'); document.getElementById('edit-color-bar').style.backgroundColor='#000000'; document.getElementById('edit-color-panel').style.display='none'" style="width:20px; height:20px; background:#000000; cursor:pointer; border:1px solid #ddd;"></div>
+        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#ff0000'); document.getElementById('edit-color-bar').style.backgroundColor='#ff0000'; document.getElementById('edit-color-panel').style.display='none'" style="width:20px; height:20px; background:#ff0000; cursor:pointer; border:1px solid #ddd;"></div>
+        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#0000ff'); document.getElementById('edit-color-bar').style.backgroundColor='#0000ff'; document.getElementById('edit-color-panel').style.display='none'" style="width:20px; height:20px; background:#0000ff; cursor:pointer; border:1px solid #ddd;"></div>
+        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#059669'); document.getElementById('edit-color-bar').style.backgroundColor='#059669'; document.getElementById('edit-color-panel').style.display='none'" style="width:20px; height:20px; background:#059669; cursor:pointer; border:1px solid #ddd;"></div>
+        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#ff9900'); document.getElementById('edit-color-bar').style.backgroundColor='#ff9900'; document.getElementById('edit-color-panel').style.display='none'" style="width:20px; height:20px; background:#ff9900; cursor:pointer; border:1px solid #ddd;"></div>
+    </div> </div> </div>
 
         <div class="edit-grid">
     <div class="card">
@@ -631,6 +633,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
