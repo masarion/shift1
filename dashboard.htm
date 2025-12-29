@@ -765,24 +765,24 @@ async function deleteCurrentProject() {
 
     window.onload = loadProjects;
 
-    // --- ログイン・認証制御 (ここから追加) ---
+    // --- ログイン・認証制御 (リロードループ対策版) ---
     async function checkAuth() {
         const { data: { session } } = await client.auth.getSession();
         
-        // body全体を最初は見えないようにし、判定後に表示させる
         if (session) {
-            document.body.style.display = 'block'; // ログイン済みなら表示
+            // ログイン済み：通常の画面を表示
+            document.body.style.display = 'block';
             loadProjects();
         } else {
-            // 未ログインなら、画面を真っ白にしてログイン画面へ飛ばすか、
-            // 簡易的なログインUIを表示する
+            // 未ログイン：ログインUIのみを表示（元のHTMLは隠す）
+            document.body.style.display = 'block'; // body自体は見せる
             document.body.innerHTML = `
-                <div style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
+                <div style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; background:#f0f2f5;">
                     <div style="text-align:center; padding:40px; border:1px solid #ddd; border-radius:15px; background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
-                        <h2>管理パネル ログイン</h2>
-                        <input type="email" id="login-email" placeholder="メールアドレス" style="padding:10px; width:250px; border:1px solid #ccc; border-radius:5px;"><br><br>
-                        <button id="login-btn" onclick="login()" style="padding:10px 20px; background:#4361ee; color:white; border:none; border-radius:5px; cursor:pointer;">ログインメールを送信</button>
-                        <p id="auth-msg" style="margin-top:15px; color:green; font-size:14px;"></p>
+                        <h2 style="color:#2b3a67;">管理パネル ログイン</h2>
+                        <input type="email" id="login-email" placeholder="メールアドレス" style="padding:12px; width:260px; border:1px solid #ccc; border-radius:8px; font-size:16px;"><br><br>
+                        <button id="login-btn" onclick="login()" style="padding:12px 24px; background:#4361ee; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">ログインメールを送信</button>
+                        <p id="auth-msg" style="margin-top:15px; color:#059669; font-size:14px; min-height:1.2em;"></p>
                     </div>
                 </div>`;
         }
@@ -803,15 +803,16 @@ async function deleteCurrentProject() {
             btn.disabled = false;
             btn.textContent = "ログインメールを送信";
         } else {
-            document.getElementById('auth-msg').textContent = "メールを送信しました！";
+            document.getElementById('auth-msg').textContent = "メールを送信しました！確認してください。";
         }
     }
 
-    // 状態変化を監視（リロードループを防ぐ修正版）
+    // 状態変化の監視（★重要：自動リロードを削除しました）
     client.auth.onAuthStateChange((event, session) => {
-        // ログインした「瞬間」だけリロードし、それ以外（すでにログイン中など）は無視する
-        if (event === 'SIGNED_IN' && !currentId) { 
-            location.reload();
+        console.log("Auth event:", event);
+        if (event === 'SIGNED_IN') {
+            // ログインしたときは、リロードではなくcheckAuthを再実行するだけにする
+            checkAuth();
         }
     });
 
@@ -821,5 +822,6 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
