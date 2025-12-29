@@ -306,8 +306,6 @@
         const adminContent = document.getElementById('admin-content');
         
         const { data: { session } } = await client.auth.getSession();
-
-        await client.auth.signOut();
         
         if (session) {
             // ログイン済み：管理画面を表示
@@ -837,6 +835,7 @@ async function deleteCurrentProject() {
     </div>
 </body>
 </html>
+
 
 
 
