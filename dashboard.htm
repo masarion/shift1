@@ -116,7 +116,10 @@
 <div id="sidebar">
     <h3 style="padding-left:10px;">管理システム</h3>
     <div class="nav-item nav-active" id="nav-projects" onclick="showSection('projects')">案件一覧</div>
-    <div class="nav-item" id="nav-edit-all" onclick="showSection('edit-all')">ページ内容・シフト編集</div>
+    <div class="nav-item" id="nav-edit-all" onclick="showSection('edit-all')">
+    ページ内容・シフト編集
+    <span id="current-editing-name" style="font-size: 0.75rem; color: #4361ee; display: block; margin-top: 4px; font-weight: bold;"></span>
+</div>
     <div class="nav-item" id="nav-qr" onclick="showSection('qr'); loadQRProjectList();">URL・QRコード作成</div>
     <div class="nav-item" id="nav-responses" onclick="showSection('responses')">送信データ（回答）確認</div>
     <div id="nav-response-list" class="nav-sub-list"></div>
@@ -393,6 +396,8 @@ async function duplicateProject(sourceId) {
     async function editProject(id) {
         currentId = id;
         const { data: p } = await client.from('projects').select('*').eq('id', id).single();
+        // 【追加】サイドメニューの<span>に案件名を流し込む
+    document.getElementById('current-editing-name').textContent = p ? `選択中: ${p.title_tag}` : "";
         document.getElementById('edit-page-title').textContent = `「${p.title_tag}」の編集`;
         document.getElementById('edit-title-tag').value = p.title_tag || '';
         document.getElementById('edit-h1-title').innerHTML = p.h1_title || '';
@@ -762,6 +767,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
