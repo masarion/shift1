@@ -299,35 +299,29 @@
     let currentId = null;
     let sortable = null;
 
-    // --- 【最重要】認証状態による画面制御 ---
+    // --- 認証状態による表示・非表示の強制制御 ---
     async function checkAuth() {
         const authSec = document.getElementById('auth-section');
         const adminContent = document.getElementById('admin-content');
         
-        // 現在のログイン状態を取得
         const { data: { session } } = await client.auth.getSession();
         
         if (session) {
             // ログイン済み：管理画面を表示
-            authSec.style.display = 'none';
-            adminContent.style.display = 'flex';
-            loadProjects(); // データを読み込む
+            authSec.style.setProperty('display', 'none', 'important');
+            adminContent.style.setProperty('display', 'flex', 'important');
+            // すでにロード関数があれば実行
+            if (typeof loadProjects === 'function') loadProjects();
         } else {
-            // 未ログイン：ログイン画面を表示
-            authSec.style.display = 'flex';
-            adminContent.style.display = 'none';
+            // 未ログイン：ログイン画面を強制表示
+            authSec.style.setProperty('display', 'flex', 'important');
+            adminContent.style.setProperty('display', 'none', 'important');
         }
     }
 
-    // ページ読み込み完了時に実行
-    document.addEventListener('DOMContentLoaded', () => {
-        checkAuth();
-
-        // ログイン状態の変化（メールのリンククリック時など）を監視
-        client.auth.onAuthStateChange((event, session) => {
-            checkAuth();
-        });
-    });
+    // 読み込み完了時と状態変化時に実行
+    document.addEventListener('DOMContentLoaded', checkAuth);
+    client.auth.onAuthStateChange(() => { checkAuth(); });
 
     // --- ログイン処理（マジックリンク） ---
     async function login() {
@@ -840,6 +834,7 @@ async function deleteCurrentProject() {
     </div>
 </body>
 </html>
+
 
 
 
