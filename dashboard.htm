@@ -301,6 +301,7 @@
 
     // --- 認証状態による表示・非表示の強制制御 ---
     async function checkAuth() {
+        console.log("要素確認:", document.getElementById('auth-section'), document.getElementById('admin-content'));
         const authSec = document.getElementById('auth-section');
         const adminContent = document.getElementById('admin-content');
         
@@ -834,6 +835,7 @@ async function deleteCurrentProject() {
     </div>
 </body>
 </html>
+
 
 
 
