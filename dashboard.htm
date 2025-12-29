@@ -124,6 +124,7 @@
     <div class="nav-item" id="nav-qr" onclick="showSection('qr'); loadQRProjectList();">URL・QRコード作成</div>
     <div class="nav-item" id="nav-responses" onclick="showSection('responses')">送信データ（回答）確認</div>
     <div id="nav-response-list" class="nav-sub-list"></div>
+    <button onclick="client.auth.signOut().then(() => location.reload())" style="margin-top:20px; color:red; cursor:pointer; background:none; border:none; text-decoration:underline;">ログアウトテスト</button>
 </div>
 
 <div id="main-content">
@@ -816,6 +817,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
