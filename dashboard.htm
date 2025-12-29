@@ -289,11 +289,26 @@
         document.getElementById('edit-color-panel').style.display = 'none';
     }
 
-    {
-    // 【案件選択の誘導】編集画面を開こうとしたとき、案件が選ばれていなければ一覧へ戻す
-    if (id === 'edit-all' && !currentId) {
-        alert("編集する案件を先に選択してください。");
-        id = 'list'; // 強制的に案件一覧へ
+    // ★ここを修正（関数名を追加し、誘導処理を実装）
+    function showSection(id) {
+        // 【案件選択の誘導】編集画面(edit-all)を開こうとしたとき、案件(currentId)がなければ警告
+        if (id === 'edit-all' && !currentId) {
+            alert("編集する案件を先に選択してください。");
+            id = 'list'; // 案件一覧セクションを表示するように切り替え
+        }
+
+        // 全セクションを一旦非表示にする
+        document.querySelectorAll('section').forEach(s => s.style.display = 'none');
+        // 指定されたセクションを表示する
+        const targetSection = document.getElementById('sec-' + id);
+        if (targetSection) {
+            targetSection.style.display = 'block';
+        }
+        
+        // ナビゲーションのアクティブ表示切り替え
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('nav-active'));
+        const navEl = document.getElementById('nav-' + id);
+        if(navEl) navEl.classList.add('nav-active');
     }
 
     document.querySelectorAll('section').forEach(s => s.style.display = 'none');
@@ -757,6 +772,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
