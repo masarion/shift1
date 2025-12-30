@@ -288,6 +288,11 @@
     let currentId = null;
     let sortable = null;
 
+    // ページが読み込まれたら、案件一覧を表示するスイッチ
+window.onload = async () => {
+    await loadProjects();
+};
+
     function applyColor(c) {
         document.execCommand('foreColor', false, c);
         document.getElementById('edit-color-bar').style.backgroundColor = c;
@@ -991,6 +996,7 @@ async function loadProjects() {
 </script>
 </body>
 </html>
+
 
 
 
