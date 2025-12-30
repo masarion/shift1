@@ -848,24 +848,38 @@ async function viewResponses(projectId, projectTitle) {
     // 画面を「回答確認セクション」に切り替え
     showSection('responses');
     
+    async function viewResponses(projectId, projectTitle) {
+    showSection('responses');
     const container = document.getElementById('sec-responses');
-    // 読み込み中の表示
-    container.innerHTML = `<h1>送信データ確認：${projectTitle}</h1><div class="card">データを読み込み中...</div>`;
-
+    
     try {
-        // Supabaseの responses テーブルから、この案件(project_id)のデータを取得
-        const { data: res, error } = await client
+        console.log("Fetching responses for ID:", projectId);
+        
+        const { data, error, status, statusText } = await client
             .from('responses')
             .select('*')
-            .eq('project_id', projectId)
-            .order('created_at', { ascending: false });
+            .eq('project_id', projectId);
 
-        if (error) throw error;
-
-        if (!res || res.length === 0) {
-            container.innerHTML = `<h1>送信データ確認：${projectTitle}</h1><div class="card">まだ送信された回答はありません。</div>`;
+        if (error) {
+            console.error("Supabase Error Details:", error);
+            container.innerHTML = `
+                <div class="card">
+                    <h2 style="color:red;">読み込みエラー</h2>
+                    <p><strong>エラーコード:</strong> ${error.code}</p>
+                    <p><strong>メッセージ:</strong> ${error.message}</p>
+                    <p><strong>ヒント:</strong> RLS（セキュリティ設定）で閲覧が禁止されている可能性があります。</p>
+                </div>`;
             return;
         }
+        
+        // 成功した場合（一旦データ数を表示）
+        container.innerHTML = `<h1>${projectTitle}</h1><div class="card">成功！ ${data.length} 件のデータが見つかりました。</div>`;
+        
+    } catch (e) {
+        console.error("Catch block error:", e);
+        container.innerHTML = `<div class="card">プログラム実行エラー: ${e.message}</div>`;
+    }
+}
 
         // テーブル（表）の組み立て
         let tableHtml = `
@@ -910,6 +924,7 @@ async function viewResponses(projectId, projectTitle) {
 </script>
 </body>
 </html>
+
 
 
 
