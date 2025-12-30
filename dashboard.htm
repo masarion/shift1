@@ -286,12 +286,13 @@
     const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     const client = supabase.createClient(S_URL, S_KEY);
     let currentId = null;
-    let sortable = null;
-
+    
     // ページが読み込まれたら、案件一覧を表示するスイッチ
 window.onload = async () => {
     await loadProjects();
 };
+    
+    let sortable = null;
 
     function applyColor(c) {
         document.execCommand('foreColor', false, c);
@@ -996,6 +997,7 @@ async function loadProjects() {
 </script>
 </body>
 </html>
+
 
 
 
