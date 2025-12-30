@@ -421,7 +421,7 @@ async function duplicateProject(sourceId) {
         }
 
         alert("コピーを作成しました。");
-        (); // 一覧を再読み込み
+        loadProjects(); // 一覧を再読み込み
     } catch (e) {
         console.error(e);
         alert("コピーに失敗しました。");
@@ -530,7 +530,7 @@ function deleteShiftRow(btn) {
         })).filter(s => s.name !== '');
         await client.from('shift_types').insert(shifts);
         alert("保存しました");
-        ();
+        loadProjects();
     }
 
     function openLivePreview() {
@@ -997,6 +997,7 @@ async function loadProjects() {
 </script>
 </body>
 </html>
+
 
 
 
