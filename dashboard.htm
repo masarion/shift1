@@ -2,1014 +2,277 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>シフト管理システム | 管理パネル</title>
+    <title>シフト調整・データ確認</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
-        :root { 
-            --primary: #4361ee; 
-            --sidebar-bg: #2b3a67; 
-            --active-bg: #4895ef; 
-            --bg: #f8f9fc; 
-            --text: #2b2d42; 
-            --danger: #e11d48;
-            --success: #059669;
+        :root { --sat: #007bff; --sun: #dc3545; --bg: #f4f7f9; --tag-bg: #e2e8f0; --danger: #e53e3e; --success: #38a169; --pdf: #6366f1; }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 0; color: #2d3748; }
+        
+        .txt-sat { color: var(--sat) !important; }
+        .txt-sun { color: var(--sun) !important; }
+
+        .header-content { background: white; padding: 15px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 2000; }
+        h2 { margin: 0 0 10px 0; font-size: 1.4rem; border-left: 5px solid #4a5568; padding-left: 15px; }
+        .how-to { font-size: 0.85rem; color: #4a5568; margin-bottom: 15px; background: #fffaf0; border: 1px solid #feebc8; padding: 12px; border-radius: 6px; line-height: 1.6; }
+        .caution { color: var(--danger); font-weight: bold; }
+        
+        .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .spacer { flex-grow: 1; }
+        button { padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; border: 1px solid #cbd5e0; background: white; }
+        .btn-pdf { background: var(--pdf); color: white; border: none; }
+        .btn-save { background: var(--success); color: white; border: none; }
+
+        .table-area { padding: 20px; overflow: auto; height: calc(100vh - 240px); }
+        .main-table { border-collapse: collapse; background: white; table-layout: fixed; width: max-content; }
+        .main-table th, .main-table td { border: 1px solid #cbd5e0; padding: 4px; text-align: center; vertical-align: top; width: 115px; min-width: 115px; }
+        .main-table thead th { background: #f7fafc; position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #a0aec0; padding: 8px 4px; }
+        
+        .shift-name-col { background: #edf2f7 !important; font-weight: bold; position: sticky; left: 0; z-index: 160; text-align: left !important; width: 140px !important; min-width: 140px !important; vertical-align: middle; }
+        .main-table thead th.shift-name-col { z-index: 170; }
+
+        .name-tag { background: var(--tag-bg); border: 1px solid #cbd5e0; border-radius: 4px; padding: 2px 4px; margin: 2px 0; font-size: 12px; white-space: nowrap; display: block; cursor: grab; }
+
+        #print-container { display: none; }
+        #print-loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 3000; align-items: center; justify-content: center; font-size: 1.5rem; }
+
+        @media print {
+            @page { size: A4 landscape; margin: 5mm; }
+            .header-content, .table-area, #print-loading { display: none !important; }
+            #print-container { display: block !important; }
+            .print-page { page-break-after: always; }
+            .print-table { border-collapse: collapse; width: 100%; table-layout: fixed; border: 2px solid #000; }
+            .print-table th, .print-table td { border: 1px solid #000; padding: 4px 2px; text-align: center; vertical-align: middle; }
+            .print-table th { font-size: 10px; background: #eee !important; }
+            .p-shift-col { width: 100px; font-size: 10px; font-weight: bold; background: #eee !important; text-align: left; }
+            .p-name { display: block; font-size: 9px; line-height: 1.2; }
+            h3 { font-size: 13px; margin: 5px 0; }
         }
-        body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; color: var(--text); }
-        
-        /* サイドバー */
-        #sidebar { width: 260px; background: var(--sidebar-bg); color: white; padding: 25px 15px; flex-shrink: 0; display: flex; flex-direction: column; overflow-y: auto; }
-        .nav-item { padding: 14px 18px; cursor: pointer; border-radius: 10px; margin-bottom: 8px; transition: 0.3s; text-decoration: none; color: white; display: block; }
-        .nav-active { background: var(--active-bg); font-weight: bold; }
-        .nav-sub-list { margin-left: 15px; border-left: 2px solid rgba(255,255,255,0.2); padding-left: 10px; margin-bottom: 15px; }
-        .nav-sub-item { padding: 6px 8px; cursor: pointer; color: rgba(255,255,255,0.7); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .nav-sub-item:hover { color: white; background: rgba(255,255,255,0.1); border-radius: 4px; }
-
-        /* メインエリア */
-        #main-content { flex-grow: 1; overflow-y: auto; padding: 40px; }
-        .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #edf2f7; margin-bottom: 25px; }
-        
-        /* 編集エリア */
-        .edit-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 25px; align-items: start; }
-        .section-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #f1f5f9; }
-        .section-desc { font-size: 0.85rem; color: #64748b; margin-bottom: 20px; line-height: 1.5; }
-        
-        .input-group { margin-bottom: 15px; }
-        .input-group label {
-    display: block;
-    font-size: 0.95rem;    /* 0.85から少し大きくしました */
-    font-weight: bold;
-    color: #334155;        /* #64748bから、より濃く視認性の高い色に変更しました */
-    margin-bottom: 8px;    /* 6pxから少し広げて、入力欄との重なりをスッキリさせました */
-}
-        .input-group input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 0.95rem; box-sizing: border-box; }
-
-        /* 共通ツールバーのスタイル */
-        .floating-toolbar {
-    position: sticky; top: 0; z-index: 100; background: #fff; padding: 10px; border: 1px solid #e2e8f0;
-    border-radius: 10px; display: flex; gap: 10px; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-    margin-bottom: 20px;
-    
-    /* 追加：幅を制限し、はみ出さないようにする */
-    max-width: fit-content; 
-    flex-wrap: wrap;
-}
-        .toolbar-group { display: flex; gap: 5px; align-items: center; border-right: 1px solid #eee; padding-right: 10px; }
-        .toolbar-icon-btn { background: white; border: 1px solid #ddd; padding: 5px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; }
-        .toolbar-icon-btn:hover { background: #f1f5f9; }
-        .color-bar { width: 16px; height: 3px; margin-top: 1px; }
-
-        /* エディタ本体 */
-        .rich-editor { min-height: 80px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; background: white; outline: none; line-height: 1.5; }
-        
-        /* ボタン・アクション */
-        .action-area { text-align: center; margin-top: 20px; padding: 30px 0; }
-        .btn-save-fixed { background: var(--success); color: white; padding: 14px 60px; font-size: 1.1rem; border-radius: 12px; cursor: pointer; border: none; font-weight: bold; }
-        .btn-preview { background: white; color: var(--primary); border: 1.5px solid var(--primary); padding: 8px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        
-        /* シフト行 */
-        .shift-row { display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 10px; margin-bottom: 8px; border: 1px solid #e2e8f0; }
-        .drag-handle { cursor: grab; color: #64748b; }
-
-        /* QR・印刷系 */
-        .btn-print { background: var(--primary); color: white; width: 100%; padding: 15px; font-size: 1rem; margin-top: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
-        .print-config { background: #f1f5f9; padding: 15px; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; justify-content: center; }
-        #print-preview-box { text-align: center; padding: 40px 20px; background: #fff; border: none; }
-
-        /* 削除ボタンのホバー設定 */
-.btn-delete-pj:hover {
-    color: var(--danger) !important;
-    text-shadow: 0 0 8px rgba(225, 29, 72, 0.3);
-    font-weight: bold;
-}
-
-        .operation-guide {
-    border: 1px solid #e2e8f0;
-    background-color: #fcfcfc;
-    padding: 12px 15px;
-    margin-bottom: 15px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    line-height: 1.6;
-}
-.guide-title {
-    font-weight: bold;
-    color: #475569;
-    border-bottom: 1px solid #e2e8f0;
-    margin-bottom: 8px;
-    padding-bottom: 4px;
-    display: inline-block;
-}
-.operation-guide ul {
-    margin: 0;
-    padding-left: 1.2rem;
-    color: #64748b;
-}
-.operation-guide li {
-    margin-bottom: 2px;
-}
     </style>
 </head>
 <body>
-    <div id="login-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#f0f2f5; z-index:9999; align-items:center; justify-content:center;"></div>
 
-<div id="sidebar">
-    <h3 style="padding-left:10px;">管理システム</h3>
-    <div class="nav-item nav-active" id="nav-projects" onclick="showSection('projects')">案件一覧</div>
-    <div class="nav-item" id="nav-edit-all" onclick="showSection('edit-all')">
-    ページ内容・シフト編集
-    <span id="current-editing-name" style="font-size: 0.75rem; color: #4361ee; display: block; margin-top: 4px; font-weight: bold;"></span>
+<div id="print-loading">PDFを作成しています...</div>
+
+<div class="header-content">
+    <h2 id="project-title-display">提出データ確認</h2>
+    <div class="how-to">
+        【操作】移動：ドラッグ＆ドロップ ／ 削除：名前をクリック<br>
+        <span class="caution">【注意】「変更を保存」を押すとスタッフの元データが上書きされます。</span>
+    </div>
+    <div class="actions">
+        <div id="month-display" style="font-weight: bold; font-size: 1.1rem; margin-right: 10px;"></div>
+        <button onclick="copyTableForExcel()">エクセル用にコピー</button>
+        <button class="btn-pdf" onclick="generateSplitPDF()">PDF作成（前後半2枚）</button>
+        <div class="spacer"></div>
+        <button onclick="undoLastAction()">1つ前に戻る</button>
+        <button onclick="resetToInitial()">全て元に戻す</button>
+        <button class="btn-save" onclick="saveToDatabase()">変更を保存</button>
+        <button onclick="window.close()" style="margin-left:10px;">× 閉じる</button>
+    </div>
 </div>
-    <div class="nav-item" id="nav-qr" onclick="showSection('qr'); loadQRProjectList();">URL・QRコード作成</div>
-    <div class="nav-item" id="nav-responses" onclick="showSection('responses')">送信データ（回答）確認</div>
-    <div id="nav-response-list" class="nav-sub-list"></div>
-    <button onclick="client.auth.signOut().then(() => location.reload())" style="margin-top:20px; color:red; cursor:pointer; background:none; border:none; text-decoration:underline;">ログアウトテスト</button>
+
+<div class="table-area">
+    <table class="main-table">
+        <thead id="h-row"></thead>
+        <tbody id="b-rows"></tbody>
+    </table>
 </div>
 
-<div id="main-content">
-    <section id="sec-projects">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
-            <h1>案件一覧</h1>
-            <button class="btn-save-fixed" style="padding:10px 30px; font-size:1rem;" onclick="createNewProject()">+ 新規案件作成</button>
-        </div>
-        <div id="project-list">読み込み中...</div>
-    </section>
-
-    <section id="sec-edit-all" style="display:none;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
-            <div>
-                <h1 id="edit-page-title" style="margin-bottom:5px;">案件の編集</h1>
-                <p style="font-size: 0.95rem; font-weight: bold; color: #334155; margin:0;">スタッフ用ページの編集ができます。</p>
-            </div>
-            <button class="btn-preview" onclick="openLivePreview()">スタッフ用ページを見る</button>
-        </div>
-
-        <div class="floating-toolbar">
-            <div class="toolbar-group">
-                <button class="toolbar-icon-btn" onclick="document.execCommand('bold')" title="太字">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path></svg>
-                </button>
-                <button class="toolbar-icon-btn" onclick="document.execCommand('underline')" title="下線">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"></path><line x1="4" y1="21" x2="20" y2="21"></line></svg>
-                </button>
-            </div>
-            <div class="toolbar-group">
-    <select onchange="document.execCommand('fontSize', false, this.value); this.value='';" style="padding:4px; border-radius:4px; border:1px solid #ddd; cursor:pointer;">
-        <option value="">サイズ</option>
-        <option value="1">極小</option>
-        <option value="2">小</option>
-        <option value="3">標準</option>
-        <option value="4">中</option>
-        <option value="5">大</option>
-        <option value="6">特大</option>
-        <option value="7">超特大</option>
-    </select>
-</div> <div class="toolbar-group" style="position:relative; border-right:none;">
-    <button onclick="const p=document.getElementById('edit-color-panel'); p.style.display=p.style.display==='grid'?'none':'grid'" style="background:white; border:1px solid #ddd; padding:4px 8px; border-radius:4px; cursor:pointer; display:flex; flex-direction:column; align-items:center;">
-        <span style="font-weight:bold; font-family:serif; font-size:14px; line-height:1;">A</span>
-        <div id="edit-color-bar" style="width:16px; height:3px; background:#000;"></div>
-    </button>
-
-    <div id="edit-color-panel" style="display:none; position:absolute; top:100%; left:0; grid-template-columns:repeat(5, 1fr); gap:4px; background:white; padding:8px; border:1px solid #ccc; box-shadow:0 4px 10px rgba(0,0,0,0.1); z-index:1000; width:120px;">
-        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#000000'); document.getElementById('edit-color-bar').style.backgroundColor='#000000'; document.getElementById('edit-color-panel').style.display='none'" style="width:20px; height:20px; background:#000000; cursor:pointer; border:1px solid #ddd;"></div>
-        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#ff0000'); document.getElementById('edit-color-bar').style.backgroundColor='#ff0000'; document.getElementById('edit-color-panel').style.display='none'" style="width:20px; height:20px; background:#ff0000; cursor:pointer; border:1px solid #ddd;"></div>
-        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#0000ff'); document.getElementById('edit-color-bar').style.backgroundColor='#0000ff'; document.getElementById('edit-color-panel').style.display='none'" style="width:20px; height:20px; background:#0000ff; cursor:pointer; border:1px solid #ddd;"></div>
-        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#059669'); document.getElementById('edit-color-bar').style.backgroundColor='#059669'; document.getElementById('edit-color-panel').style.display='none'" style="width:20px; height:20px; background:#059669; cursor:pointer; border:1px solid #ddd;"></div>
-        <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#ff9900'); document.getElementById('edit-color-bar').style.backgroundColor='#ff9900'; document.getElementById('edit-color-panel').style.display='none'" style="width:20px; height:20px; background:#ff9900; cursor:pointer; border:1px solid #ddd;"></div>
-    </div> </div> </div>
-
-        <div class="edit-grid">
-    <div class="card">
-        <div class="section-title">1. 表示テキストの設定</div>
-
-        <div class="operation-guide">
-            <div class="guide-title">操作説明</div>
-            <ul>
-                <li><strong>編集：</strong> 各入力欄を書き換えられます。<strong>改行もそのまま反映されます。</strong></li>
-                <li><strong>装飾：</strong> 文字を選択し、<strong>上のツールバー</strong>（Bや色など）で見た目を整えられます。</li>
-                <li><strong>確定：</strong> 完了後、必ずページ最下部の<strong>「変更を保存して反映」</strong>を押してください。</li>
-            </ul>
-            <div style="margin-top: 8px; font-size: 0.8rem; color: #e11d48; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
-                ※最下部の「この案件を完全に削除する」は、案件自体が消えるためご注意ください。
-            </div>
-        </div>
-        <div class="input-group">
-    <label>
-        案件名称（管理用） 
-        <span style="font-weight: normal; color: #94a3b8; font-size: 0.75rem; margin-left: 8px;">
-            スタッフがブックマークしたときの名称になります。※この項目は文字装飾が適用できません。
-        </span>
-    </label>
-    <input type="text" id="edit-title-tag">
-</div>
-                <div class="input-group">
-    <label>
-        画面トップの見出し
-        <span style="display: block; font-weight: normal; color: #94a3b8; font-size: 0.75rem; margin-top: 2px; line-height: 1.4;">
-            ※翌月が自動で表示されるのでそれ以降を編集してください<br>
-            （例：「月のシフト」と入力すると「◯月のシフト」と表示されます。※◯月＝翌月です）
-        </span>
-    </label>
-    <div id="edit-h1-title" class="rich-editor" contenteditable="true" style="margin-top: 8px;"></div>
-</div>
-                <div class="input-group"><label>冒頭メッセージ</label><div id="edit-msg-top" class="rich-editor" contenteditable="true"></div></div>
-                <div class="input-group"><label>カレンダー操作説明</label><div id="edit-msg-calendar" class="rich-editor" contenteditable="true"></div></div>
-
-<div class="input-group"><label>備考・その他希望欄の説明</label><div id="edit-msg-bottom" class="rich-editor" contenteditable="true"></div></div>
-
-<div class="input-group"><label>確認画面の注意書き</label><div id="edit-msg-confirm" class="rich-editor" contenteditable="true"></div></div>
-            </div>
-            <div class="card">
-                <div class="section-title">2. シフト枠の種類</div>
-                <div class="operation-guide">
-    <div class="guide-title">操作説明</div>
-    <ul>
-        <li><strong>並べ替え：</strong> 左のマークをドラッグすると並び替えができて、番号も同時に入れ替わります</li>
-        <li><strong>テキスト：</strong> 各枠内をクリックして直接編集できます</li>
-        <li><strong>削除：</strong> 右のゴミ箱アイコンから削除（確認ダイアログが表示されます）</li>
-        <li><strong>確定：</strong> 完了後、必ずページ最下部の<strong>「変更を保存して反映」</strong>を押してください</li>
-    </ul>
-</div>
-                <div id="shift-manager-list"></div>
-                <button onclick="addShiftRow()" style="width:100%; padding:12px; margin-top:10px; background:#f1f5f9; border:1px dashed #cbd5e1; border-radius:8px; cursor:pointer;">+ 枠を追加</button>
-            </div>
-        </div>
-
-        <div class="action-area">
-            <button class="btn-save-fixed" onclick="saveSettings()">変更を保存して反映</button><br>
-            <button class="btn-delete-pj" onclick="deleteCurrentProject()" style="background:none; border:none; color:#94a3b8; text-decoration:underline; cursor:pointer; margin-top:20px;">この案件を完全に削除する</button>
-        </div>
-    </section>
-
-    <section id="sec-qr" style="display:none;">
-        <h1>URL・QRコード作成</h1>
-        <div class="edit-grid">
-            <div class="card">
-                <div class="section-title">案件を選択</div>
-                <div id="qr-pj-list"></div>
-            </div>
-            <div class="card" id="preview-card-area">
-                <div class="section-title">掲示用プレビュー</div>
-                <div class="print-config" id="print-config-area" style="display:none;">
-                    <span>対象月：</span>
-                    <select id="print-month-select" onchange="updatePreviewMonth()">
-                        <option value="◯月">指定なし</option>
-                        <script>for(let i=1;i<=12;i++) document.write(`<option value="${i}月">${i}月</option>`);</script>
-                    </select>
-                </div>
-                <div id="print-preview-box">
-                    <p id="preview-month-display" style="font-size: 1.5rem; font-weight: bold; margin: 0; color: #4361ee;">◯月</p>
-                    <h2 id="qr-pj-name" style="margin:5px 0 0 0;">案件を選択してください</h2>
-                    <div id="qrcode-area" style="display:flex; justify-content:center; margin:25px 0;"></div>
-                    <p id="qr-pj-url" style="font-size:0.8rem; color:#64748b; word-break:break-all;"></p>
-
-<button id="btn-copy-url" onclick="copyToClipboard()" style="display:none; margin: 10px auto; padding: 6px 12px; background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 0.8rem; align-items: center; gap: 5px;">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-    URLをコピー
-</button>
-
-                </div>
-                <button id="btn-print-action" class="btn-print" style="display:none;" onclick="execPrint()">印刷用画面を開く</button>
-            </div>
-        </div>
-    </section>
-
-    <section id="sec-responses" style="display:none;">
-        <h1>送信データ（回答）確認</h1>
-        <div class="card"><p>左メニューの案件リストから確認したい案件を選択してください。</p></div>
-    </section>
-</div>
+<div id="print-container"></div>
 
 <script>
     const S_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
     const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     const client = supabase.createClient(S_URL, S_KEY);
-    let currentId = null;
-    
-    // ページが読み込まれたら、案件一覧を表示するスイッチ
-window.onload = async () => {
-    await loadProjects();
-};
-    
-    let sortable = null;
 
-    function applyColor(c) {
-        document.execCommand('foreColor', false, c);
-        document.getElementById('edit-color-bar').style.backgroundColor = c;
-        document.getElementById('edit-color-panel').style.display = 'none';
-    }
+    let _MASTER_DATA = [], _INITIAL_DATA = [], _HISTORY = [], _SHIFT_TYPES = [], _CAL_DATES = [];
+    let currentProjectId = null;
 
-    // 画面切り替えと案件選択の誘導
-    function showSection(id) {
-        // 編集画面を開こうとした時に、案件が選ばれていなければ警告を出して一覧へ
-        if (id === 'edit-all' && !currentId) {
-            alert("編集する案件を先に選択してください。");
-            id = 'list'; 
-        }
-
-        // セクションの表示切り替え
-        document.querySelectorAll('section').forEach(s => s.style.display = 'none');
-        const targetSection = document.getElementById('sec-' + id);
-        if (targetSection) {
-            targetSection.style.display = 'block';
-        }
+    async function startApp(projectId) {
+        currentProjectId = projectId;
         
-        // ナビゲーションの見た目を更新
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('nav-active'));
-        const navEl = document.getElementById('nav-' + id);
-        if(navEl) navEl.classList.add('nav-active');
-    }
+        // 案件情報の取得
+        const { data: pj } = await client.from('projects').select('*').eq('id', projectId).single();
+        if (pj) document.getElementById('project-title-display').textContent = `データ確認：${pj.title_tag}`;
 
-    // --- 1. プロジェクト一覧とサイドバーを更新する関数 ---
-    async function loadProjects() {
-        try {
-            const { data: pjs, error } = await client.from('projects').select('*').order('created_at', { ascending: false });
-            if (error) throw error;
-
-            // 右側の案件一覧（メインエリア）を更新
-            const projectListEl = document.getElementById('project-list');
-            if (projectListEl) {
-                if (pjs && pjs.length > 0) {
-                    projectListEl.innerHTML = pjs.map(p => `
-                        <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:15px 25px;">
-                            <strong>${p.title_tag || '無題'}</strong>
-                            <div style="display:flex; gap:10px;">
-                                <button onclick="duplicateProject('${p.id}')" style="background:#f1f5f9; color:var(--text); border:1px solid #cbd5e1; padding:8px 15px; border-radius:8px; cursor:pointer; font-size:0.85rem;">コピーを作成</button>
-                                <button onclick="editProject('${p.id}')" style="background:var(--primary); color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer;">編集する</button>
-                            </div>
-                        </div>
-                    `).join('');
-                } else {
-                    projectListEl.innerHTML = '<div class="card">案件がありません。「新規案件作成」から追加してください。</div>';
-                }
-            }
-
-            // 左サイドバーの「送信データ確認」リストを更新
-            const responseListEl = document.getElementById('nav-response-list');
-            if (responseListEl && pjs) {
-                responseListEl.innerHTML = pjs.map(p => `
-                    <div class="nav-sub-item" onclick="viewResponses('${p.id}', '${p.title_tag || '無題'}')">└ ${p.title_tag || '無題'}</div>
-                `).join('');
-            }
-        } catch (e) {
-            console.error("loadProjectsエラー:", e);
-            const listEl = document.getElementById('project-list');
-            if(listEl) {
-                // 何が原因で止まったのか、画面に直接表示させます
-                listEl.innerHTML = `<div class="card" style="border:2px solid red;">
-                    <strong>読み込み失敗</strong><br>
-                    エラー内容: ${e.message || "不明なエラー"}<br>
-                    <small style="color:gray;">※詳細はコンソール(F12)を確認してください</small>
-                </div>`;
-            }
-        }
-
-    // --- 2. 回答データを取得・表示する関数（新規） ---
-    async function viewResponses(projectId, projectTitle) {
-        showSection('responses');
-        const container = document.getElementById('sec-responses');
-        container.innerHTML = `<h1>送信データ確認：${projectTitle}</h1><div class="card">読み込み中...</div>`;
-        try {
-            const { data, error } = await client.from('responses').select('*').eq('project_id', projectId).order('created_at', { ascending: false });
-            if (error) {
-                container.innerHTML = `<div class="card" style="color:red;">エラー: ${error.message}</div>`;
-                return;
-            }
-            if (!data || data.length === 0) {
-                container.innerHTML = `<h1>${projectTitle}</h1><div class="card">まだ回答がありません。</div>`;
-                return;
-            }
-            container.innerHTML = `<h1>${projectTitle}</h1><div class="card" style="color:green;">✓ 成功！ ${data.length} 件のデータが見つかりました。</div>`;
-        } catch (e) {
-            container.innerHTML = `<div class="card">エラー: ${e.message}</div>`;
-        }
-    }
-
-    // 案件のコピー（複製）処理
-async function duplicateProject(sourceId) {
-    if (!confirm("この案件の設定をコピーして新規作成しますか？")) return;
-
-    try {
-        // 1. 元の案件データを取得
-        const { data: p, error: pErr } = await client.from('projects').select('*').eq('id', sourceId).single();
-        if (pErr) throw pErr;
-
-        // 2. 複製用の新しい案件を作成（IDは自動生成されるため除外）
-        const { data: newP, error: insErr } = await client.from('projects').insert([{
-            title_tag: p.title_tag + " のコピー",
-            h1_title: p.h1_title,
-            msg_top: p.msg_top,
-            msg_calendar: p.msg_calendar,
-            msg_confirm: p.msg_confirm
-        }]).select().single();
-        if (insErr) throw insErr;
-
-        // 3. 元の案件に紐付くシフト枠を取得
-        const { data: shifts, error: sErr } = await client.from('shift_types').select('*').eq('project_id', sourceId);
-        if (sErr) throw sErr;
-
-        // 4. シフト枠があれば、新しい案件IDに紐付けて一括保存
-        if (shifts && shifts.length > 0) {
-            const newShifts = shifts.map(s => ({
-                project_id: newP.id,
-                name: s.name,
-                display_order: s.display_order
-            }));
-            const { error: insSErr } = await client.from('shift_types').insert(newShifts);
-            if (insSErr) throw insSErr;
-        }
-
-        alert("コピーを作成しました。");
-        loadProjects(); // 一覧を再読み込み
-    } catch (e) {
-        console.error(e);
-        alert("コピーに失敗しました。");
-    }
-}
-
-    async function editProject(id) {
-        currentId = id;
-        const { data: p } = await client.from('projects').select('*').eq('id', id).single();
-        // 【追加】サイドメニューの<span>に案件名を流し込む
-    document.getElementById('current-editing-name').textContent = p ? `選択中: ${p.title_tag}` : "";
-        document.getElementById('edit-page-title').textContent = `「${p.title_tag}」の編集`;
-        document.getElementById('edit-title-tag').value = p.title_tag || '';
-        document.getElementById('edit-h1-title').innerHTML = p.h1_title || '';
-        document.getElementById('edit-msg-top').innerHTML = p.msg_top || '';
-        document.getElementById('edit-msg-calendar').innerHTML = p.msg_calendar || '';
-        document.getElementById('edit-msg-bottom').innerHTML = p.msg_bottom || '';
-        document.getElementById('edit-msg-confirm').innerHTML = p.msg_confirm || '';
+        // シフト枠と提出データの取得
+        const { data: t } = await client.from('shift_types').select('*').eq('project_id', projectId).order('display_order');
+        const { data: s } = await client.from('submissions').select('*').eq('project_id', projectId);
         
-        const { data: shifts } = await client.from('shift_types').select('*').eq('project_id', id).order('display_order');
-        const container = document.getElementById('shift-manager-list');
-        container.innerHTML = '';
-        if(shifts && shifts.length > 0) shifts.forEach(s => addShiftRow(s.name));
-        else addShiftRow('日勤');
+        _SHIFT_TYPES = t || [];
+        _INITIAL_DATA = JSON.parse(JSON.stringify(s || []));
+        _MASTER_DATA = JSON.parse(JSON.stringify(_INITIAL_DATA));
+
+        // カレンダー設定（翌月分を表示するロジック）
+        const now = new Date();
+        const target = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        document.getElementById('month-display').textContent = `${target.getFullYear()}年 ${target.getMonth()+1}月`;
         
-        if(sortable) sortable.destroy();
-        sortable = new Sortable(container, { 
-            handle: '.drag-handle', 
-            animation: 150,
-            onEnd: function() {
-                updateShiftNumbers(); // 並べ替えが終わったら番号を振り直す
-            }
+        const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+        _CAL_DATES = Array.from({length: lastDay}, (_, i) => {
+            const day = i + 1;
+            return `${target.getFullYear()}-${String(target.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
         });
-        showSection('edit-all');
+
+        renderAll();
     }
 
-    function updateShiftNumbers() {
-    const rows = document.querySelectorAll('.shift-row');
-    rows.forEach((row, index) => {
-        // 各行の中にある「number-badge」というクラスの要素を探して数字を入れる
-        const numBadge = row.querySelector('.number-badge');
-        if (numBadge) {
-            numBadge.textContent = index + 1;
-        }
-    });
-}
-
-    // シフト枠の削除を実行する関数
-function deleteShiftRow(btn) {
-    // 1. 確認ダイアログを表示
-    const confirmed = confirm("このシフト枠を削除しますか？\n\n※まだこの時点ではデータベースからは削除されません。\n最下部の「変更を保存して反映」を押すと確定します。");
-
-    // 2. 「OK」が押された場合のみ削除を実行
-    if (confirmed) {
-        btn.parentElement.remove(); // ボタンの親要素（shift-row全体）を消す
-        updateShiftNumbers();       // 残った枠の番号を上から振り直す
-    }
-}
-
-    function addShiftRow(val = '') {
-    const div = document.createElement('div');
-    div.className = 'shift-row';
-    // 行の先頭に <span class="number-badge"></span> を追加
-    div.innerHTML = `
-        <div class="drag-handle" style="cursor:grab; display:flex; align-items:center; color:#94a3b8;">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="9" cy="12" r="1"></circle>
-        <circle cx="9" cy="5" r="1"></circle>
-        <circle cx="9" cy="19" r="1"></circle>
-        <circle cx="15" cy="12" r="1"></circle>
-        <circle cx="15" cy="5" r="1"></circle>
-        <circle cx="15" cy="19" r="1"></circle>
-    </svg>
-</div>
-        <span class="number-badge" style="font-weight:bold; margin:0 10px; color:#64748b; min-width:20px;"></span>
-        <input type="text" value="${val}" style="flex:1; border:none; background:transparent;">
-        <button onclick="deleteShiftRow(this)" style="background:none; border:none; cursor:pointer; color:#94a3b8; padding:5px; transition:0.2s;" onmouseover="this.style.color='#e11d48'" onmouseout="this.style.color='#94a3b8'">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="3 6 5 6 21 6"></polyline>
-        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-        <line x1="10" y1="11" x2="10" y2="17"></line>
-        <line x1="14" y1="11" x2="14" y2="17"></line>
-    </svg>
-</button>`;
-    
-    document.getElementById('shift-manager-list').appendChild(div);
-    
-    // 追加した後に番号を更新
-    updateShiftNumbers();
-}
-
-    async function saveSettings() {
-        if(!currentId) return;
-        await client.from('projects').update({
-            title_tag: document.getElementById('edit-title-tag').value,
-            h1_title: document.getElementById('edit-h1-title').innerHTML,
-            msg_top: document.getElementById('edit-msg-top').innerHTML,
-            msg_calendar: document.getElementById('edit-msg-calendar').innerHTML,
-            msg_bottom: document.getElementById('edit-msg-bottom').innerHTML,
-            msg_confirm: document.getElementById('edit-msg-confirm').innerHTML
-        }).eq('id', currentId);
+    function renderAll() {
+        const h = document.getElementById('h-row'), b = document.getElementById('b-rows'), w = ["日","月","火","水","木","金","土"];
         
-        await client.from('shift_types').delete().eq('project_id', currentId);
-        const shifts = Array.from(document.querySelectorAll('.shift-row input')).map((el, i) => ({
-            project_id: currentId, name: el.value, display_order: i
-        })).filter(s => s.name !== '');
-        await client.from('shift_types').insert(shifts);
-        alert("保存しました");
-        loadProjects();
-    }
+        h.innerHTML = `<tr><th class="shift-name-col">シフト枠</th>${_CAL_DATES.map(d => {
+            const dt = new Date(d.replace(/-/g, '/')); // iOS対策
+            const dayIdx = dt.getDay();
+            const cl = dayIdx === 0 ? 'txt-sun' : (dayIdx === 6 ? 'txt-sat' : '');
+            return `<th><span class="${cl}">${dt.getMonth()+1}/${dt.getDate()}(${w[dayIdx]})</span></th>`;
+        }).join('')}</tr>`;
 
-    function openLivePreview() {
-        if(!currentId) return;
-        window.open(window.location.href.split('dashboard.htm')[0] + 'index.htm?id=' + currentId + '&preview=1', '_blank');
-    }
+        b.innerHTML = '';
+        _SHIFT_TYPES.forEach(type => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td class="shift-name-col">${type.name}</td>`;
+            
+            _CAL_DATES.forEach(date => {
+                const td = document.createElement('td');
+                td.ondragover = e => e.preventDefault();
+                td.ondrop = e => { 
+                    e.preventDefault(); 
+                    const info = JSON.parse(e.dataTransfer.getData("text/plain"));
+                    handleMove(info, date, type.name); 
+                };
 
-    async function loadQRProjectList() {
-        const { data: pjs } = await client.from('projects').select('*').order('created_at', { ascending: false });
-        document.getElementById('qr-pj-list').innerHTML = pjs.map(p => `
-            <div onclick="generateQR('${p.id}', '${p.title_tag}')" style="padding:15px; border:1px solid #eee; border-radius:10px; margin-bottom:10px; cursor:pointer; background:#fff;"><strong>${p.title_tag}</strong></div>
-        `).join('');
-    }
-
-    function generateQR(id, title) {
-    const url = window.location.href.split('dashboard.htm')[0] + 'index.htm?id=' + id;
-    document.getElementById('qr-pj-name').textContent = title;
-    document.getElementById('qr-pj-url').textContent = url;
-    document.getElementById('qrcode-area').innerHTML = '';
-    new QRCode(document.getElementById('qrcode-area'), { text: url, width: 200, height: 200 });
-    
-    // ここに書きます！
-    document.getElementById('btn-print-action').style.display = 'block'; // 印刷ボタン表示
-    document.getElementById('print-config-area').style.display = 'flex'; // 設定エリア表示
-    document.getElementById('btn-copy-url').style.display = 'flex';      // ★コピーボタンも表示！
-        
-// ★ここを追記：別の案件を選んだら月の表示を「◯月」に戻す
-    document.getElementById('print-month-select').value = '◯月';
-    document.getElementById('preview-month-display').textContent = '◯月';
-}
-
-// こちらの関数からは、さきほど追記した display = 'flex' の1行を削除してください
-function copyToClipboard() {
-    const urlText = document.getElementById('qr-pj-url').innerText;
-    if (!urlText) return;
-
-    navigator.clipboard.writeText(urlText).then(() => {
-        const btn = document.getElementById('btn-copy-url');
-        const originalContent = btn.innerHTML;
-        
-        btn.innerHTML = 'コピーしました！';
-        btn.style.backgroundColor = '#d1fae5';
-        btn.style.color = '#065f46';
-        
-        setTimeout(() => {
-            btn.innerHTML = originalContent;
-            btn.style.backgroundColor = '#f1f5f9';
-            btn.style.color = '#475569';
-        }, 2000);
-    });
-}
-
-    // プルダウンの選択をプレビューに反映させる
-function updatePreviewMonth() {
-    const selectEl = document.getElementById('print-month-select');
-    const displayEl = document.getElementById('preview-month-display');
-    
-    if (selectEl && displayEl) {
-        displayEl.textContent = selectEl.value;
-    }
-}
-
-    function execPrint() {
-        const month = document.getElementById('preview-month-display').textContent;
-        const title = document.getElementById('qr-pj-name').textContent;
-        const qrData = document.getElementById('qr-pj-url').textContent;
-        const win = window.open('', '_blank');
-        
-        win.document.write(`<html><head><title>印刷レイアウト編集</title>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
-            <style>
-                @page { margin: 0; }
-                body { text-align: center; font-family: sans-serif; background: #f0f0f0; margin: 0; padding: 0; }
-                /* 操作説明を最上部に固定 */
-                .no-print { padding: 15px; background: #fff; border-bottom: 1px solid #ddd; position: sticky; top:0; z-index:100; display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap; }
-                .btn-exec { background: #4361ee; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-                .print-canvas { background: white; display: inline-block; padding: 60px; min-height: 100vh; width: 210mm; box-sizing: border-box; box-shadow: 0 0 20px rgba(0,0,0,0.1); margin: 20px auto; text-align: center; position: relative; }
-                
-                /* 個別移動・編集ブロック */
-                .editable-block { outline: none; border: 1px dashed transparent; width: 100%; display: flex; align-items: center; position: relative; transition: 0.1s; margin-bottom: 10px; }
-                .editable-block:hover { border: 1px dashed #4361ee; background: #f8f9ff; }
-                .editable-block.selected { border: 1px solid #4361ee; background: #f0f4ff; }
-                .content-inner { width: 100%; outline: none; word-break: break-all; }
-                
-                /* 削除ボタン */
-                .del-btn { position: absolute; right: -40px; background: #ff4d4f; color: white; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 12px; display: none; }
-                .editable-block:hover .del-btn { display: block; }
-                
-                .toolbar-btn { background: white; border: 1px solid #ddd; padding: 5px 8px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 13px; min-width: 32px; }
-                .toolbar-btn:hover { background: #f0f0f0; }
-                .guide-text { color: #64748b; font-size: 0.8rem; width: 100%; margin-bottom: 5px; text-align: center; font-weight: bold; }
-                .group-label { font-size: 11px; color: #94a3b8; margin-right: 2px; }
-                
-                @media print { .no-print, .del-btn { display: none !important; } body { background: white; } .print-canvas { box-shadow: none; margin: 0; padding: 60px; border:none; } }
-            </style>
-        </head><body>
-            <div class="no-print">
-                <p class="guide-text">テキストをクリックして編集できます。ツールバーでテキストの装飾ができます。よろしければ「印刷を実行」してください</p>
-                
-                <div style="display:flex; gap:5px; align-items:center; border-right:1px solid #eee; padding-right:8px;">
-                    <span class="group-label">装飾:</span>
-                    <button class="toolbar-btn" onclick="document.execCommand('bold')"><b>B</b></button>
-                    <button class="toolbar-btn" onclick="document.execCommand('underline')"><u>U</u></button>
-                    <select onchange="document.execCommand('fontSize', false, this.value)" style="padding:4px; border-radius:4px; border:1px solid #ddd;">
-                        <option value="1">極小</option><option value="2">小</option><option value="3" selected>標準</option>
-                        <option value="4">中</option><option value="5">大</option><option value="6">特大</option><option value="7">超特大</option>
-                    </select>
-                    <div style="position:relative; display:flex; align-items:center;">
-                        <button onclick="const p=document.getElementById('p-col'); p.style.display=p.style.display==='grid'?'none':'grid'" class="toolbar-btn" style="flex-direction:column; line-height:1; padding:2px 8px;">
-                            <span style="font-weight:bold; font-size:14px;">A</span>
-                            <div id="p-bar" style="width:14px; height:3px; background:#000; margin-top:1px;"></div>
-                        </button>
-                        <div id="p-col" style="display:none; position:absolute; top:100%; left:0; grid-template-columns:repeat(5, 1fr); gap:4px; background:white; padding:8px; border:1px solid #ccc; width:120px; z-index:1000; box-shadow:0 4px 10px rgba(0,0,0,0.1);">
-                            <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#000000'); document.getElementById('p-bar').style.backgroundColor='#000000'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#000000; cursor:pointer;"></div>
-                            <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#ff0000'); document.getElementById('p-bar').style.backgroundColor='#ff0000'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#ff0000; cursor:pointer;"></div>
-                            <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#0000ff'); document.getElementById('p-bar').style.backgroundColor='#0000ff'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#0000ff; cursor:pointer;"></div>
-                            <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#059669'); document.getElementById('p-bar').style.backgroundColor='#059669'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#059669; cursor:pointer;"></div>
-                            <div onmousedown="event.preventDefault(); document.execCommand('foreColor', false, '#ff9900'); document.getElementById('p-bar').style.backgroundColor='#ff9900'; document.getElementById('p-col').style.display='none'" style="width:20px; height:20px; background:#ff9900; cursor:pointer;"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="display:flex; gap:5px; align-items:center; border-right:1px solid #eee; padding-right:8px;">
-                    <span class="group-label">配置:</span>
-                    <button class="toolbar-btn" onclick="execAlign('justifyLeft')">左</button>
-                    <button class="toolbar-btn" onclick="execAlign('justifyCenter')">中</button>
-                    <button class="toolbar-btn" onclick="execAlign('justifyRight')">右</button>
-                    <button class="toolbar-btn" onclick="moveElement(-10)">↑</button>
-                    <button class="toolbar-btn" onclick="moveElement(10)">↓</button>
-                </div>
-
-                <div style="display:flex; gap:5px; align-items:center; border-right:1px solid #eee; padding-right:8px;">
-                    <span class="group-label">QR:</span>
-                    <button class="toolbar-btn" onclick="changeQRSize(20)">＋</button>
-                    <button class="toolbar-btn" onclick="changeQRSize(-20)">－</button>
-                </div>
-
-                <button class="toolbar-btn" onclick="addTextArea()" style="background:#f8f9ff; border-color:#4361ee; color:#4361ee;">＋テキスト追加</button>
-
-                <button class="btn-exec" onclick="window.print()" style="margin-left:15px;">印刷を実行</button>
-                <button class="toolbar-btn" onclick="window.close()" style="margin-left:8px; background:#f0f0f0; border:1px solid #ccc;">閉じる</button>
-            </div>
-
-            <div class="print-canvas" id="main-canvas">
-                <div class="editable-block" style="justify-content:center;">
-                    <div class="content-inner" contenteditable="true" style="font-size: 2.5rem; font-weight: bold;">${month}</div>
-                    <button class="del-btn" onclick="this.parentElement.remove()">削除</button>
-                </div>
-                <div class="editable-block" style="margin-top:10px; justify-content:center;">
-                    <div class="content-inner" contenteditable="true" style="font-size: 1.8rem; font-weight: bold;">${title}</div>
-                    <button class="del-btn" onclick="this.parentElement.remove()">削除</button>
-                </div>
-                
-                <div id="qr-block" class="editable-block" style="margin-top:20px; justify-content:center;" onclick="selectQR(this)">
-                    <div id="qrcode" style="pointer-events:none;"></div>
-                    <button class="del-btn" onclick="this.parentElement.remove()">削除</button>
-                </div>
-                
-                <div class="editable-block" style="margin-top:20px; justify-content:center;">
-                    <div class="content-inner" contenteditable="true" style="font-size: 1.3rem; font-weight: bold;">シフト希望の提出はこちらから</div>
-                    <button class="del-btn" onclick="this.parentElement.remove()">削除</button>
-                </div>
-            </div>
-
-            <script>
-                let currentQRSize = 220;
-                let selectedBlock = null;
-
-                // QRコードをクリックで選択状態にする
-                function selectQR(el) {
-                    document.querySelectorAll('.editable-block').forEach(b => b.classList.remove('selected'));
-                    el.classList.add('selected');
-                    selectedBlock = el;
-                }
-
-                function changeQRSize(delta) {
-                    currentQRSize += delta;
-                    if(currentQRSize < 50) currentQRSize = 50;
-                    const qrElem = document.getElementById("qrcode");
-                    qrElem.innerHTML = "";
-                    new QRCode(qrElem, { text: "${qrData}", width: currentQRSize, height: currentQRSize });
-                }
-
-                function moveElement(delta) {
-                    const block = getActiveBlock();
-                    if (block) {
-                        const currentTop = parseInt(window.getComputedStyle(block).marginTop) || 0;
-                        block.style.marginTop = (currentTop + delta) + "px";
-                    }
-                }
-
-                function execAlign(cmd) {
-                    const block = getActiveBlock();
-                    if (block) {
-                        const align = cmd === 'justifyLeft' ? 'flex-start' : cmd === 'justifyCenter' ? 'center' : 'flex-end';
-                        block.style.justifyContent = align;
-                        const inner = block.querySelector('.content-inner');
-                        if(inner) inner.style.textAlign = cmd === 'justifyLeft' ? 'left' : cmd === 'justifyCenter' ? 'center' : 'right';
-                    }
-                }
-
-                function getActiveBlock() {
-                    const sel = window.getSelection();
-                    if (sel.rangeCount > 0 && !sel.isCollapsed) {
-                        let target = sel.anchorNode;
-                        if (target.nodeType === 3) target = target.parentNode;
-                        return target.closest('.editable-block');
-                    }
-                    return selectedBlock || document.querySelector('.editable-block.selected');
-                }
-
-                function addTextArea() {
-                    const canvas = document.getElementById('main-canvas');
-                    const newBlock = document.createElement('div');
-                    newBlock.className = 'editable-block';
-                    newBlock.style.justifyContent = 'center';
-                    newBlock.style.marginTop = '10px';
-                    newBlock.innerHTML = '<div class="content-inner" contenteditable="true" style="font-size: 1.2rem;">新しいテキスト</div><button class="del-btn" onclick="this.parentElement.remove()">削除</button>';
-                    canvas.appendChild(newBlock);
-                }
-
-                // 全体のクリック判定で選択解除を制御
-                document.addEventListener('mousedown', (e) => {
-                    const block = e.target.closest('.editable-block');
-                    if (block) {
-                        document.querySelectorAll('.editable-block').forEach(b => b.classList.remove('selected'));
-                        block.classList.add('selected');
-                        selectedBlock = block;
+                _MASTER_DATA.forEach(staff => {
+                    const shiftsForDate = staff.shift_data[date] || [];
+                    if (shiftsForDate.includes(type.name)) {
+                        const tag = document.createElement('div');
+                        tag.className = 'name-tag'; 
+                        tag.textContent = staff.staff_name; 
+                        tag.draggable = true;
+                        tag.onclick = () => handleDelete(staff.id, date, type.name, staff.staff_name);
+                        tag.ondragstart = e => { 
+                            e.dataTransfer.setData("text/plain", JSON.stringify({ id: staff.id, d: date, t: type.name })); 
+                        };
+                        td.appendChild(tag);
                     }
                 });
-
-                new QRCode(document.getElementById("qrcode"), { text: "${qrData}", width: currentQRSize, height: currentQRSize });
-            <\/script>
-        </body></html>`);
-        win.document.close();
-    }
-
-    async function createNewProject() {
-        const name = prompt("案件名を入力");
-        if(name) { await client.from('projects').insert([{ title_tag: name, h1_title: name }]); loadProjects(); }
-    }
-    
-    // 案件削除の実行関数
-async function deleteCurrentProject() {
-    if (!currentId) return;
-
-    const confirmed = confirm(
-        "【警告】この案件を削除すると、設定内容および関連するシフトデータがデータベースから完全に消去されます。復元はできません。\n\n本当に削除しますか？"
-    );
-
-    if (confirmed) {
-        try {
-            // 関連データの削除（外部キー制約がある場合はshift_types等から削除）
-            await client.from('shift_types').delete().eq('project_id', currentId);
-            const { error } = await client.from('projects').delete().eq('id', currentId);
-
-            if (error) throw error;
-
-            alert("案件を削除しました。");
-            location.reload(); // 一覧に戻るためにリロード
-        } catch (e) {
-            console.error(e);
-            alert("削除に失敗しました。");
-        }
-    }
-}
-
-    window.onload = loadProjects;
-
-    // --- ログイン・認証制御 (レイアウト崩れ対策版) ---
-    async function checkAuth() {
-        // URLのトークンクリーンアップ
-        if (location.hash && location.hash.includes('access_token')) {
-            setTimeout(() => {
-                history.replaceState(null, null, window.location.pathname);
-            }, 500);
-        }
-
-        const { data: { session }, error } = await client.auth.getSession();
-        const overlay = document.getElementById('login-overlay');
-        
-        if (session && !error) {
-            // ログイン成功時：オーバーレイを完全に消す
-            overlay.style.display = 'none';
-            
-            // 重要：bodyのスタイルを直接変更せず、
-            // もし「ログイン画面でbodyごと消していた」場合に備えて元の状態（空文字）に戻す
-            if (document.body.style.display === 'none') {
-                document.body.style.display = '';
-            }
-            
-            loadProjects();
-        } else {
-            // 未ログイン時：オーバーレイを表示
-            overlay.style.display = 'flex';
-            overlay.innerHTML = `
-                <div style="text-align:center; padding:40px; border:1px solid #ddd; border-radius:15px; background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.1); font-family:sans-serif; z-index:10000;">
-                    <h2 style="color:#2b3a67; margin-top:0;">管理パネル ログイン</h2>
-                    <p style="font-size:13px; color:#666; margin-bottom:20px;">登録メールアドレスへログイン用リンクを送信します。</p>
-                    <input type="email" id="login-email" placeholder="メールアドレス" style="padding:12px; width:260px; border:1px solid #ccc; border-radius:8px; font-size:16px;"><br><br>
-                    <button id="login-btn" onclick="login()" style="padding:12px 24px; background:#4361ee; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">ログインメールを送信</button>
-                    <p id="auth-msg" style="margin-top:15px; color:#059669; font-size:14px; min-height:1.2em;"></p>
-                </div>`;
-        }
-    }
-
-    async function login() {
-        const email = document.getElementById('login-email').value;
-        const btn = document.getElementById('login-btn');
-        if (!email) return alert("メールアドレスを入力してください");
-        
-        btn.disabled = true;
-        btn.textContent = "送信中...";
-        
-        const { error } = await client.auth.signInWithOtp({
-            email: email,
-            options: { 
-                // ログイン後の戻り先を明示的に指定（現在のURL）
-                emailRedirectTo: window.location.origin + window.location.pathname 
-            }
+                row.appendChild(td);
+            });
+            b.appendChild(row);
         });
-
-        if (error) {
-            alert("エラー: " + error.message);
-            btn.disabled = false;
-            btn.textContent = "ログインメールを送信";
-        } else {
-            document.getElementById('auth-msg').textContent = "メールを送信しました！確認してください。";
-        }
     }
 
-    // 認証状態の変化を監視（完全リセット版）
-    client.auth.onAuthStateChange((event, session) => {
-        console.log("Auth Event:", event);
+    // --- 各種操作関数 ---
+    function pushHistory() { _HISTORY.push(JSON.parse(JSON.stringify(_MASTER_DATA))); }
+    
+    function undoLastAction() { if (_HISTORY.length > 0) { _MASTER_DATA = _HISTORY.pop(); renderAll(); } }
+    
+    function resetToInitial() { if (confirm("保存前の状態に全て戻しますか？")) { _MASTER_DATA = JSON.parse(JSON.stringify(_INITIAL_DATA)); _HISTORY = []; renderAll(); } }
+    
+    function handleMove(info, toDate, toType) { 
+        pushHistory(); 
+        const s = _MASTER_DATA.find(st => String(st.id) === String(info.id)); 
+        if (s) { 
+            s.shift_data[info.d] = (s.shift_data[info.d] || []).filter(v => v !== info.t);
+            if (!s.shift_data[toDate]) s.shift_data[toDate] = [];
+            if (!s.shift_data[toDate].includes(toType)) s.shift_data[toDate].push(toType);
+            renderAll(); 
+        } 
+    }
+
+    function handleDelete(staffId, date, typeName, name) { 
+        if (confirm(`${name}さんのこのシフトを削除しますか？`)) { 
+            pushHistory(); 
+            const s = _MASTER_DATA.find(st => String(st.id) === String(staffId)); 
+            if (s && s.shift_data[date]) { 
+                s.shift_data[date] = s.shift_data[date].filter(v => v !== typeName); 
+                renderAll(); 
+            } 
+        } 
+    }
+
+    async function saveToDatabase() { 
+        if(!confirm("現在の調整内容でデータベースを更新しますか？")) return; 
+        try { 
+            for (const s of _MASTER_DATA) { 
+                await client.from('submissions').update({ shift_data: s.shift_data }).eq('id', s.id); 
+            } 
+            alert("保存完了しました。"); 
+            _INITIAL_DATA = JSON.parse(JSON.stringify(_MASTER_DATA)); 
+            _HISTORY = []; 
+        } catch (err) { alert("エラー: " + err.message); } 
+    }
+
+    function generateSplitPDF() {
+        const loading = document.getElementById('print-loading');
+        const container = document.getElementById('print-container');
+        loading.style.display = 'flex';
+        container.innerHTML = '';
+        const w = ["日","月","火","水","木","金","土"];
+        const monthTitle = document.getElementById('month-display').textContent;
+        const chunks = [{ title: "前半(1-15日)", dates: _CAL_DATES.slice(0, 15) }, { title: "後半(16日-末)", dates: _CAL_DATES.slice(15) }];
         
-        if (event === 'SIGNED_IN') {
-            // ログインしたときは、状態をチェックして画面を表示
-            checkAuth();
-        } else if (event === 'SIGNED_OUT') {
-            // ログアウトした瞬間、URLからパラメータを完全に消した状態でページを強制再読み込み
-            // これにより、CSSやHTMLの状態が「初訪問時」と同じ真っ新な状態に戻ります
-            window.location.href = window.location.origin + window.location.pathname;
-        }
-    });
-
-    // --- 送信された回答データを取得して表形式で表示する関数 ---
-async function loadProjects() {
-        try {
-            const { data: pjs, error } = await client.from('projects').select('*').order('created_at', { ascending: false });
-            
-            if (error) throw error;
-
-            // 1. メイン画面の案件一覧を更新
-            const projectListEl = document.getElementById('project-list');
-            if (pjs && pjs.length > 0) {
-                projectListEl.innerHTML = pjs.map(p => `
-                    <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:15px 25px;">
-                        <strong>${p.title_tag || '無題'}</strong>
-                        <div style="display:flex; gap:10px;">
-                            <button onclick="duplicateProject('${p.id}')" style="background:#f1f5f9; color:var(--text); border:1px solid #cbd5e1; padding:8px 15px; border-radius:8px; cursor:pointer; font-size:0.85rem;">コピーを作成</button>
-                            <button onclick="editProject('${p.id}')" style="background:var(--primary); color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer;">編集する</button>
-                        </div>
-                    </div>
-                `).join('');
-            } else {
-                projectListEl.innerHTML = '<div class="card">案件がありません。「新規案件作成」から追加してください。</div>';
-            }
-
-            // 2. サイドメニューの「送信データ確認」リストを更新
-            const responseListEl = document.getElementById('nav-response-list');
-            if (responseListEl && pjs && pjs.length > 0) {
-                responseListEl.innerHTML = pjs.map(p => `
-                    <div class="nav-sub-item" onclick="viewResponses('${p.id}', '${p.title_tag || '無題'}')">└ ${p.title_tag || '無題'}</div>
-                `).join('');
-            }
-
-        } catch (e) {
-            console.error("プロジェクト読み込みエラー:", e);
-            const projectListEl = document.getElementById('project-list');
-            if(projectListEl) projectListEl.innerHTML = "データの読み込みに失敗しました。";
-        }
+        chunks.forEach(chunk => {
+            let html = `<div class="print-page"><h3>${monthTitle} ${chunk.title}</h3><table class="print-table"><thead><tr><th class="p-shift-col">シフト枠</th>`;
+            chunk.dates.forEach(d => {
+                const dt = new Date(d.replace(/-/g, '/'));
+                const dayIdx = dt.getDay();
+                const cl = dayIdx === 0 ? 'txt-sun' : (dayIdx === 6 ? 'txt-sat' : '');
+                html += `<th><span class="${cl}">${dt.getMonth()+1}/${dt.getDate()}(${w[dayIdx]})</span></th>`;
+            });
+            html += `</tr></thead><tbody>`;
+            _SHIFT_TYPES.forEach(type => {
+                html += `<tr><td class="p-shift-col">${type.name}</td>`;
+                chunk.dates.forEach(date => {
+                    html += `<td>`;
+                    _MASTER_DATA.forEach(staff => {
+                        if ((staff.shift_data[date] || []).includes(type.name)) {
+                            html += `<span class="p-name">${staff.staff_name}</span>`;
+                        }
+                    });
+                    html += `</td>`;
+                });
+                html += `</tr>`;
+            });
+            html += `</tbody></table></div>`;
+            container.innerHTML += html;
+        });
+        setTimeout(() => { loading.style.display = 'none'; window.print(); }, 800);
     }
 
-    // --- 回答データ表示関数 (診断版) ---
-    async function viewResponses(projectId, projectTitle) {
-    showSection('responses');
-    const container = document.getElementById('sec-responses');
-    container.innerHTML = `<h1>送信データ確認：${projectTitle}</h1><div class="card">診断中...</div>`;
+    function copyTableForExcel() {
+        const table = document.querySelector('.main-table');
+        let text = "";
+        const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.innerText.trim());
+        text += headers.join("\t") + "\n";
+        table.querySelectorAll('tbody tr').forEach(row => {
+            const cells = Array.from(row.querySelectorAll('td')).map(td => {
+                const tags = Array.from(td.querySelectorAll('.name-tag')).map(tag => tag.innerText);
+                return td.classList.contains('shift-name-col') ? td.innerText.trim() : tags.join(", ");
+            });
+            text += cells.join("\t") + "\n";
+        });
+        navigator.clipboard.writeText(text).then(() => alert("エクセル用にコピーしました。Excelを開いて貼り付けてください。"));
+    }
 
-    try {
-        // 診断用に詳細なレスポンスを受け取る
-        const { data, error, status, statusText } = await client
-            .from('responses')
-            .select('*')
-            .eq('project_id', projectId);
-
-        if (error) {
-            // エラーが出た場合、その内容を画面に詳しく表示する
-            container.innerHTML = `
-                <h1>読み込みエラー発生</h1>
-                <div class="card" style="border-left: 5px solid red;">
-                    <p><strong>エラーメッセージ:</strong> ${error.message}</p>
-                    <p><strong>エラーコード:</strong> ${error.code}</p>
-                    <p><strong>ステータス:</strong> ${status} (${statusText})</p>
-                    <hr>
-                    <p style="font-size:0.8rem; color:#666;">※"PGRST116"ならデータ無し、"42501"なら権限エラーの可能性があります。</p>
-                </div>`;
+    // 起動時チェック
+    window.onload = async () => {
+        const { data: { session } } = await client.auth.getSession();
+        if (!session) {
+            window.location.href = 'dashboard.htm';
             return;
         }
 
-        // 成功した場合
-        container.innerHTML = `
-            <h1>送信データ確認：${projectTitle}</h1>
-            <div class="card">
-                <p style="color:green; font-weight:bold;">? 通信成功</p>
-                <p>取得できたデータ件数: ${data ? data.length : 0} 件</p>
-            </div>`;
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
 
-        // テーブル（表）の組み立て
-        let tableHtml = `
-            <h1>送信データ確認：${projectTitle}</h1>
-            <div class="card" style="overflow-x:auto; padding:0;">
-                <table style="width:100%; border-collapse:collapse; min-width:600px;">
-                    <thead>
-                        <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
-                            <th style="padding:15px; text-align:left; font-size:0.85rem; color:#64748b;">送信日時</th>
-                            <th style="padding:15px; text-align:left; font-size:0.85rem; color:#64748b;">スタッフ名</th>
-                            <th style="padding:15px; text-align:left; font-size:0.85rem; color:#64748b;">回答（JSON）</th>
-                            <th style="padding:15px; text-align:left; font-size:0.85rem; color:#64748b;">備考</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-
-        res.forEach(item => {
-            const date = new Date(item.created_at).toLocaleString('ja-JP');
-            // 回答内容はオブジェクト形式で入っているため、文字列にして表示
-            const answerText = typeof item.answer === 'object' ? JSON.stringify(item.answer) : item.answer;
-            
-            tableHtml += `
-                <tr style="border-bottom:1px solid #f1f5f9; transition:0.2s;" onmouseover="this.style.background='#fcfcfc'" onmouseout="this.style.background='transparent'">
-                    <td style="padding:15px; font-size:0.85rem;">${date}</td>
-                    <td style="padding:15px; font-weight:bold; color:var(--sidebar-bg);">${item.staff_name || '未入力'}</td>
-                    <td style="padding:15px; font-size:0.8rem; color:#475569; max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title='${answerText}'>${answerText}</td>
-                    <td style="padding:15px; font-size:0.85rem; color:#64748b;">${item.note || '-'}</td>
-                </tr>`;
-        });
-
-        tableHtml += `</tbody></table></div>`;
-        container.innerHTML = tableHtml;
-
-    } catch (e) {
-        console.error("回答取得エラー:", e);
-        container.innerHTML = `<div class="card" style="color:red;">データの読み込み中にエラーが発生しました。</div>`;
-    }
-}
-
-    window.onload = loadProjects;
-    // --- ログイン・認証制御 (ここまで) ---
+        if (id) {
+            startApp(id);
+        } else {
+            alert("案件IDが指定されていません。ダッシュボードから開き直してください。");
+            window.location.href = 'dashboard.htm';
+        }
+    };
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
