@@ -338,14 +338,10 @@
         }
 
         // 2. サイドメニューの「送信データ確認」リストを更新
-       const responseListEl = document.getElementById('nav-response-list');
+        const responseListEl = document.getElementById('nav-response-list');
         if (pjs && pjs.length > 0) {
             responseListEl.innerHTML = pjs.map(p => `
-                <div class="nav-sub-item" 
-                     style="cursor:pointer;" 
-                     onclick="viewResponses('${p.id}', '${p.title_tag || '無題'}')">
-                     └ ${p.title_tag || '無題'}
-                </div>
+                <div class="nav-sub-item" onclick="location.href='admin.htm?id=${p.id}'">└ ${p.title_tag || '無題'}</div>
             `).join('');
         } else {
             responseListEl.innerHTML = '';
@@ -913,5 +909,6 @@ async function viewResponses(projectId, projectTitle) {
 </script>
 </body>
 </html>
+
 
 
