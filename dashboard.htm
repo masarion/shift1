@@ -315,43 +315,73 @@
         if(navEl) navEl.classList.add('nav-active');
     }
 
+    // 1. プロジェクト一覧の表示（右側の「読み込み中」を直すための関数）
     async function loadProjects() {
-    try {
-        const { data: pjs, error } = await client.from('projects').select('*').order('created_at', { ascending: false });
-        
-        if (error) throw error;
+        try {
+            const { data: pjs, error } = await client.from('projects').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
 
-        // 1. メイン画面の案件一覧を更新
-        const projectListEl = document.getElementById('project-list');
-        if (pjs && pjs.length > 0) {
-            projectListEl.innerHTML = pjs.map(p => `
-                <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:15px 25px;">
-                    <strong>${p.title_tag || '無題'}</strong>
-                    <div style="display:flex; gap:10px;">
-                        <button onclick="duplicateProject('${p.id}')" style="background:#f1f5f9; color:var(--text); border:1px solid #cbd5e1; padding:8px 15px; border-radius:8px; cursor:pointer; font-size:0.85rem;">コピーを作成</button>
-                        <button onclick="editProject('${p.id}')" style="background:var(--primary); color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer;">編集する</button>
-                    </div>
-                </div>
-            `).join('');
-        } else {
-            projectListEl.innerHTML = '<div class="card">案件がありません。「新規案件作成」から追加してください。</div>';
+            // 右側の案件一覧を更新
+            const projectListEl = document.getElementById('project-list');
+            if (projectListEl) {
+                if (pjs && pjs.length > 0) {
+                    projectListEl.innerHTML = pjs.map(p => `
+                        <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:15px 25px;">
+                            <strong>${p.title_tag || '無題'}</strong>
+                            <div style="display:flex; gap:10px;">
+                                <button onclick="duplicateProject('${p.id}')" style="background:#f1f5f9; color:var(--text); border:1px solid #cbd5e1; padding:8px 15px; border-radius:8px; cursor:pointer; font-size:0.85rem;">コピーを作成</button>
+                                <button onclick="editProject('${p.id}')" style="background:var(--primary); color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer;">編集する</button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    projectListEl.innerHTML = '<div class="card">案件がありません。「新規案件作成」から追加してください。</div>';
+                }
+            }
+
+            // 左サイドバーのリストを更新
+            const responseListEl = document.getElementById('nav-response-list');
+            if (responseListEl && pjs) {
+                responseListEl.innerHTML = pjs.map(p => `
+                    <div class="nav-sub-item" onclick="viewResponses('${p.id}', '${p.title_tag || '無題'}')">└ ${p.title_tag || '無題'}</div>
+                `).join('');
+            }
+        } catch (e) {
+            console.error(e);
+            if(document.getElementById('project-list')) {
+                document.getElementById('project-list').innerHTML = "読み込みエラーが発生しました。";
+            }
         }
-
-        // 2. サイドメニューの「送信データ確認」リストを更新
-const responseListEl = document.getElementById('nav-response-list');
-if (pjs && pjs.length > 0) {
-    responseListEl.innerHTML = pjs.map(p => `
-        <div class="nav-sub-item" onclick="viewResponses('${p.id}', '${p.title_tag || '無題'}')">└ ${p.title_tag || '無題'}</div>
-    `).join('');
-} else {
-    responseListEl.innerHTML = '';
-}
-
-    } catch (e) {
-        console.error("プロジェクト読み込みエラー:", e);
-        document.getElementById('project-list').innerHTML = "データの読み込みに失敗しました。";
     }
-}
+
+    // 2. 送信された回答データを表示する関数（新しく追加する関数）
+    async function viewResponses(projectId, projectTitle) {
+        showSection('responses');
+        const container = document.getElementById('sec-responses');
+        container.innerHTML = `<h1>送信データ確認：${projectTitle}</h1><div class="card">読み込み中...</div>`;
+
+        try {
+            const { data, error } = await client
+                .from('responses')
+                .select('*')
+                .eq('project_id', projectId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                container.innerHTML = `<div class="card" style="color:red;">エラー: ${error.message}</div>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                container.innerHTML = `<h1>送信データ確認：${projectTitle}</h1><div class="card">まだ回答がありません。</div>`;
+                return;
+            }
+
+            container.innerHTML = `<h1>${projectTitle}</h1><div class="card" style="color:green;">? 成功！ ${data.length} 件のデータが見つかりました。</div>`;
+        } catch (e) {
+            container.innerHTML = `<div class="card">エラー: ${e.message}</div>`;
+        }
+    }
 
     // 案件のコピー（複製）処理
 async function duplicateProject(sourceId) {
@@ -388,7 +418,7 @@ async function duplicateProject(sourceId) {
         }
 
         alert("コピーを作成しました。");
-        loadProjects(); // 一覧を再読み込み
+        (); // 一覧を再読み込み
     } catch (e) {
         console.error(e);
         alert("コピーに失敗しました。");
@@ -497,7 +527,7 @@ function deleteShiftRow(btn) {
         })).filter(s => s.name !== '');
         await client.from('shift_types').insert(shifts);
         alert("保存しました");
-        loadProjects();
+        ();
     }
 
     function openLivePreview() {
@@ -964,6 +994,7 @@ async function loadProjects() {
 </script>
 </body>
 </html>
+
 
 
 
