@@ -949,11 +949,6 @@ async function loadProjects() {
                 <p>取得できたデータ件数: ${data ? data.length : 0} 件</p>
             </div>`;
 
-    } catch (e) {
-        container.innerHTML = `<div class="card">プログラム自体に問題があります: ${e.message}</div>`;
-    }
-}
-
         // テーブル（表）の組み立て
         let tableHtml = `
             <h1>送信データ確認：${projectTitle}</h1>
@@ -997,6 +992,7 @@ async function loadProjects() {
 </script>
 </body>
 </html>
+
 
 
 
