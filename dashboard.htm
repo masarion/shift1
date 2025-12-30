@@ -883,37 +883,43 @@ async function loadProjects() {
 
     // --- 回答データ表示関数 (診断版) ---
     async function viewResponses(projectId, projectTitle) {
-        showSection('responses');
-        const container = document.getElementById('sec-responses');
-        container.innerHTML = `<h1>送信データ確認：${projectTitle}</h1><div class="card">診断中...</div>`;
+    showSection('responses');
+    const container = document.getElementById('sec-responses');
+    container.innerHTML = `<h1>送信データ確認：${projectTitle}</h1><div class="card">診断中...</div>`;
 
-        try {
-            const { data, error, status, statusText } = await client
-                .from('responses')
-                .select('*')
-                .eq('project_id', projectId);
+    try {
+        // 診断用に詳細なレスポンスを受け取る
+        const { data, error, status, statusText } = await client
+            .from('responses')
+            .select('*')
+            .eq('project_id', projectId);
 
-            if (error) {
-                container.innerHTML = `
-                    <h1>読み込みエラー発生</h1>
-                    <div class="card" style="border-left: 5px solid red;">
-                        <p><strong>エラーメッセージ:</strong> ${error.message}</p>
-                        <p><strong>エラーコード:</strong> ${error.code}</p>
-                        <p><strong>ステータス:</strong> ${status} (${statusText})</p>
-                    </div>`;
-                return;
-            }
-
+        if (error) {
+            // エラーが出た場合、その内容を画面に詳しく表示する
             container.innerHTML = `
-                <h1>送信データ確認：${projectTitle}</h1>
-                <div class="card">
-                    <p style="color:green; font-weight:bold;">✓ 通信成功</p>
-                    <p>取得できたデータ件数: ${data ? data.length : 0} 件</p>
+                <h1>読み込みエラー発生</h1>
+                <div class="card" style="border-left: 5px solid red;">
+                    <p><strong>エラーメッセージ:</strong> ${error.message}</p>
+                    <p><strong>エラーコード:</strong> ${error.code}</p>
+                    <p><strong>ステータス:</strong> ${status} (${statusText})</p>
+                    <hr>
+                    <p style="font-size:0.8rem; color:#666;">※"PGRST116"ならデータ無し、"42501"なら権限エラーの可能性があります。</p>
                 </div>`;
-        } catch (e) {
-            container.innerHTML = `<div class="card">プログラム実行エラー: ${e.message}</div>`;
+            return;
         }
+
+        // 成功した場合
+        container.innerHTML = `
+            <h1>送信データ確認：${projectTitle}</h1>
+            <div class="card">
+                <p style="color:green; font-weight:bold;">? 通信成功</p>
+                <p>取得できたデータ件数: ${data ? data.length : 0} 件</p>
+            </div>`;
+
+    } catch (e) {
+        container.innerHTML = `<div class="card">プログラム自体に問題があります: ${e.message}</div>`;
     }
+}
 
         // テーブル（表）の組み立て
         let tableHtml = `
@@ -958,6 +964,7 @@ async function loadProjects() {
 </script>
 </body>
 </html>
+
 
 
 
