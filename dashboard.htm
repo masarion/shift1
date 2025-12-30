@@ -316,7 +316,6 @@
     }
 
     // --- 1. プロジェクト一覧とサイドバーを更新する関数 ---
-    // --- 1. プロジェクト一覧とサイドバーを更新する関数 ---
     async function loadProjects() {
         try {
             const { data: pjs, error } = await client.from('projects').select('*').order('created_at', { ascending: false });
@@ -350,9 +349,15 @@
         } catch (e) {
             console.error("loadProjectsエラー:", e);
             const listEl = document.getElementById('project-list');
-            if(listEl) listEl.innerHTML = "データの読み込み中にエラーが発生しました。";
+            if(listEl) {
+                // 何が原因で止まったのか、画面に直接表示させます
+                listEl.innerHTML = `<div class="card" style="border:2px solid red;">
+                    <strong>読み込み失敗</strong><br>
+                    エラー内容: ${e.message || "不明なエラー"}<br>
+                    <small style="color:gray;">※詳細はコンソール(F12)を確認してください</small>
+                </div>`;
+            }
         }
-    }
 
     // --- 2. 回答データを取得・表示する関数（新規） ---
     async function viewResponses(projectId, projectTitle) {
@@ -986,6 +991,7 @@ async function loadProjects() {
 </script>
 </body>
 </html>
+
 
 
 
