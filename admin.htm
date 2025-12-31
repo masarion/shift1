@@ -276,27 +276,34 @@ checkAuth();
         navigator.clipboard.writeText(text).then(() => alert("エクセル用にコピーしました。Excelを開いて貼り付けてください。"));
     }
 
-    // 起動時チェック
+    // 起動時チェック (デモモード対応版に修正)
     window.onload = async () => {
+        // 1. URLのパラメータを確認
+        const urlParams = new URLSearchParams(window.location.search);
+        const isDemo = urlParams.get('mode') === 'demo';
+        const id = urlParams.get('id');
+
+        // 2. セッション確認
         const { data: { session } } = await client.auth.getSession();
-        if (!session) {
+        
+        // 3. ログインしていない、かつデモモードでもない場合のみ追い返す
+        if (!session && !isDemo) {
             window.location.href = 'dashboard.htm';
             return;
         }
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
-
+        // 4. IDチェックとアプリ起動
         if (id) {
             startApp(id);
         } else {
             alert("案件IDが指定されていません。ダッシュボードから開き直してください。");
-            window.location.href = 'dashboard.htm';
+            window.location.href = 'dashboard.htm' + (isDemo ? '?mode=demo' : '');
         }
     };
 </script>
 </body>
 </html>
+
 
 
 
