@@ -295,33 +295,43 @@ checkAuth();
         navigator.clipboard.writeText(text).then(() => alert("エクセル用にコピーしました。Excelを開いて貼り付けてください。"));
     }
 
-    // 起動時チェック (デモモード対応版に修正)
+    // 起動時チェック (徹底エラー追跡版)
     window.onload = async () => {
-        // 1. URLのパラメータを確認
-        const urlParams = new URLSearchParams(window.location.search);
-        const isDemo = urlParams.get('mode') === 'demo';
-        const id = urlParams.get('id');
+        console.log("window.onload が開始されました"); // これが出るか確認
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const isDemo = urlParams.get('mode') === 'demo';
+            const id = urlParams.get('id');
+            console.log("URLパラメータ取得:", { id, isDemo });
 
-        // 2. セッション確認
-        const { data: { session } } = await client.auth.getSession();
-        
-        // 3. ログインしていない、かつデモモードでもない場合のみ追い返す
-        if (!session && !isDemo) {
-            window.location.href = 'dashboard.htm';
-            return;
-        }
+            // セッション確認
+            const { data, error: authError } = await client.auth.getSession();
+            if (authError) console.error("Authエラー:", authError);
+            
+            const session = data ? data.session : null;
+            
+            // ログインしていない、かつデモモードでもない場合
+            if (!session && !isDemo) {
+                console.log("未ログインかつ通常モードのため移動します");
+                window.location.href = 'dashboard.htm';
+                return;
+            }
 
-        // 4. IDチェックとアプリ起動
-        if (id) {
-            startApp(id);
-        } else {
-            alert("案件IDが指定されていません。ダッシュボードから開き直してください。");
-            window.location.href = 'dashboard.htm' + (isDemo ? '?mode=demo' : '');
+            if (id) {
+                console.log("startApp を呼び出します...");
+                await startApp(id);
+            } else {
+                alert("案件IDが指定されていません。");
+                window.location.href = 'dashboard.htm' + (isDemo ? '?mode=demo' : '');
+            }
+        } catch (err) {
+            console.error("onload内で致命的エラーが発生しました:", err);
         }
     };
 </script>
 </body>
 </html>
+
 
 
 
