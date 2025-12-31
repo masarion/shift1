@@ -85,17 +85,16 @@
     const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     const client = supabase.createClient(S_URL, S_KEY);
 
-    // 一時的にセキュリティをオフにする
+    // admin.htm の冒頭に追加
 async function checkAccess() {
     const { data: { session } } = await client.auth.getSession();
     
-    /* テスト中につき一時無効化
+    // もしログインセッションがなければ、ログイン画面（dashboard.htm）へ強制送還
     if (!session) {
         alert("認証が必要です。ログインし直してください。");
         location.href = 'dashboard.htm'; 
         return;
     }
-    */
 }
 checkAccess();
 
@@ -289,5 +288,6 @@ checkAccess();
 </script>
 </body>
 </html>
+
 
 
