@@ -112,20 +112,38 @@ checkAuth();
 
     async function startApp(projectId) {
         currentProjectId = projectId;
-        
-        // 案件情報の取得
-        const { data: pj } = await client.from('projects').select('*').eq('id', projectId).single();
-        if (pj) document.getElementById('project-title-display').textContent = `データ確認：${pj.title_tag}`;
+        console.log("--- アプリ起動チェック開始 ---");
+        console.log("対象案件ID:", projectId);
 
-        // シフト枠と提出データの取得
-        const { data: t } = await client.from('shift_types').select('*').eq('project_id', projectId).order('display_order');
-        const { data: s } = await client.from('submissions').select('*').eq('project_id', projectId);
+        // 1. 案件情報の取得
+        const { data: pj, error: pjErr } = await client.from('projects').select('*').eq('id', projectId).single();
+        if (pjErr) console.error("【エラー】案件が取得できません:", pjErr);
+        if (pj) {
+            console.log("案件名取得成功:", pj.title_tag);
+            document.getElementById('project-title-display').textContent = `データ確認：${pj.title_tag}`;
+        }
+
+        // 2. シフト枠の取得
+        const { data: t, error: tErr } = await client.from('shift_types').select('*').eq('project_id', projectId).order('display_order');
+        if (tErr) console.error("【エラー】シフト枠が取得できません:", tErr);
+        console.log("シフト枠数:", t ? t.length : 0);
+        
+        // 3. 提出データの取得（ここが最重要！）
+        console.log("submissions（提出データ）を取得しにいきます...");
+        const { data: s, error: sErr } = await client.from('submissions').select('*').eq('project_id', projectId);
+        
+        if (sErr) {
+            // ここでエラーが出たら、Supabaseの「鍵(RLS)」が閉まっている証拠です
+            console.error("【重要エラー】データ取得を拒否されました:", sErr);
+        } else {
+            console.log("提出データの取得に成功！ 件数:", s ? s.length : 0);
+        }
         
         _SHIFT_TYPES = t || [];
         _INITIAL_DATA = JSON.parse(JSON.stringify(s || []));
         _MASTER_DATA = JSON.parse(JSON.stringify(_INITIAL_DATA));
 
-        // カレンダー設定（翌月分を表示するロジック）
+        // 4. カレンダー設定（ここは変更なし）
         const now = new Date();
         const target = new Date(now.getFullYear(), now.getMonth() + 1, 1);
         document.getElementById('month-display').textContent = `${target.getFullYear()}年 ${target.getMonth()+1}月`;
@@ -136,6 +154,7 @@ checkAuth();
             return `${target.getFullYear()}-${String(target.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
         });
 
+        console.log("画面の描画（renderAll）を実行します");
         renderAll();
     }
 
@@ -303,6 +322,7 @@ checkAuth();
 </script>
 </body>
 </html>
+
 
 
 
