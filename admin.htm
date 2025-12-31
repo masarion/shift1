@@ -85,18 +85,27 @@
     const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     const client = supabase.createClient(S_URL, S_KEY);
 
-    // admin.htm の冒頭に追加
-async function checkAccess() {
+    // admin.htm の冒頭にある checkAuth 関数をこのように書く
+async function checkAuth() {
+    // 1. URLのパラメータを確認 (?mode=demo が付いているか)
+    const urlParams = new URLSearchParams(window.location.search);
+    const isDemo = urlParams.get('mode') === 'demo';
+
     const { data: { session } } = await client.auth.getSession();
     
-    // もしログインセッションがなければ、ログイン画面（dashboard.htm）へ強制送還
-    if (!session) {
+    // 2. ログインしていない、かつデモモードでもない場合のみ追い返す
+    if (!session && !isDemo) {
         alert("認証が必要です。ログインし直してください。");
         location.href = 'dashboard.htm'; 
         return;
     }
+
+    // デモモードまたはログイン済みならそのまま続行（データを読み込む）
+    loadProjectDetails(); // すでにあるデータ読み込み関数を呼ぶ
 }
-checkAccess();
+
+// ページ読み込み時に実行
+checkAuth();
 
     let _MASTER_DATA = [], _INITIAL_DATA = [], _HISTORY = [], _SHIFT_TYPES = [], _CAL_DATES = [];
     let currentProjectId = null;
@@ -288,6 +297,7 @@ checkAccess();
 </script>
 </body>
 </html>
+
 
 
 
