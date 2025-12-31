@@ -85,6 +85,19 @@
     const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     const client = supabase.createClient(S_URL, S_KEY);
 
+    // admin.htm の冒頭に追加
+async function checkAccess() {
+    const { data: { session } } = await client.auth.getSession();
+    
+    // もしログインセッションがなければ、ログイン画面（dashboard.htm）へ強制送還
+    if (!session) {
+        alert("認証が必要です。ログインし直してください。");
+        location.href = 'dashboard.htm'; 
+        return;
+    }
+}
+checkAccess();
+
     let _MASTER_DATA = [], _INITIAL_DATA = [], _HISTORY = [], _SHIFT_TYPES = [], _CAL_DATES = [];
     let currentProjectId = null;
 
@@ -275,3 +288,4 @@
 </script>
 </body>
 </html>
+
