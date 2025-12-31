@@ -776,8 +776,14 @@ async function deleteCurrentProject() {
 
     window.onload = loadProjects;
 
-    // --- ログイン・認証制御 (レイアウト崩れ対策版) ---
+    /window.onload = checkAuth;
+
+    // --- ログイン・認証制御 (デモモード対応版) ---
     async function checkAuth() {
+        // 【追記】URLのパラメータを確認 (?mode=demo があるか)
+        const urlParams = new URLSearchParams(window.location.search);
+        const isDemo = urlParams.get('mode') === 'demo';
+
         // URLのトークンクリーンアップ
         if (location.hash && location.hash.includes('access_token')) {
             setTimeout(() => {
@@ -788,17 +794,22 @@ async function deleteCurrentProject() {
         const { data: { session }, error } = await client.auth.getSession();
         const overlay = document.getElementById('login-overlay');
         
-        if (session && !error) {
-            // ログイン成功時：オーバーレイを完全に消す
+        // 【修正】セッションがある、または「デモモード」の場合
+        if ((session && !error) || isDemo) {
+            // ログイン成功またはデモ：オーバーレイを完全に消す
             overlay.style.display = 'none';
             
-            // 重要：bodyのスタイルを直接変更せず、
-            // もし「ログイン画面でbodyごと消していた」場合に備えて元の状態（空文字）に戻す
             if (document.body.style.display === 'none') {
                 document.body.style.display = '';
             }
             
+            // 案件一覧を読み込む
             loadProjects();
+
+            // デモモードであることの通知を表示（任意）
+            if (isDemo && !session) {
+                console.log("デモモードで閲覧中");
+            }
         } else {
             // 未ログイン時：オーバーレイを表示
             overlay.style.display = 'flex';
@@ -809,6 +820,7 @@ async function deleteCurrentProject() {
                     <input type="email" id="login-email" placeholder="メールアドレス" style="padding:12px; width:260px; border:1px solid #ccc; border-radius:8px; font-size:16px;"><br><br>
                     <button id="login-btn" onclick="login()" style="padding:12px 24px; background:#4361ee; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">ログインメールを送信</button>
                     <p id="auth-msg" style="margin-top:15px; color:#059669; font-size:14px; min-height:1.2em;"></p>
+                    <p style="margin-top:10px; font-size:11px; color:#999;">※試験用URLをご利用の方はアドレス入力不要です。</p>
                 </div>`;
         }
     }
@@ -824,7 +836,6 @@ async function deleteCurrentProject() {
         const { error } = await client.auth.signInWithOtp({
             email: email,
             options: { 
-                // ログイン後の戻り先を明示的に指定（現在のURL）
                 emailRedirectTo: window.location.origin + window.location.pathname 
             }
         });
@@ -858,6 +869,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
