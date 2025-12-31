@@ -118,13 +118,18 @@
     <h3 style="padding-left:10px;">管理システム</h3>
     <div class="nav-item nav-active" id="nav-projects" onclick="showSection('projects')">案件一覧</div>
     <div class="nav-item" id="nav-edit-all" onclick="showSection('edit-all')">
-    ページ内容・シフト編集
-    <span id="current-editing-name" style="font-size: 0.75rem; color: #4361ee; display: block; margin-top: 4px; font-weight: bold;"></span>
-</div>
+        ページ内容・シフト編集
+        <span id="current-editing-name" style="font-size: 0.75rem; color: #4361ee; display: block; margin-top: 4px; font-weight: bold;"></span>
+    </div>
     <div class="nav-item" id="nav-qr" onclick="showSection('qr'); loadQRProjectList();">URL・QRコード作成</div>
     <div class="nav-item" id="nav-responses" onclick="showSection('responses')">送信データ（回答）確認</div>
     <div id="nav-response-list" class="nav-sub-list"></div>
-    <button onclick="client.auth.signOut().then(() => location.reload())" style="margin-top:20px; color:red; cursor:pointer; background:none; border:none; text-decoration:underline;">ログアウトテスト</button>
+
+    <div class="nav-item" 
+         onclick="if(confirm('ログアウトしますか？')){ client.auth.signOut().then(() => location.reload()) }" 
+         style="margin-top: 30px; color: #e63946; border-top: 1px solid #ddd; padding-top: 15px;">
+        <span style="margin-right: 8px;">??</span>ログアウト
+    </div>
 </div>
 
 <div id="main-content">
@@ -849,6 +854,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
