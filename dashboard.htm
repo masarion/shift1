@@ -518,7 +518,19 @@ function deleteShiftRow(btn) {
 
     function openLivePreview() {
         if(!currentId) return;
-        window.open(window.location.href.split('dashboard.htm')[0] + 'index.htm?id=' + currentId + '&preview=1', '_blank');
+        
+        // 現在のURLがデモモードか判定
+        const isDemo = new URLSearchParams(window.location.search).get('mode') === 'demo';
+        
+        // 基本のURLを作成
+        let url = window.location.href.split('dashboard.htm')[0] + 'index.htm?id=' + currentId + '&preview=1';
+        
+        // デモモードならさらに &mode=demo を追加
+        if (isDemo) {
+            url += '&mode=demo';
+        }
+        
+        window.open(url, '_blank');
     }
 
     async function loadQRProjectList() {
@@ -868,6 +880,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
