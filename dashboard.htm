@@ -34,27 +34,88 @@
         .edit-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 25px; align-items: start; }
         .section-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #f1f5f9; }
         .section-desc { font-size: 0.85rem; color: #64748b; margin-bottom: 20px; line-height: 1.5; }
-        
-        .input-group { margin-bottom: 15px; }
-        .input-group label {
-    display: block;
-    font-size: 0.95rem;    /* 0.85から少し大きくしました */
-    font-weight: bold;
-    color: #334155;        /* #64748bから、より濃く視認性の高い色に変更しました */
-    margin-bottom: 8px;    /* 6pxから少し広げて、入力欄との重なりをスッキリさせました */
-}
-        .input-group input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 0.95rem; box-sizing: border-box; }
 
-        /* 共通ツールバーのスタイル */
-        .floating-toolbar {
-    position: sticky; top: 0; z-index: 100; background: #fff; padding: 10px; border: 1px solid #e2e8f0;
-    border-radius: 10px; display: flex; gap: 10px; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-    margin-bottom: 20px;
-    
-    /* 追加：幅を制限し、はみ出さないようにする */
-    max-width: fit-content; 
-    flex-wrap: wrap;
-}
+        
+        /* --- ここから追加：設定項目カードのデザイン --- */
+        .field-list { display: flex; flex-direction: column; gap: 20px; } /* カード同士の間隔 */
+
+        .field-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        /* ドラッグ中のスタイル */
+        .field-card.sortable-ghost { opacity: 0.4; border: 2px dashed var(--primary); }
+
+        /* タイトルとアイコン装飾 */
+        .field-label {
+            display: flex;
+            align-items: center;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        /* 文字化けしないCSSアイコン (iアイコン) */
+        .field-label::before {
+            content: "i";
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            background: var(--primary);
+            color: white;
+            font-size: 12px;
+            font-family: serif; /* iの文字を綺麗に見せるため */
+            border-radius: 50%;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        /* 説明書きのスタイル統一 */
+        .field-desc {
+            font-size: 0.8rem;
+            color: #64748b;
+            line-height: 1.5;
+            margin-bottom: 12px;
+            padding-left: 28px; /* アイコンの幅分ずらして整列 */
+        }
+
+        /* カード内の入力エリア */
+        .field-card input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+            background: #fcfcfc;
+        }
+        
+        .field-card .rich-editor {
+            background: #fcfcfc;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* ドラッグ用のハンドル（カードの右上に配置） */
+        .field-drag-handle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            cursor: grab;
+            color: #cbd5e1;
+            padding: 5px;
+        }
+        .field-drag-handle:active { cursor: grabbing; }
+        /* --- ここまで追加 --- */
+
         .toolbar-group { display: flex; gap: 5px; align-items: center; border-right: 1px solid #eee; padding-right: 10px; }
         .toolbar-icon-btn { background: white; border: 1px solid #ddd; padding: 5px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; }
         .toolbar-icon-btn:hover { background: #f1f5f9; }
@@ -203,38 +264,122 @@
                 ※最下部の「この案件を完全に削除する」は、案件自体が消えるためご注意ください。
             </div>
         </div>
-        <div class="input-group">
-            <div class="edit-item">
-    <label>閲覧パスコード (空なら制限なし)</label>
-                <p style="font-size:0.8rem; color:#666;">※スタッフが入力画面を開く際に入力を求めます。不要なら空白で良いです。※セキュリティの観点から設定しておき、定期的に変更することをおすすめします。</p>
-    <input type="text" id="project-passcode" placeholder="例: 1234">
+        <div id="project-fields-list" class="field-list">
+
+    <div class="field-card" data-id="title_tag">
+        <div class="field-drag-handle" style="cursor:grab; display:flex; align-items:center; color:#94a3b8;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="12" r="1"></circle>
+        <circle cx="9" cy="5" r="1"></circle>
+        <circle cx="9" cy="19" r="1"></circle>
+        <circle cx="15" cy="12" r="1"></circle>
+        <circle cx="15" cy="5" r="1"></circle>
+        <circle cx="15" cy="19" r="1"></circle>
+    </svg>
+</div>
+        <div class="field-label">案件名称（管理用）</div>
+        <div class="field-desc">スタッフがブックマークした際などの名称になります。※文字装飾不可。</div>
+        <input type="text" id="edit-title-tag">
+    </div>
+
+    <div class="field-card" data-id="passcode">
+        <div class="field-drag-handle" style="cursor:grab; display:flex; align-items:center; color:#94a3b8;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="12" r="1"></circle>
+        <circle cx="9" cy="5" r="1"></circle>
+        <circle cx="9" cy="19" r="1"></circle>
+        <circle cx="15" cy="12" r="1"></circle>
+        <circle cx="15" cy="5" r="1"></circle>
+        <circle cx="15" cy="19" r="1"></circle>
+    </svg>
+</div>
+        <div class="field-label">閲覧パスコード</div>
+        <div class="field-desc">入力画面で求められるコードです。不要なら空白で良いです。他人の名前を語る「なりすまし」などセキュリティの観点から定期的な設定変更を推奨します。</div>
+        <input type="text" id="project-passcode" placeholder="例: 1234">
+    </div>
+
+    <div class="field-card" data-id="h1_title">
+        <div class="field-drag-handle" style="cursor:grab; display:flex; align-items:center; color:#94a3b8;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="12" r="1"></circle>
+        <circle cx="9" cy="5" r="1"></circle>
+        <circle cx="9" cy="19" r="1"></circle>
+        <circle cx="15" cy="12" r="1"></circle>
+        <circle cx="15" cy="5" r="1"></circle>
+        <circle cx="15" cy="19" r="1"></circle>
+    </svg>
+</div>
+        <div class="field-label">画面トップの見出し</div>
+        <div class="field-desc">翌月の数字が自動表示されるので、その後に後に続く言葉です。（例：「月のシフト希望」）</div>
+        <div id="edit-h1-title" class="rich-editor" contenteditable="true"></div>
+    </div>
+
+    <div class="field-card" data-id="msg_top">
+        <div class="field-drag-handle" style="cursor:grab; display:flex; align-items:center; color:#94a3b8;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="12" r="1"></circle>
+        <circle cx="9" cy="5" r="1"></circle>
+        <circle cx="9" cy="19" r="1"></circle>
+        <circle cx="15" cy="12" r="1"></circle>
+        <circle cx="15" cy="5" r="1"></circle>
+        <circle cx="15" cy="19" r="1"></circle>
+    </svg>
+</div>
+        <div class="field-label">冒頭メッセージ</div>
+        <div class="field-desc">カレンダーの上のエリアに表示される挨拶やお願い文です。</div>
+        <div id="edit-msg-top" class="rich-editor" contenteditable="true"></div>
+    </div>
+
+    <div class="field-card" data-id="msg_calendar">
+        <div class="field-drag-handle" style="cursor:grab; display:flex; align-items:center; color:#94a3b8;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="12" r="1"></circle>
+        <circle cx="9" cy="5" r="1"></circle>
+        <circle cx="9" cy="19" r="1"></circle>
+        <circle cx="15" cy="12" r="1"></circle>
+        <circle cx="15" cy="5" r="1"></circle>
+        <circle cx="15" cy="19" r="1"></circle>
+    </svg>
+</div>
+        <div class="field-label">カレンダー操作説明</div>
+        <div class="field-desc">日付を選択する際の注意点などを記載します。</div>
+        <div id="edit-msg-calendar" class="rich-editor" contenteditable="true"></div>
+    </div>
+
+    <div class="field-card" data-id="msg_bottom">
+        <div class="field-drag-handle" style="cursor:grab; display:flex; align-items:center; color:#94a3b8;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="12" r="1"></circle>
+        <circle cx="9" cy="5" r="1"></circle>
+        <circle cx="9" cy="19" r="1"></circle>
+        <circle cx="15" cy="12" r="1"></circle>
+        <circle cx="15" cy="5" r="1"></circle>
+        <circle cx="15" cy="19" r="1"></circle>
+    </svg>
+</div>
+        <div class="field-label">備考・その他希望欄の説明</div>
+        <div class="field-desc">自由記述欄のタイトルや、記入例などを記載します。</div>
+        <div id="edit-msg-bottom" class="rich-editor" contenteditable="true"></div>
+    </div>
+
+    <div class="field-card" data-id="msg_confirm">
+        <div class="field-drag-handle" style="cursor:grab; display:flex; align-items:center; color:#94a3b8;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="12" r="1"></circle>
+        <circle cx="9" cy="5" r="1"></circle>
+        <circle cx="9" cy="19" r="1"></circle>
+        <circle cx="15" cy="12" r="1"></circle>
+        <circle cx="15" cy="5" r="1"></circle>
+        <circle cx="15" cy="19" r="1"></circle>
+    </svg>
+</div>
+        <div class="field-label">確認画面の注意書き</div>
+        <div class="field-desc">送信ボタンを押す前の最終確認時に表示されるメッセージ内容などです。</div>
+        <div id="edit-msg-confirm" class="rich-editor" contenteditable="true"></div>
+    </div>
 
 </div>
-    <label>
-        案件名称（管理用） 
-        <span style="font-weight: normal; color: #94a3b8; font-size: 0.75rem; margin-left: 8px;">
-            スタッフがブックマークしたときの名称になります。※この項目は文字装飾が適用できません。
-        </span>
-    </label>
-    <input type="text" id="edit-title-tag">
-</div>
-                <div class="input-group">
-    <label>
-        画面トップの見出し
-        <span style="display: block; font-weight: normal; color: #94a3b8; font-size: 0.75rem; margin-top: 2px; line-height: 1.4;">
-            ※翌月が自動で表示されるのでそれ以降を編集してください<br>
-            （例：「月のシフト」と入力すると「◯月のシフト」と表示されます。※◯月＝翌月です）
-        </span>
-    </label>
-    <div id="edit-h1-title" class="rich-editor" contenteditable="true" style="margin-top: 8px;"></div>
-</div>
-                <div class="input-group"><label>冒頭メッセージ</label><div id="edit-msg-top" class="rich-editor" contenteditable="true"></div></div>
-                <div class="input-group"><label>カレンダー操作説明</label><div id="edit-msg-calendar" class="rich-editor" contenteditable="true"></div></div>
-
-<div class="input-group"><label>備考・その他希望欄の説明</label><div id="edit-msg-bottom" class="rich-editor" contenteditable="true"></div></div>
-
-<div class="input-group"><label>確認画面の注意書き</label><div id="edit-msg-confirm" class="rich-editor" contenteditable="true"></div></div>
-            </div>
+            
             <div class="card">
                 <div class="section-title">2. シフト枠の種類</div>
                 <div class="operation-guide">
@@ -440,14 +585,27 @@ async function duplicateProject(sourceId) {
         if(shifts && shifts.length > 0) shifts.forEach(s => addShiftRow(s.name));
         else addShiftRow('日勤');
         
-        if(sortable) sortable.destroy();
+       // --- 【並べ替え設定：右側】シフト枠リストのドラッグ移動 ---
+        if(sortable) sortable.destroy(); // 既存の設定を一度リセット
         sortable = new Sortable(container, { 
-            handle: '.drag-handle', 
+            handle: '.drag-handle', // シフト枠用のハンドルを指定
             animation: 150,
             onEnd: function() {
-                updateShiftNumbers(); // 並べ替えが終わったら番号を振り直す
+                updateShiftNumbers(); // 並べ替え完了後に番号（1, 2, 3...）を更新
             }
         });
+
+        // --- 【並べ替え設定：左側】設定項目カードのドラッグ移動 ---
+        const fieldContainer = document.getElementById('project-fields-list');
+        if (fieldContainer) {
+            new Sortable(fieldContainer, {
+                handle: '.field-drag-handle', // 設定カード用のハンドルを指定
+                animation: 150,
+                ghostClass: 'sortable-ghost' // 移動中のカードを半透明にするデザインを適用
+            });
+        }
+
+        // 編集画面を表示
         showSection('edit-all');
     }
 
@@ -898,6 +1056,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
