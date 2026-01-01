@@ -93,6 +93,11 @@
 
         // 3. 提出データの取得 (デモモードでも取得できるよう絞り込みをprojectIdのみに)
         const { data: s, error: sErr } = await client.from('submissions').select('*').eq('project_id', projectId);
+
+        // startApp関数の中に追加
+if (new URLSearchParams(window.location.search).get('mode') === 'demo') {
+    document.querySelector('.btn-save').style.display = 'none'; // 保存ボタンを消す
+}
         
         if (sErr) {
             console.error("データ取得エラー:", sErr);
@@ -272,4 +277,5 @@
 </script>
 </body>
 </html>
+
 
