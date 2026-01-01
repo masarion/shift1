@@ -7,34 +7,25 @@
     <style>
         :root { --sat: #007bff; --sun: #dc3545; --bg: #f4f7f9; --tag-bg: #e2e8f0; --danger: #e53e3e; --success: #38a169; --pdf: #6366f1; }
         body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 0; color: #2d3748; }
-        
         .txt-sat { color: var(--sat) !important; }
         .txt-sun { color: var(--sun) !important; }
-
         .header-content { background: white; padding: 15px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 2000; }
         h2 { margin: 0 0 10px 0; font-size: 1.4rem; border-left: 5px solid #4a5568; padding-left: 15px; }
         .how-to { font-size: 0.85rem; color: #4a5568; margin-bottom: 15px; background: #fffaf0; border: 1px solid #feebc8; padding: 12px; border-radius: 6px; line-height: 1.6; }
         .caution { color: var(--danger); font-weight: bold; }
-        
         .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
         .spacer { flex-grow: 1; }
         button { padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; border: 1px solid #cbd5e0; background: white; }
         .btn-pdf { background: var(--pdf); color: white; border: none; }
         .btn-save { background: var(--success); color: white; border: none; }
-
         .table-area { padding: 20px; overflow: auto; height: calc(100vh - 240px); }
         .main-table { border-collapse: collapse; background: white; table-layout: fixed; width: max-content; }
         .main-table th, .main-table td { border: 1px solid #cbd5e0; padding: 4px; text-align: center; vertical-align: top; width: 115px; min-width: 115px; }
         .main-table thead th { background: #f7fafc; position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #a0aec0; padding: 8px 4px; }
-        
         .shift-name-col { background: #edf2f7 !important; font-weight: bold; position: sticky; left: 0; z-index: 160; text-align: left !important; width: 140px !important; min-width: 140px !important; vertical-align: middle; }
-        .main-table thead th.shift-name-col { z-index: 170; }
-
         .name-tag { background: var(--tag-bg); border: 1px solid #cbd5e0; border-radius: 4px; padding: 2px 4px; margin: 2px 0; font-size: 12px; white-space: nowrap; display: block; cursor: grab; }
-
         #print-container { display: none; }
         #print-loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 3000; align-items: center; justify-content: center; font-size: 1.5rem; }
-
         @media print {
             @page { size: A4 landscape; margin: 5mm; }
             .header-content, .table-area, #print-loading { display: none !important; }
@@ -85,65 +76,34 @@
     const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     const client = supabase.createClient(S_URL, S_KEY);
 
-    // admin.htm の冒頭にある checkAuth 関数をこのように書く
-async function checkAuth() {
-    // 1. URLのパラメータを確認 (?mode=demo が付いているか)
-    const urlParams = new URLSearchParams(window.location.search);
-    const isDemo = urlParams.get('mode') === 'demo';
-
-    const { data: { session } } = await client.auth.getSession();
-    
-    // 2. ログインしていない、かつデモモードでもない場合のみ追い返す
-    if (!session && !isDemo) {
-        alert("認証が必要です。ログインし直してください。");
-        location.href = 'dashboard.htm'; 
-        return;
-    }
-
-    // デモモードまたはログイン済みならそのまま続行（データを読み込む）
-    loadProjectDetails(); // すでにあるデータ読み込み関数を呼ぶ
-}
-
-// ページ読み込み時に実行
-checkAuth();
-
     let _MASTER_DATA = [], _INITIAL_DATA = [], _HISTORY = [], _SHIFT_TYPES = [], _CAL_DATES = [];
     let currentProjectId = null;
 
     async function startApp(projectId) {
         currentProjectId = projectId;
-        console.log("--- アプリ起動チェック開始 ---");
-        console.log("対象案件ID:", projectId);
+        console.log("--- アプリ起動 --- ID:", projectId);
 
         // 1. 案件情報の取得
         const { data: pj, error: pjErr } = await client.from('projects').select('*').eq('id', projectId).single();
-        if (pjErr) console.error("【エラー】案件が取得できません:", pjErr);
-        if (pj) {
-            console.log("案件名取得成功:", pj.title_tag);
-            document.getElementById('project-title-display').textContent = `データ確認：${pj.title_tag}`;
-        }
+        if (pj) document.getElementById('project-title-display').textContent = `データ確認：${pj.title_tag}`;
 
         // 2. シフト枠の取得
-        const { data: t, error: tErr } = await client.from('shift_types').select('*').eq('project_id', projectId).order('display_order');
-        if (tErr) console.error("【エラー】シフト枠が取得できません:", tErr);
-        console.log("シフト枠数:", t ? t.length : 0);
-        
-        // 3. 提出データの取得（ここが最重要！）
-        console.log("submissions（提出データ）を取得しにいきます...");
+        const { data: t } = await client.from('shift_types').select('*').eq('project_id', projectId).order('display_order');
+        _SHIFT_TYPES = t || [];
+
+        // 3. 提出データの取得 (デモモードでも取得できるよう絞り込みをprojectIdのみに)
         const { data: s, error: sErr } = await client.from('submissions').select('*').eq('project_id', projectId);
         
         if (sErr) {
-            // ここでエラーが出たら、Supabaseの「鍵(RLS)」が閉まっている証拠です
-            console.error("【重要エラー】データ取得を拒否されました:", sErr);
+            console.error("データ取得エラー:", sErr);
         } else {
-            console.log("提出データの取得に成功！ 件数:", s ? s.length : 0);
+            console.log("取得データ件数:", s ? s.length : 0);
         }
         
-        _SHIFT_TYPES = t || [];
         _INITIAL_DATA = JSON.parse(JSON.stringify(s || []));
         _MASTER_DATA = JSON.parse(JSON.stringify(_INITIAL_DATA));
 
-        // 4. カレンダー設定（ここは変更なし）
+        // 4. カレンダー設定（翌月分）
         const now = new Date();
         const target = new Date(now.getFullYear(), now.getMonth() + 1, 1);
         document.getElementById('month-display').textContent = `${target.getFullYear()}年 ${target.getMonth()+1}月`;
@@ -154,15 +114,13 @@ checkAuth();
             return `${target.getFullYear()}-${String(target.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
         });
 
-        console.log("画面の描画（renderAll）を実行します");
         renderAll();
     }
 
     function renderAll() {
         const h = document.getElementById('h-row'), b = document.getElementById('b-rows'), w = ["日","月","火","水","木","金","土"];
-        
         h.innerHTML = `<tr><th class="shift-name-col">シフト枠</th>${_CAL_DATES.map(d => {
-            const dt = new Date(d.replace(/-/g, '/')); // iOS対策
+            const dt = new Date(d.replace(/-/g, '/'));
             const dayIdx = dt.getDay();
             const cl = dayIdx === 0 ? 'txt-sun' : (dayIdx === 6 ? 'txt-sat' : '');
             return `<th><span class="${cl}">${dt.getMonth()+1}/${dt.getDate()}(${w[dayIdx]})</span></th>`;
@@ -172,7 +130,6 @@ checkAuth();
         _SHIFT_TYPES.forEach(type => {
             const row = document.createElement('tr');
             row.innerHTML = `<td class="shift-name-col">${type.name}</td>`;
-            
             _CAL_DATES.forEach(date => {
                 const td = document.createElement('td');
                 td.ondragover = e => e.preventDefault();
@@ -181,7 +138,6 @@ checkAuth();
                     const info = JSON.parse(e.dataTransfer.getData("text/plain"));
                     handleMove(info, date, type.name); 
                 };
-
                 _MASTER_DATA.forEach(staff => {
                     const shiftsForDate = staff.shift_data[date] || [];
                     if (shiftsForDate.includes(type.name)) {
@@ -202,13 +158,9 @@ checkAuth();
         });
     }
 
-    // --- 各種操作関数 ---
     function pushHistory() { _HISTORY.push(JSON.parse(JSON.stringify(_MASTER_DATA))); }
-    
     function undoLastAction() { if (_HISTORY.length > 0) { _MASTER_DATA = _HISTORY.pop(); renderAll(); } }
-    
     function resetToInitial() { if (confirm("保存前の状態に全て戻しますか？")) { _MASTER_DATA = JSON.parse(JSON.stringify(_INITIAL_DATA)); _HISTORY = []; renderAll(); } }
-    
     function handleMove(info, toDate, toType) { 
         pushHistory(); 
         const s = _MASTER_DATA.find(st => String(st.id) === String(info.id)); 
@@ -219,7 +171,6 @@ checkAuth();
             renderAll(); 
         } 
     }
-
     function handleDelete(staffId, date, typeName, name) { 
         if (confirm(`${name}さんのこのシフトを削除しますか？`)) { 
             pushHistory(); 
@@ -251,7 +202,6 @@ checkAuth();
         const w = ["日","月","火","水","木","金","土"];
         const monthTitle = document.getElementById('month-display').textContent;
         const chunks = [{ title: "前半(1-15日)", dates: _CAL_DATES.slice(0, 15) }, { title: "後半(16日-末)", dates: _CAL_DATES.slice(15) }];
-        
         chunks.forEach(chunk => {
             let html = `<div class="print-page"><h3>${monthTitle} ${chunk.title}</h3><table class="print-table"><thead><tr><th class="p-shift-col">シフト枠</th>`;
             chunk.dates.forEach(d => {
@@ -292,50 +242,27 @@ checkAuth();
             });
             text += cells.join("\t") + "\n";
         });
-        navigator.clipboard.writeText(text).then(() => alert("エクセル用にコピーしました。Excelを開いて貼り付けてください。"));
+        navigator.clipboard.writeText(text).then(() => alert("エクセル用にコピーしました。"));
     }
 
-    // 起動時チェック (徹底エラー追跡版)
     window.onload = async () => {
-        console.log("window.onload が開始されました"); // これが出るか確認
         try {
             const urlParams = new URLSearchParams(window.location.search);
             const isDemo = urlParams.get('mode') === 'demo';
             const id = urlParams.get('id');
-            console.log("URLパラメータ取得:", { id, isDemo });
-
-            // セッション確認
-            const { data, error: authError } = await client.auth.getSession();
-            if (authError) console.error("Authエラー:", authError);
-            
-            const session = data ? data.session : null;
-            
-            // ログインしていない、かつデモモードでもない場合
+            const { data: { session } } = await client.auth.getSession();
             if (!session && !isDemo) {
-                console.log("未ログインかつ通常モードのため移動します");
                 window.location.href = 'dashboard.htm';
                 return;
             }
-
             if (id) {
-                console.log("startApp を呼び出します...");
-                await startApp(id);
+                startApp(id);
             } else {
                 alert("案件IDが指定されていません。");
                 window.location.href = 'dashboard.htm' + (isDemo ? '?mode=demo' : '');
             }
-        } catch (err) {
-            console.error("onload内で致命的エラーが発生しました:", err);
-        }
+        } catch (e) { console.error(e); }
     };
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
