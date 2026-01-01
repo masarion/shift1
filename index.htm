@@ -133,56 +133,82 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
     let targetMonthStr = "";
 
     async function init() {
-        const now = new Date();
-        const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-        const y = nextMonthDate.getFullYear();
-        const m = nextMonthDate.getMonth() + 1;
-        targetMonthStr = `${y}-${m}`;
+    const now = new Date();
+    const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const y = nextMonthDate.getFullYear();
+    const m = nextMonthDate.getMonth() + 1;
+    targetMonthStr = `${y}-${m}`;
 
-        // ロック解除判定：ID以外の文字（?id=...&a や ?id=...&preview など）があればisPreviewとする
-        const isPreview = window.location.search.length > (window.location.search.indexOf(PROJECT_ID) + PROJECT_ID.length);
-        const lockKey = `submitted_${targetMonthStr}_${PROJECT_ID}`;
-        
-        if (!isPreview && localStorage.getItem(lockKey)) {
-            document.body.innerHTML = `
-                <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
-                    <h2 style="color:#333;">送信済み</h2>
-                    <p style="color:#666;">${m}月分のシフト希望は既に提出されています。</p>
-                    <p style="font-size:0.9rem; color:#999;">※内容の変更が必要な場合は管理者に連絡してください。</p>
-                </div>`;
-            return;
-        }
-
-        try {
-            const [pRes, sRes] = await Promise.all([
-                db.from('projects').select('*').eq('id', PROJECT_ID).single(),
-                db.from('shift_types').select('*').eq('project_id', PROJECT_ID).order('display_order', { ascending: true })
-            ]);
-            if (pRes.error || sRes.error) throw (pRes.error || sRes.error);
-
-            const proj = pRes.data;
-            shiftTypes = sRes.data;
-            document.getElementById('h1-title').innerHTML = m + (proj.h1_title || "月のシフト希望");
-            document.title = proj.title_tag || document.getElementById('h1-title').textContent;
-
-            const config = { 'msg-top': proj.msg_top, 'msg-calendar': proj.msg_calendar, 'msg-bottom': proj.msg_bottom, 'msg-confirm': proj.msg_confirm };
-            Object.keys(config).forEach(id => {
-    const el = document.getElementById(id);
-    if (config[id]) { 
-        // .textContent から .innerHTML に変更
-        el.innerHTML = config[id]; 
-        el.style.display = 'block'; 
-    } else {
-        el.style.display = 'none';
+    const urlParams = new URLSearchParams(window.location.search);
+    // ロック解除判定：ID以外の文字があればisPreviewとする
+    const isPreview = window.location.search.length > (window.location.search.indexOf(PROJECT_ID) + PROJECT_ID.length);
+    const lockKey = `submitted_${targetMonthStr}_${PROJECT_ID}`;
+    
+    if (!isPreview && localStorage.getItem(lockKey)) {
+        document.body.innerHTML = `
+            <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
+                <h2 style="color:#333;">送信済み</h2>
+                <p style="color:#666;">${m}月分のシフト希望は既に提出されています。</p>
+                <p style="font-size:0.9rem; color:#999;">※内容の変更が必要な場合は管理者に連絡してください。</p>
+            </div>`;
+        return;
     }
-});
-            renderCalendar(nextMonthDate);
-        } catch (e) { 
-            document.getElementById('h1-title').textContent = "読み込みエラー";
-            document.getElementById('msg-top').style.display = 'block';
-            document.getElementById('msg-top').innerHTML = `設定が見つかりません。`;
+
+    try {
+        const [pRes, sRes] = await Promise.all([
+            db.from('projects').select('*').eq('id', PROJECT_ID).single(),
+            db.from('shift_types').select('*').eq('project_id', PROJECT_ID).order('display_order', { ascending: true })
+        ]);
+        if (pRes.error || sRes.error) throw (pRes.error || sRes.error);
+
+        const proj = pRes.data;
+        shiftTypes = sRes.data;
+
+        // --- ★ここからパスコードチェックを追加 ---
+        const correctPass = proj.passcode; 
+        const inputPass = urlParams.get('pw');
+
+        // パスコードが設定されている場合のみ判定を行う
+        if (correctPass && correctPass.trim() !== "" && inputPass !== correctPass) {
+            const userIn = prompt("この案件を閲覧するにはパスコードが必要です。");
+            if (userIn === correctPass) {
+                // 正解ならURLにパスコードを付けてリロード
+                const separator = window.location.search.includes('?') ? '&' : '?';
+                location.href = window.location.href + separator + "pw=" + userIn;
+                return;
+            } else {
+                // 不正解時の表示（既存のスタイルに合わせました）
+                document.body.innerHTML = `
+                    <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
+                        <h2 style="color:#e53e3e;">アクセス権限がありません</h2>
+                        <p>正しいパスコードを入力してください。</p>
+                        <button onclick="location.reload()" style="margin-top:20px; padding:10px 20px;">再試行</button>
+                    </div>`;
+                return;
+            }
         }
+        // --- ★パスコードチェック終了 ---
+
+        document.getElementById('h1-title').innerHTML = m + (proj.h1_title || "月のシフト希望");
+        document.title = proj.title_tag || document.getElementById('h1-title').textContent;
+
+        const config = { 'msg-top': proj.msg_top, 'msg-calendar': proj.msg_calendar, 'msg-bottom': proj.msg_bottom, 'msg-confirm': proj.msg_confirm };
+        Object.keys(config).forEach(id => {
+            const el = document.getElementById(id);
+            if (config[id]) { 
+                el.innerHTML = config[id]; 
+                el.style.display = 'block'; 
+            } else {
+                el.style.display = 'none';
+            }
+        });
+        renderCalendar(nextMonthDate);
+    } catch (e) { 
+        document.getElementById('h1-title').textContent = "読み込みエラー";
+        document.getElementById('msg-top').style.display = 'block';
+        document.getElementById('msg-top').innerHTML = `設定が見つかりません。`;
     }
+}
 
     function renderCalendar(baseDate) {
         const container = document.getElementById('calendar');
@@ -301,6 +327,7 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
 </script>
 </body>
 </html>
+
 
 
 
