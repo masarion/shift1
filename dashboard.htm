@@ -424,6 +424,10 @@ async function duplicateProject(sourceId) {
     document.getElementById('current-editing-name').textContent = p ? `選択中: ${p.title_tag}` : "";
         document.getElementById('edit-page-title').textContent = `「${p.title_tag}」の編集`;
         document.getElementById('edit-title-tag').value = p.title_tag || '';
+        // ★スタッフ画面上のパスコード入力欄にデータを表示させる
+    // (HTML側で id="project-passcode" としている場合)
+    const passcodeEl = document.getElementById('project-passcode');
+    if (passcodeEl) passcodeEl.value = p.passcode || '';
         document.getElementById('edit-h1-title').innerHTML = p.h1_title || '';
         document.getElementById('edit-msg-top').innerHTML = p.msg_top || '';
         document.getElementById('edit-msg-calendar').innerHTML = p.msg_calendar || '';
@@ -503,15 +507,23 @@ function deleteShiftRow(btn) {
 }
 
     async function saveSettings() {
-        if(!currentId) return;
-        await client.from('projects').update({
-            title_tag: document.getElementById('edit-title-tag').value,
-            h1_title: document.getElementById('edit-h1-title').innerHTML,
-            msg_top: document.getElementById('edit-msg-top').innerHTML,
-            msg_calendar: document.getElementById('edit-msg-calendar').innerHTML,
-            msg_bottom: document.getElementById('edit-msg-bottom').innerHTML,
-            msg_confirm: document.getElementById('edit-msg-confirm').innerHTML
-        }).eq('id', currentId);
+    if(!currentId) return;
+    
+    // 【修正】画面からパスコードを取得
+    const passcodeVal = document.getElementById('project-passcode').value;
+
+    await client.from('projects').update({
+        title_tag: document.getElementById('edit-title-tag').value,
+        
+        // ★ここを追加！ Supabaseの「passcode」カラムに保存
+        passcode: passcodeVal,
+
+        h1_title: document.getElementById('edit-h1-title').innerHTML,
+        msg_top: document.getElementById('edit-msg-top').innerHTML,
+        msg_calendar: document.getElementById('edit-msg-calendar').innerHTML,
+        msg_bottom: document.getElementById('edit-msg-bottom').innerHTML,
+        msg_confirm: document.getElementById('edit-msg-confirm').innerHTML
+    }).eq('id', currentId);
         
         await client.from('shift_types').delete().eq('project_id', currentId);
         const shifts = Array.from(document.querySelectorAll('.shift-row input')).map((el, i) => ({
@@ -886,6 +898,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
