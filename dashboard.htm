@@ -142,10 +142,12 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
     margin-bottom: 20px;
     
-    /* ボタンの折り返しを禁止 */
     flex-wrap: nowrap;
-    overflow-x: auto; /* 横幅が足りない時は横スクロールを出す */
-    width: 100%;
+    overflow-x: auto;
+    
+    /* ★ここを width: 100%; から書き換え */
+    width: fit-content;  /* 中身のボタンの幅に合わせる */
+    max-width: 100%;     /* ただし親要素（左カラム）からはみ出さない */
     box-sizing: border-box;
 }
 
@@ -1089,6 +1091,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
