@@ -58,7 +58,7 @@
         <button onclick="undoLastAction()">1つ前に戻る</button>
         <button onclick="resetToInitial()">全て元に戻す</button>
         <button class="btn-save" onclick="saveToDatabase()">変更を保存</button>
-        <button onclick="window.close()" style="margin-left:10px;">× 閉じる</button>
+        <button onclick="goBackToDashboard()" style="margin-left:10px;">← 管理画面に戻る</button>
     </div>
 </div>
 
@@ -194,6 +194,12 @@
         } catch (err) { alert("エラー: " + err.message); } 
     }
 
+    function goBackToDashboard() {
+        const isDemo = new URLSearchParams(window.location.search).get('mode') === 'demo';
+        // デモモードならデモ用ダッシュボードへ、そうでなければ通常ダッシュボードへ戻る
+        window.location.href = 'dashboard.htm' + (isDemo ? '?mode=demo' : '');
+    }
+
     function generateSplitPDF() {
         const loading = document.getElementById('print-loading');
         const container = document.getElementById('print-container');
@@ -266,3 +272,4 @@
 </script>
 </body>
 </html>
+
