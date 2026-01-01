@@ -890,13 +890,17 @@ function updatePreviewMonth() {
                     <div id="qrcode" style="pointer-events:none;"></div>
                     <button class="del-btn" onclick="this.parentElement.remove()">削除</button>
                 </div>
-
-                <div class="editable-block" style="margin-top:20px; justify-content:center;">
-                    <div class="content-inner" contenteditable="true" style="font-size: 1.3rem; font-weight: bold;">パスコード：（例）1234<br>パスコードは必ず控えてください。また、定期的に変更するので、その際は改めて連絡します</div>
-                    <button class="del-btn" onclick="this.parentElement.remove()">削除</button>
                 
                 <div class="editable-block" style="margin-top:20px; justify-content:center;">
                     <div class="content-inner" contenteditable="true" style="font-size: 1.3rem; font-weight: bold;">シフト希望の提出はこちらから</div>
+                    <button class="del-btn" onclick="this.parentElement.remove()">削除</button>
+
+                    <div class="editable-block" style="margin-top:20px; justify-content:center;">
+                    <div class="content-inner" contenteditable="true" style="font-size: 1.3rem; font-weight: bold;">パスコード：（例）1234</div>
+                    <button class="del-btn" onclick="this.parentElement.remove()">削除</button>
+
+                    <div class="editable-block" style="margin-top:20px; justify-content:center;">
+                    <div class="content-inner" contenteditable="true" style="font-size: 1.3rem; font-weight: bold;">【重要】パスコードは各自、必ず控えてください。定期的に変更しますのでその際は改めて連絡します</div>
                     <button class="del-btn" onclick="this.parentElement.remove()">削除</button>
 
                     
@@ -1093,6 +1097,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
