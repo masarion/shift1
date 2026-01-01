@@ -346,12 +346,19 @@
             projectListEl.innerHTML = '<div class="card">案件がありません。「新規案件作成」から追加してください。</div>';
         }
 
-        // 2. サイドメニューの「送信データ確認」リストを更新
+       // 2. サイドメニューの「送信データ確認」リストを更新
         const responseListEl = document.getElementById('nav-response-list');
         if (pjs && pjs.length > 0) {
-            responseListEl.innerHTML = pjs.map(p => `
-                <div class="nav-sub-item" onclick="location.href='admin.htm?id=${p.id}&mode=demo'">└ ${p.title_tag || '無題'}</div>
-            `).join('');
+            // 現在のURLに mode=demo が含まれているかチェック
+            const isDemoMode = new URLSearchParams(window.location.search).get('mode') === 'demo';
+
+            responseListEl.innerHTML = pjs.map(p => {
+                // デモモードの時だけ &mode=demo を追加、それ以外は空文字にする
+                const demoParam = isDemoMode ? '&mode=demo' : '';
+                return `
+                    <div class="nav-sub-item" onclick="location.href='admin.htm?id=${p.id}${demoParam}'">└ ${p.title_tag || '無題'}</div>
+                `;
+            }).join('');
         } else {
             responseListEl.innerHTML = '';
         }
@@ -861,6 +868,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
