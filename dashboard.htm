@@ -399,42 +399,35 @@
 
     <div class="field-card" data-id="msg_confirm">
         <div class="field-drag-handle" style="cursor:grab; display:flex; align-items:center; color:#94a3b8;">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="9" cy="12" r="1"></circle>
-        <circle cx="9" cy="5" r="1"></circle>
-        <circle cx="9" cy="19" r="1"></circle>
-        <circle cx="15" cy="12" r="1"></circle>
-        <circle cx="15" cy="5" r="1"></circle>
-        <circle cx="15" cy="19" r="1"></circle>
-    </svg>
-</div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle>
+                <circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle>
+            </svg>
+        </div>
         <div class="field-label">確認画面の注意書き</div>
         <div class="field-desc">送信ボタンを押す前の最終確認時に表示されるメッセージ内容などです。</div>
         <div id="edit-msg-confirm" class="rich-editor" contenteditable="true"></div>
     </div>
 
+</div> </div> <div class="card">
+    <div class="section-title">2. シフト枠の種類</div>
+    <div class="operation-guide">
+        <div class="guide-title">操作説明</div>
+        <ul>
+            <li><strong>並べ替え：</strong> 左のマークをドラッグすると並び替えができて、番号も同時に入れ替わります</li>
+            <li><strong>テキスト：</strong> 各枠内をクリックして直接編集できます</li>
+            <li><strong>削除：</strong> 右のゴミ箱アイコンから削除（確認ダイアログが表示されます）</li>
+            <li><strong>確定：</strong> 完了後、必ずページ最下部の<strong>「変更を保存して反映」</strong>を押してください</li>
+        </ul>
+    </div>
+    <div id="shift-manager-list"></div>
+    <button onclick="addShiftRow()" style="width:100%; padding:12px; margin-top:10px; background:#f1f5f9; border:1px dashed #cbd5e1; border-radius:8px; cursor:pointer;">+ 枠を追加</button>
 </div>
-            
-            <div class="card">
-                <div class="section-title">2. シフト枠の種類</div>
-                <div class="operation-guide">
-    <div class="guide-title">操作説明</div>
-    <ul>
-        <li><strong>並べ替え：</strong> 左のマークをドラッグすると並び替えができて、番号も同時に入れ替わります</li>
-        <li><strong>テキスト：</strong> 各枠内をクリックして直接編集できます</li>
-        <li><strong>削除：</strong> 右のゴミ箱アイコンから削除（確認ダイアログが表示されます）</li>
-        <li><strong>確定：</strong> 完了後、必ずページ最下部の<strong>「変更を保存して反映」</strong>を押してください</li>
-    </ul>
-</div>
-                <div id="shift-manager-list"></div>
-                <button onclick="addShiftRow()" style="width:100%; padding:12px; margin-top:10px; background:#f1f5f9; border:1px dashed #cbd5e1; border-radius:8px; cursor:pointer;">+ 枠を追加</button>
-            </div>
-        </div>
 
-        <div class="action-area">
-            <button class="btn-save-fixed" onclick="saveSettings()">変更を保存して反映</button><br>
-            <button class="btn-delete-pj" onclick="deleteCurrentProject()" style="background:none; border:none; color:#94a3b8; text-decoration:underline; cursor:pointer; margin-top:20px;">この案件を完全に削除する</button>
-        </div>
+</div> <div class="action-area">
+    <button class="btn-save-fixed" onclick="saveSettings()">変更を保存して反映</button><br>
+    <button class="btn-delete-pj" onclick="deleteCurrentProject()" style="background:none; border:none; color:#94a3b8; text-decoration:underline; cursor:pointer; margin-top:20px;">この案件を完全に削除する</button>
+</div>
     </section>
 
     <section id="sec-qr" style="display:none;">
@@ -1091,6 +1084,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
