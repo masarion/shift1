@@ -72,6 +72,16 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
 </head>
 <body>
 
+    <div id="passcode-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; flex-direction:column; align-items:center; justify-content:center; font-family:sans-serif; padding:20px; box-sizing:border-box;">
+    <div style="max-width:400px; width:100%; text-align:center;">
+        <h2 id="pass-title" style="color:#333; margin-bottom:20px;">パスコードが必要です</h2>
+        <p style="color:#666; margin-bottom:20px;">管理者に案内されたパスコードを入力してください。</p>
+        <input type="text" id="pass-input" placeholder="パスコードを入力" style="width:100%; padding:15px; font-size:1.2rem; border:2px solid #ddd; border-radius:8px; margin-bottom:20px; text-align:center; box-sizing:border-box;">
+        <button id="pass-submit" style="width:100%; padding:15px; background:#007bff; color:white; border:none; border-radius:8px; font-size:1.1rem; cursor:pointer;">認証する</button>
+        <div id="pass-error" style="color:#e53e3e; margin-top:15px; display:none;">パスコードが違います</div>
+    </div>
+</div>
+
 <div class="container" id="input-screen">
     <h1 id="h1-title">読み込み中...</h1>
     <div id="msg-top" class="msg-box"></div>
@@ -140,10 +150,10 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
     targetMonthStr = `${y}-${m}`;
 
     const urlParams = new URLSearchParams(window.location.search);
-    // ロック解除判定：ID以外の文字があればisPreviewとする
     const isPreview = window.location.search.length > (window.location.search.indexOf(PROJECT_ID) + PROJECT_ID.length);
     const lockKey = `submitted_${targetMonthStr}_${PROJECT_ID}`;
     
+    // 1. 送信済みチェック（既存のまま）
     if (!isPreview && localStorage.getItem(lockKey)) {
         document.body.innerHTML = `
             <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
@@ -164,31 +174,32 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
         const proj = pRes.data;
         shiftTypes = sRes.data;
 
-        // --- ★ここからパスコードチェックを追加 ---
+        // --- ★視覚的なパスコードチェックにアップデート ---
         const correctPass = proj.passcode; 
         const inputPass = urlParams.get('pw');
 
-        // パスコードが設定されている場合のみ判定を行う
         if (correctPass && correctPass.trim() !== "" && inputPass !== correctPass) {
-            const userIn = prompt("この案件を閲覧するにはパスコードが必要です。");
-            if (userIn === correctPass) {
-                // 正解ならURLにパスコードを付けてリロード
-                const separator = window.location.search.includes('?') ? '&' : '?';
-                location.href = window.location.href + separator + "pw=" + userIn;
-                return;
-            } else {
-                // 不正解時の表示（既存のスタイルに合わせました）
-                document.body.innerHTML = `
-                    <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
-                        <h2 style="color:#e53e3e;">アクセス権限がありません</h2>
-                        <p>正しいパスコードを入力してください。</p>
-                        <button onclick="location.reload()" style="margin-top:20px; padding:10px 20px;">再試行</button>
-                    </div>`;
-                return;
-            }
+            // パスコード用画面を表示
+            const overlay = document.getElementById('passcode-overlay');
+            overlay.style.display = 'flex';
+            document.getElementById('pass-title').textContent = proj.title_tag || "閲覧制限";
+
+            // 認証ボタンクリック時の動作
+            document.getElementById('pass-submit').onclick = () => {
+                const userIn = document.getElementById('pass-input').value;
+                if (userIn === correctPass) {
+                    const separator = window.location.search.includes('?') ? '&' : '?';
+                    location.href = window.location.href + separator + "pw=" + encodeURIComponent(userIn);
+                } else {
+                    document.getElementById('pass-error').style.display = 'block';
+                    document.getElementById('pass-input').value = '';
+                }
+            };
+            return; // 認証されるまでここで止める（以降の描画を行わない）
         }
         // --- ★パスコードチェック終了 ---
 
+        // 2. メッセージやタイトルの反映（既存のまま）
         document.getElementById('h1-title').innerHTML = m + (proj.h1_title || "月のシフト希望");
         document.title = proj.title_tag || document.getElementById('h1-title').textContent;
 
@@ -202,7 +213,10 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
                 el.style.display = 'none';
             }
         });
+
+        // 3. カレンダー描画（既存のまま）
         renderCalendar(nextMonthDate);
+
     } catch (e) { 
         document.getElementById('h1-title').textContent = "読み込みエラー";
         document.getElementById('msg-top').style.display = 'block';
@@ -327,6 +341,7 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
 </script>
 </body>
 </html>
+
 
 
 
