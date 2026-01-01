@@ -31,7 +31,18 @@
         .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #edf2f7; margin-bottom: 25px; }
         
         /* 編集エリア */
-        .edit-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 25px; align-items: start; }
+        /* 編集エリア：比率を固定し、中身の飛び出しを防ぐ */
+.edit-grid { 
+    display: grid; 
+    grid-template-columns: 1.2fr 0.8fr; 
+    gap: 25px; 
+    align-items: start; 
+}
+
+/* グリッド直下の要素が親の幅を超えないように強制する */
+.edit-grid > div { 
+    min-width: 0; 
+}
         .section-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #f1f5f9; }
         .section-desc { font-size: 0.85rem; color: #64748b; margin-bottom: 20px; line-height: 1.5; }
 
@@ -115,6 +126,28 @@
         }
         .field-drag-handle:active { cursor: grabbing; }
         /* --- ここまで追加 --- */
+        
+        /* 共通ツールバー：ボタンをスッキリ横一列に整列させる */
+.floating-toolbar {
+    position: sticky; 
+    top: 0; 
+    z-index: 100; 
+    background: #fff; 
+    padding: 10px; 
+    border: 1px solid #e2e8f0;
+    border-radius: 10px; 
+    display: flex; 
+    gap: 8px; 
+    align-items: center; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+    margin-bottom: 20px;
+    
+    /* ボタンの折り返しを禁止 */
+    flex-wrap: nowrap;
+    overflow-x: auto; /* 横幅が足りない時は横スクロールを出す */
+    width: 100%;
+    box-sizing: border-box;
+}
 
         .toolbar-group { display: flex; gap: 5px; align-items: center; border-right: 1px solid #eee; padding-right: 10px; }
         .toolbar-icon-btn { background: white; border: 1px solid #ddd; padding: 5px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; }
@@ -1056,6 +1089,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
