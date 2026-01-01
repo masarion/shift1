@@ -204,6 +204,11 @@
             </div>
         </div>
         <div class="input-group">
+            <div class="edit-item">
+    <label>閲覧パスコード (空なら制限なし)</label>
+    <input type="text" id="project-passcode" placeholder="例: 1234">
+    <p style="font-size:0.8rem; color:#666;">※スタッフが入力画面を開く際に入力を求めます。不要なら空白で良いです。※セキュリティの観点から設定しておくことをおすすめします。</p>
+</div>
     <label>
         案件名称（管理用） 
         <span style="font-weight: normal; color: #94a3b8; font-size: 0.75rem; margin-left: 8px;">
@@ -880,6 +885,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
