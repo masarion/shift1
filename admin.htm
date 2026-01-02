@@ -161,11 +161,10 @@
                         tag.className = 'name-tag'; 
                         tag.textContent = staff.staff_name; 
 
-                        // --- 判定処理をここだけにまとめます ---
-                        if (staff.staff_name.includes('休み')) {
-                            td.style.backgroundColor = '#f1f5f9'; // セルの背景
-                            tag.style.backgroundColor = '#94a3b8'; // タグの背景
-                            tag.style.color = 'white';             // 文字色
+                        // 条件を消して、全てのセルとタグに色を塗る設定にします
+td.style.setProperty('background-color', '#f1f5f9', 'important'); 
+tag.style.backgroundColor = '#94a3b8'; 
+tag.style.color = 'white';
                         }
 
                         tag.draggable = true;
@@ -310,6 +309,7 @@ function deleteAllSubmissions() {
 </script>
 </body>
 </html>
+
 
 
 
