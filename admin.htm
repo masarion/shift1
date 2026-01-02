@@ -46,9 +46,9 @@
         }
 
         /* 「休み」という文字が含まれるセルの背景を薄いグレーに */
-.main-table td:has(.name-tag:contains('休み')), /* ブラウザ対応用 */
 .main-table td {
     transition: background-color 0.2s;
+    background-color: white; /* 基本は白 */
 }
     </style>
 </head>
@@ -307,6 +307,7 @@ function deleteAllSubmissions() {
 </script>
 </body>
 </html>
+
 
 
 
