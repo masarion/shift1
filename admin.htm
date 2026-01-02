@@ -151,7 +151,7 @@
 
                 // 休みのセルは色を変える判定と処理
                 if (type.name && type.name.includes('休み')) {
-                    td.style.setProperty('background-color', '#e2e8f0', 'important'); // 少し濃いめのグレー
+                    td.style.setProperty('background-color', '#fef3c7', 'important'); // 落ち着いた薄いベージュ（注意喚起）
                 }
                 // 休みのセルは色を変える判定と処理はここまで
 
@@ -168,11 +168,12 @@
                         tag.className = 'name-tag'; 
                         tag.textContent = staff.staff_name; 
 
-                        // ここに「配置された名前（タグ）自体の色」を変える処理も入れるとさらに見やすくなります
-            if (type.name && type.name.includes('休み')) {
-                tag.style.backgroundColor = '#4a5568';
-                tag.style.color = 'white';
-            }
+                        // 休みのセルは色を変える判定と処理（配置された名前の色）
+                        if (type.name && type.name.includes('休み')) {
+                            tag.style.backgroundColor = '#4b5563'; // 濃いチャコールグレー（コントラスト重視）
+                            tag.style.color = 'white'; 
+                        }
+                        // 休みのセルは色を変える判定と処理はここまで
 
                         tag.draggable = true;
                         tag.onclick = () => handleDelete(staff.id, date, type.name, staff.staff_name);
@@ -316,6 +317,7 @@ function deleteAllSubmissions() {
 </script>
 </body>
 </html>
+
 
 
 
