@@ -161,13 +161,10 @@
                         tag.className = 'name-tag'; 
                         tag.textContent = staff.staff_name; 
 
-                        // --- 修正はここから ---
-                        if (staff.staff_name && staff.staff_name.includes('休み')) {
-                            td.style.setProperty('background-color', '#f1f5f9', 'important');
-                            tag.style.backgroundColor = '#94a3b8';
-                            tag.style.color = 'white';
-                        }
-                        // --- ここまで ---
+                        // あえてif文を使わず、全てのセルとタグに色を塗る命令に変えます
+td.style.setProperty('background-color', 'red', 'important'); 
+tag.style.setProperty('background-color', 'black', 'important'); 
+tag.style.color = 'white';
 
                         tag.draggable = true;
                         tag.onclick = () => handleDelete(staff.id, date, type.name, staff.staff_name);
@@ -311,6 +308,7 @@ function deleteAllSubmissions() {
 </script>
 </body>
 </html>
+
 
 
 
