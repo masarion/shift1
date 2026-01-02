@@ -143,14 +143,20 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
     let targetMonthStr = "";
 
     async function init() {
+        // --- 【追加】デモ・プレビュー用の注釈表示 ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const isPreview = window.location.search.length > (window.location.search.indexOf(PROJECT_ID) + PROJECT_ID.length);
+    if (isPreview) {
+        const demoBanner = document.createElement('div');
+        demoBanner.style.cssText = 'background:#f1f5f9; color:#475569; padding:10px; text-align:center; font-size:0.8rem; border-bottom:1px solid #e2e8f0; line-height:1.4;';
+        demoBanner.innerHTML = '<strong>デモ・プレビューモード実行中</strong><br>実際のスタッフ用画面では一度送信すると翌月まで送信できない仕組みです';
+        document.body.prepend(demoBanner);
+    }
     const now = new Date();
     const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const y = nextMonthDate.getFullYear();
     const m = nextMonthDate.getMonth() + 1;
     targetMonthStr = `${y}-${m}`;
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const isPreview = window.location.search.length > (window.location.search.indexOf(PROJECT_ID) + PROJECT_ID.length);
     const lockKey = `submitted_${targetMonthStr}_${PROJECT_ID}`;
     
     // 1. 送信済みチェック
@@ -379,6 +385,7 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
 </script>
 </body>
 </html>
+
 
 
 
