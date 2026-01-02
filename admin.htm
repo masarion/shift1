@@ -24,23 +24,8 @@
         button { padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; border: 1px solid #cbd5e0; background: white; }
         .btn-pdf { background: var(--pdf); color: white; border: none; }
         .btn-save { background: var(--success); color: white; border: none; }
-        .table-area { 
-            padding: 20px; 
-            overflow: auto; 
-            height: calc(100vh - 240px); 
-            /* 背景との境界を分かりやすくし、スクロールの終わりを感じさせないための余白 */
-            padding-bottom: 200px; 
-            padding-right: 200px;
-        }
-        .main-table { 
-            border-collapse: collapse; 
-            background: white; 
-            table-layout: fixed; 
-            width: max-content; 
-            /* padding側で余白を作るので、巨大なmarginは少し抑えて調整しやすくします */
-            margin-right: 0; 
-            margin-bottom: 0;
-        }
+        .table-area { padding: 20px; overflow: auto; height: calc(100vh - 240px); }
+        .main-table { border-collapse: collapse; background: white; table-layout: fixed; width: max-content; margin-right: 600px; margin-bottom: 100px;}
         .main-table th, .main-table td { border: 1px solid #cbd5e0; padding: 4px; text-align: center; vertical-align: top; width: 115px; min-width: 115px; }
         .main-table thead th { background: #f7fafc; position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #a0aec0; padding: 8px 4px; }
         .shift-name-col { background: #edf2f7 !important; font-weight: bold; position: sticky; left: 0; z-index: 160; text-align: left !important; width: 140px !important; min-width: 140px !important; vertical-align: middle; }
@@ -332,24 +317,4 @@ function deleteAllSubmissions() {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
