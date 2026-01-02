@@ -236,7 +236,7 @@
     
 // 全提出データを空にする関数
 function deleteAllSubmissions() {
-    if (!confirm("【警告】現在表示されている全てのスタッフのシフトデータを空にしますか？\n\n※「変更を保存」を押すまでは確定されません。")) return;
+    if (!confirm("現在表示されている全てのスタッフのシフトデータを空にしますか？\n\n※「変更を保存」を押すまでは確定されません。")) return;
     
     pushHistory(); // 履歴に保存（やり直し可能にするため）
     
@@ -326,6 +326,7 @@ function deleteAllSubmissions() {
 </script>
 </body>
 </html>
+
 
 
 
