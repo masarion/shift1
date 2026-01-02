@@ -701,20 +701,23 @@ function deleteShiftRow(btn) {
     async function saveSettings() {
     if(!currentId) return;
     
-    // 【修正】画面からパスコードを取得
+    // 1. 【新機能】左側カードの現在の並び順を取得
+    const fieldOrder = Array.from(document.querySelectorAll('#project-fields-list .field-card'))
+        .map(card => card.getAttribute('data-id'));
+
+    // 2. 画面上の各入力値を取得
     const passcodeVal = document.getElementById('project-passcode').value;
 
+    // 3. projectsテーブルの更新（ここが「書き終わり」までの範囲の新しい姿です）
     await client.from('projects').update({
         title_tag: document.getElementById('edit-title-tag').value,
-        
-        // ★ここを追加！ Supabaseの「passcode」カラムに保存
         passcode: passcodeVal,
-
         h1_title: document.getElementById('edit-h1-title').innerHTML,
         msg_top: document.getElementById('edit-msg-top').innerHTML,
         msg_calendar: document.getElementById('edit-msg-calendar').innerHTML,
         msg_bottom: document.getElementById('edit-msg-bottom').innerHTML,
-        msg_confirm: document.getElementById('edit-msg-confirm').innerHTML
+        msg_confirm: document.getElementById('edit-msg-confirm').innerHTML,
+        form_config: fieldOrder // ★ここに並び順を追加
     }).eq('id', currentId);
         
         await client.from('shift_types').delete().eq('project_id', currentId);
@@ -1109,6 +1112,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
