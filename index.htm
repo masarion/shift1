@@ -153,7 +153,7 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
     const isPreview = window.location.search.length > (window.location.search.indexOf(PROJECT_ID) + PROJECT_ID.length);
     const lockKey = `submitted_${targetMonthStr}_${PROJECT_ID}`;
     
-    // 1. 送信済みチェック（既存のまま）
+    // 1. 送信済みチェック
     if (!isPreview && localStorage.getItem(lockKey)) {
         document.body.innerHTML = `
             <div style="padding:100px 20px; text-align:center; font-family:sans-serif;">
@@ -174,17 +174,14 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
         const proj = pRes.data;
         shiftTypes = sRes.data;
 
-        // --- ★視覚的なパスコードチェックにアップデート ---
+        // --- ★パスコードチェック ---
         const correctPass = proj.passcode; 
         const inputPass = urlParams.get('pw');
 
         if (correctPass && correctPass.trim() !== "" && inputPass !== correctPass) {
-            // パスコード用画面を表示
             const overlay = document.getElementById('passcode-overlay');
             overlay.style.display = 'flex';
             document.getElementById('pass-title').textContent = proj.title_tag || "閲覧制限";
-
-            // 認証ボタンクリック時の動作
             document.getElementById('pass-submit').onclick = () => {
                 const userIn = document.getElementById('pass-input').value;
                 if (userIn === correctPass) {
@@ -195,11 +192,46 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
                     document.getElementById('pass-input').value = '';
                 }
             };
-            return; // 認証されるまでここで止める（以降の描画を行わない）
+            return;
         }
-        // --- ★パスコードチェック終了 ---
 
-        // 2. メッセージやタイトルの反映（既存のまま）
+        // --- ★並び順（form_config）の反映 ---
+        // 管理画面のIDに対応する、スタッフ画面の要素IDのマッピング
+        const idMap = {
+            'h1_title': 'h1-title',
+            'msg_top': 'msg-top',
+            'msg_calendar': 'msg-calendar',
+            'msg_bottom': 'msg-bottom',
+            'passcode': null // スタッフ画面ではパスコード入力欄は独立しているので無視
+        };
+
+        const container = document.getElementById('input-screen');
+        if (proj.form_config && Array.isArray(proj.form_config)) {
+            proj.form_config.forEach(fieldId => {
+                const targetId = idMap[fieldId];
+                if (!targetId) return;
+
+                const targetEl = document.getElementById(targetId);
+                if (targetEl) {
+                    // 要素をコンテナの末尾へ順に移動させる（カレンダーより上に配置されるように制御）
+                    // ※氏名入力欄などラベルとセットのものは一緒に動かす必要があるため、
+                    // カレンダーより「前」にある要素のみを対象にします。
+                    const referenceEl = document.querySelector('.calendar-wrapper');
+                    container.insertBefore(targetEl, referenceEl);
+                    
+                    // 氏名入力欄のラベル(氏名)など、直前の要素も一緒に動かす必要がある場合の微調整
+                    if (fieldId === 'msg_top') {
+                        // 氏名入力欄（ラベルとinput）をmsg-topの直後に維持する
+                        const nameLabel = document.querySelector('label:nth-of-type(1)');
+                        const nameInput = document.getElementById('staff-name');
+                        container.insertBefore(nameLabel, referenceEl);
+                        container.insertBefore(nameInput, referenceEl);
+                    }
+                }
+            });
+        }
+
+        // 2. メッセージやタイトルの反映
         document.getElementById('h1-title').innerHTML = m + (proj.h1_title || "月のシフト希望");
         document.title = proj.title_tag || document.getElementById('h1-title').textContent;
 
@@ -214,7 +246,7 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
             }
         });
 
-        // 3. カレンダー描画（既存のまま）
+        // 3. カレンダー描画
         renderCalendar(nextMonthDate);
 
     } catch (e) { 
@@ -341,6 +373,7 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
 </script>
 </body>
 </html>
+
 
 
 
