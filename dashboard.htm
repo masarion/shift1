@@ -372,18 +372,19 @@
 
     <div class="field-card" data-id="msg_calendar">
         <div class="field-drag-handle" style="cursor:grab; display:flex; align-items:center; color:#94a3b8;">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="9" cy="12" r="1"></circle>
-        <circle cx="9" cy="5" r="1"></circle>
-        <circle cx="9" cy="19" r="1"></circle>
-        <circle cx="15" cy="12" r="1"></circle>
-        <circle cx="15" cy="5" r="1"></circle>
-        <circle cx="15" cy="19" r="1"></circle>
-    </svg>
-</div>
-        <div class="field-label">カレンダー操作説明</div>
-        <div class="field-desc">日付を選択する際の注意点などを記載します。</div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle>
+                <circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle>
+            </svg>
+        </div>
+        <div class="field-label">カレンダー操作説明 ＆ 本体</div>
+        <div class="field-desc">カレンダーの直前に表示される説明文です。※スタッフ画面では、この下に「カレンダー本体」が配置されます。</div>
         <div id="edit-msg-calendar" class="rich-editor" contenteditable="true"></div>
+        
+        <div style="margin-top: 15px; padding: 10px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 0.85rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            <span>ここに「カレンダー本体」が表示されます</span>
+        </div>
     </div>
 
     <div class="field-card" data-id="msg_bottom">
@@ -1122,6 +1123,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
