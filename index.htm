@@ -182,7 +182,8 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
 
         // --- ★パスコードチェック ---
         const correctPass = proj.passcode; 
-        const inputPass = urlParams.get('pw');
+        const savedPass = localStorage.getItem(`pass_${PROJECT_ID}`);
+        const inputPass = urlParams.get('pw') || savedPass;
 
         if (correctPass && correctPass.trim() !== "" && inputPass !== correctPass) {
             const overlay = document.getElementById('passcode-overlay');
@@ -192,7 +193,8 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
                 const userIn = document.getElementById('pass-input').value;
                 if (userIn === correctPass) {
                     const separator = window.location.search.includes('?') ? '&' : '?';
-                    location.href = window.location.href + separator + "pw=" + encodeURIComponent(userIn);
+                    localStorage.setItem(`pass_${PROJECT_ID}`, userIn);
+location.href = window.location.pathname + "?id=" + PROJECT_ID;
                 } else {
                     document.getElementById('pass-error').style.display = 'block';
                     document.getElementById('pass-input').value = '';
@@ -385,6 +387,7 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
 </script>
 </body>
 </html>
+
 
 
 
