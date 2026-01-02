@@ -673,6 +673,15 @@ async function duplicateProject(sourceId) {
             handle: '.field-drag-handle',
             animation: 150,
             ghostClass: 'sortable-ghost'
+
+            // ★ここから追加
+        scroll: true,             // 自動スクロールを有効にする
+        scrollSensitivity: 100,    // 端から100pxの位置にきたらスクロール開始（広めにしておくと楽です）
+        scrollSpeed: 20,          // スクロールの速さ
+        bubbleScroll: true        // ウィンドウ全体をスクロールさせる
+        // ★ここまで
+    });
+}
         });
     }
 
@@ -1149,6 +1158,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
