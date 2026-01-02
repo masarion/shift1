@@ -223,7 +223,7 @@
     }
 
     async function saveToDatabase() { 
-        if(!confirm("現在の調整内容でデータベースを更新しますか？")) return; 
+        if(!confirm("OKを押すとデータベースが全て上書きされます。本当に更新しますか？")) return; 
         try { 
             for (const s of _MASTER_DATA) { 
                 await client.from('submissions').update({ shift_data: s.shift_data }).eq('id', s.id); 
@@ -326,6 +326,7 @@ function deleteAllSubmissions() {
 </script>
 </body>
 </html>
+
 
 
 
