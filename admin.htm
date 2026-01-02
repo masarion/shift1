@@ -6,7 +6,17 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --sat: #007bff; --sun: #dc3545; --bg: #f4f7f9; --tag-bg: #e2e8f0; --danger: #e53e3e; --success: #38a169; --pdf: #6366f1; }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 0; color: #2d3748; }
+        body { 
+    font-family: sans-serif; 
+    background: var(--bg); 
+    margin: 0; 
+    padding: 0; 
+    color: #2d3748; 
+    /* ↓ここからが追加分です */
+    padding-bottom: 800px !important; 
+    padding-right: 800px !important; 
+    min-width: max-content; 
+}
         .txt-sat { color: var(--sat) !important; }
         .txt-sun { color: var(--sun) !important; }
         .header-content { background: white; padding: 15px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 2000; }
@@ -19,7 +29,7 @@
         .btn-pdf { background: var(--pdf); color: white; border: none; }
         .btn-save { background: var(--success); color: white; border: none; }
         .table-area { padding: 20px; overflow: auto; height: calc(100vh - 240px); }
-        .main-table { border-collapse: collapse; background: white; table-layout: fixed; width: max-content; }
+        .main-table { border-collapse: collapse; background: white; table-layout: fixed; width: max-content; margin-bottom: 100px;}
         .main-table th, .main-table td { border: 1px solid #cbd5e0; padding: 4px; text-align: center; vertical-align: top; width: 115px; min-width: 115px; }
         .main-table thead th { background: #f7fafc; position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #a0aec0; padding: 8px 4px; }
         .shift-name-col { background: #edf2f7 !important; font-weight: bold; position: sticky; left: 0; z-index: 160; text-align: left !important; width: 140px !important; min-width: 140px !important; vertical-align: middle; }
@@ -45,10 +55,10 @@
     transition: background-color 0.2s;
 }
 
-/* スクロールに余裕を持たせる（テーブルの右と下に巨大な余白を作る） */
 .table-area {
-    padding-bottom: 500px !important; /* 下方向に余裕 */
-    padding-right: 500px !important; /* 右方向に余裕 */
+    padding: 20px;
+    overflow: visible; /* スクロールバーを二重に出さない */
+    height: auto;      /* 高さを固定しない */
 }
 
 /* 枠線の重なりを防ぎつつスクロールをスムーズに */
@@ -315,6 +325,7 @@ function deleteAllSubmissions() {
 </script>
 </body>
 </html>
+
 
 
 
