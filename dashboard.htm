@@ -531,7 +531,7 @@
     function showSection(id) {
         // 編集画面を開こうとした時に、案件が選ばれていなければ警告を出して一覧へ
         if (id === 'edit-all' && !currentId) {
-            alert("編集する案件を先に選択してください。");
+            alert("左メニュー「案件一覧」から編集する案件を先に選択してください。");
             id = 'list'; 
         }
 
@@ -1163,6 +1163,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
