@@ -59,6 +59,18 @@
             position: relative;
             transition: transform 0.2s, box-shadow 0.2s;
         }
+
+        /* ドラッグ操作中のスクロールを助ける設定 */
+#project-fields-list {
+    overflow-y: visible !important;
+}
+
+/* ドラッグ中に掴んでいる要素の見た目を少し透明にする（操作しやすくするため） */
+.sortable-ghost {
+    opacity: 0.4;
+    background-color: #e2e8f0 !important;
+}
+
         
         /* ドラッグ中のスタイル */
         .field-card.sortable-ghost { opacity: 0.4; border: 2px dashed var(--primary); }
@@ -668,16 +680,13 @@ async function duplicateProject(sourceId) {
     });
 
     // --- 【並べ替え設定：左側】設定項目カードのドラッグ移動 ---
-        const fieldContainer = document.getElementById('project-fields-list');
         if (fieldContainer) {
             new Sortable(fieldContainer, {
-                handle: '.field-drag-handle', // 設定カード用のハンドルを指定
+                handle: '.field-drag-handle',
                 animation: 150,
-                ghostClass: 'sortable-ghost', // ←ここにカンマがあるか確認してください
-                scroll: true,                 // ★追加
-                scrollSensitivity: 100,       // ★追加
-                scrollSpeed: 20,              // ★追加
-                bubbleScroll: true            // ★追加
+                ghostClass: 'sortable-ghost',
+                // 追加した4行は削除します
+                forceFallback: true // ★代わりにこれを追加（ブラウザ標準の挙動を優先させる設定）
             });
         }
 
@@ -1154,6 +1163,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
