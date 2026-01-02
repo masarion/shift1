@@ -195,41 +195,47 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
             return;
         }
 
-        // --- ★並び順（form_config）の反映 ---
-        // 管理画面のIDに対応する、スタッフ画面の要素IDのマッピング
-        const idMap = {
-            'h1_title': 'h1-title',
-            'msg_top': 'msg-top',
-            'msg_calendar': 'msg-calendar',
-            'msg_bottom': 'msg-bottom',
-            'passcode': null // スタッフ画面ではパスコード入力欄は独立しているので無視
+        // --- ★並び順（form_config）の完全再現反映 ---
+        const container = document.getElementById('input-screen');
+        
+        // スタッフ画面の各要素を「一式」として定義
+        const elementMapping = {
+            'h1_title': document.getElementById('h1-title'),
+            'msg_top': document.getElementById('msg-top'),
+            'name_label': document.querySelector('label[for="staff-name"]') || document.querySelector('label:nth-of-type(1)'),
+            'name_input': document.getElementById('staff-name'),
+            'msg_calendar': document.getElementById('msg-calendar'),
+            'calendar_field': document.querySelector('.calendar-wrapper'),
+            'msg_bottom': document.getElementById('msg-bottom'),
+            'memo_label': document.querySelector('label:nth-of-type(2)'),
+            'memo_input': document.getElementById('free-text'),
+            'submit_btn': document.querySelector('button[onclick="showSummary()"]')
         };
 
-        const container = document.getElementById('input-screen');
         if (proj.form_config && Array.isArray(proj.form_config)) {
             proj.form_config.forEach(fieldId => {
-                const targetId = idMap[fieldId];
-                if (!targetId) return;
-
-                const targetEl = document.getElementById(targetId);
-                if (targetEl) {
-                    // 要素をコンテナの末尾へ順に移動させる（カレンダーより上に配置されるように制御）
-                    // ※氏名入力欄などラベルとセットのものは一緒に動かす必要があるため、
-                    // カレンダーより「前」にある要素のみを対象にします。
-                    const referenceEl = document.querySelector('.calendar-wrapper');
-                    container.insertBefore(targetEl, referenceEl);
-                    
-                    // 氏名入力欄のラベル(氏名)など、直前の要素も一緒に動かす必要がある場合の微調整
-                    if (fieldId === 'msg_top') {
-                        // 氏名入力欄（ラベルとinput）をmsg-topの直後に維持する
-                        const nameLabel = document.querySelector('label:nth-of-type(1)');
-                        const nameInput = document.getElementById('staff-name');
-                        container.insertBefore(nameLabel, referenceEl);
-                        container.insertBefore(nameInput, referenceEl);
-                    }
+                // 保存された順序に従って、要素を順番に「一番下」へ移動させていくことで並び替える
+                if (fieldId === 'h1_title' && elementMapping['h1_title']) {
+                    container.appendChild(elementMapping['h1_title']);
+                } else if (fieldId === 'msg_top' && elementMapping['msg_top']) {
+                    container.appendChild(elementMapping['msg_top']);
+                    container.appendChild(elementMapping['name_label']);
+                    container.appendChild(elementMapping['name_input']);
+                } else if (fieldId === 'msg_calendar' && elementMapping['msg_calendar']) {
+                    container.appendChild(elementMapping['msg_calendar']);
+                    container.appendChild(elementMapping['calendar_field']);
+                } else if (fieldId === 'msg_bottom' && elementMapping['msg_bottom']) {
+                    container.appendChild(elementMapping['msg_bottom']);
+                    container.appendChild(elementMapping['memo_label']);
+                    container.appendChild(elementMapping['memo_input']);
                 }
             });
+            // 送信ボタンは常に一番最後（最下部）に配置する
+            if (elementMapping['submit_btn']) {
+                container.appendChild(elementMapping['submit_btn']);
+            }
         }
+        // --- ★反映終了 ---
 
         // 2. メッセージやタイトルの反映
         document.getElementById('h1-title').innerHTML = m + (proj.h1_title || "月のシフト希望");
@@ -373,6 +379,7 @@ h1 div, .msg-box div { margin: 0; padding: 0; }
 </script>
 </body>
 </html>
+
 
 
 
