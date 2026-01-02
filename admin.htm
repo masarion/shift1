@@ -57,7 +57,8 @@
         <div class="spacer"></div>
         <button onclick="undoLastAction()">1つ前に戻る</button>
         <button onclick="resetToInitial()">全て元に戻す</button>
-        <button class="btn-save" onclick="saveToDatabase()">変更を保存</button>
+        <button onclick="deleteAllSubmissions()" style="background: var(--danger); color: white; border: none;">全て削除する</button>
+　　　　　<button class="btn-save" onclick="saveToDatabase()">変更を保存</button>
         <button onclick="goBackToDashboard()" style="margin-left:10px;">← 管理画面に戻る</button>
     </div>
 </div>
@@ -193,6 +194,20 @@
             _HISTORY = []; 
         } catch (err) { alert("エラー: " + err.message); } 
     }
+    
+// 全提出データを空にする関数
+function deleteAllSubmissions() {
+    if (!confirm("【警告】現在表示されている全てのスタッフのシフトデータを空にしますか？\n\n※「変更を保存」を押すまでは確定されません。")) return;
+    
+    pushHistory(); // 履歴に保存（やり直し可能にするため）
+    
+    _MASTER_DATA.forEach(staff => {
+        staff.shift_data = {}; // 全ての日付のデータを空にする
+    });
+    
+    renderAll(); // 画面を更新
+    alert("全てのデータをクリアしました。反映するには「変更を保存」を押してください。");
+}
 
     function goBackToDashboard() {
         const isDemo = new URLSearchParams(window.location.search).get('mode') === 'demo';
@@ -272,6 +287,7 @@
 </script>
 </body>
 </html>
+
 
 
 
