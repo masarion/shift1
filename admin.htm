@@ -38,6 +38,24 @@
             .p-name { display: block; font-size: 9px; line-height: 1.2; }
             h3 { font-size: 13px; margin: 5px 0; }
         }
+
+        /* 「休み」という文字が含まれるセルの背景を薄いグレーに */
+.main-table td:has(.name-tag:contains('休み')), /* ブラウザ対応用 */
+.main-table td {
+    transition: background-color 0.2s;
+}
+
+/* スクロールに余裕を持たせる（テーブルの右と下に巨大な余白を作る） */
+.table-area {
+    padding-bottom: 500px !important; /* 下方向に余裕 */
+    padding-right: 500px !important; /* 右方向に余裕 */
+}
+
+/* 枠線の重なりを防ぎつつスクロールをスムーズに */
+.main-table {
+    margin-bottom: 100px;
+    margin-right: 100px;
+}
     </style>
 </head>
 <body>
@@ -145,6 +163,11 @@
                         const tag = document.createElement('div');
                         tag.className = 'name-tag'; 
                         tag.textContent = staff.staff_name; 
+                        // renderAll関数内の tag.textContent = staff.staff_name; のすぐ下に追加
+if (staff.staff_name.includes('休み')) {
+    tag.style.background = '#cbd5e0'; // 休みタグ自体の色
+    td.style.background = '#f7fafc';  // セル自体の背景色
+}
                         tag.draggable = true;
                         tag.onclick = () => handleDelete(staff.id, date, type.name, staff.staff_name);
                         tag.ondragstart = e => { 
@@ -287,6 +310,7 @@ function deleteAllSubmissions() {
 </script>
 </body>
 </html>
+
 
 
 
