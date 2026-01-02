@@ -667,21 +667,19 @@ async function duplicateProject(sourceId) {
         }
     });
 
-    // 【機能維持】左側設定項目のドラッグ移動設定
-    if (fieldContainer) {
-        new Sortable(fieldContainer, {
-            handle: '.field-drag-handle',
-            animation: 150,
-            ghostClass: 'sortable-ghost'
-
-            // ★ここから追加
-        scroll: true,             // 自動スクロールを有効にする
-        scrollSensitivity: 100,    // 端から100pxの位置にきたらスクロール開始（広めにしておくと楽です）
-        scrollSpeed: 20,          // スクロールの速さ
-        bubbleScroll: true        // ウィンドウ全体をスクロールさせる
-        // ★ここまで
-        });
-    }
+    // --- 【並べ替え設定：左側】設定項目カードのドラッグ移動 ---
+        const fieldContainer = document.getElementById('project-fields-list');
+        if (fieldContainer) {
+            new Sortable(fieldContainer, {
+                handle: '.field-drag-handle', // 設定カード用のハンドルを指定
+                animation: 150,
+                ghostClass: 'sortable-ghost', // ←ここにカンマがあるか確認してください
+                scroll: true,                 // ★追加
+                scrollSensitivity: 100,       // ★追加
+                scrollSpeed: 20,              // ★追加
+                bubbleScroll: true            // ★追加
+            });
+        }
 
     // 【機能維持】編集画面を表示
     showSection('edit-all');
@@ -1156,6 +1154,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
