@@ -170,6 +170,11 @@ if (staff.staff_name.includes('休み')) {
 }
                         tag.draggable = true;
                         tag.onclick = () => handleDelete(staff.id, date, type.name, staff.staff_name);
+                    　　if (staff.staff_name.includes('休み')) {
+    td.style.backgroundColor = '#f1f5f9'; // セル（枠）を薄いグレーに
+    tag.style.backgroundColor = '#94a3b8'; // タグ自体を濃いグレーに
+    tag.style.color = 'white';             // 文字を白に
+}
                         tag.ondragstart = e => { 
                             e.dataTransfer.setData("text/plain", JSON.stringify({ id: staff.id, d: date, t: type.name })); 
                         };
@@ -310,6 +315,7 @@ function deleteAllSubmissions() {
 </script>
 </body>
 </html>
+
 
 
 
