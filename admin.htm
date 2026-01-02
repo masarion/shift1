@@ -25,7 +25,16 @@
         .btn-pdf { background: var(--pdf); color: white; border: none; }
         .btn-save { background: var(--success); color: white; border: none; }
         .table-area { padding: 20px; overflow: auto; height: calc(100vh - 240px); }
-        .main-table { border-collapse: collapse; background: white; table-layout: fixed; width: max-content; margin-right: 600px; margin-bottom: 100px;}
+        .main-table { 
+            border-collapse: collapse; 
+            background: white; 
+            table-layout: fixed; 
+            width: max-content; 
+            /* 横スクロールの余白を600pxから1200px（約100%増）へ変更 */
+            margin-right: 1200px; 
+            /* 下方向の余白も操作しやすいよう少し広げています */
+            margin-bottom: 300px;
+        }
         .main-table th, .main-table td { border: 1px solid #cbd5e0; padding: 4px; text-align: center; vertical-align: top; width: 115px; min-width: 115px; }
         .main-table thead th { background: #f7fafc; position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #a0aec0; padding: 8px 4px; }
         .shift-name-col { background: #edf2f7 !important; font-weight: bold; position: sticky; left: 0; z-index: 160; text-align: left !important; width: 140px !important; min-width: 140px !important; vertical-align: middle; }
@@ -317,4 +326,5 @@ function deleteAllSubmissions() {
 </script>
 </body>
 </html>
+
 
