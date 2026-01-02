@@ -45,10 +45,13 @@
             h3 { font-size: 13px; margin: 5px 0; }
         }
 
-        /* 「休み」という文字が含まれるセルの背景を薄いグレーに */
-.main-table td {
+       .main-table td {
+    background-color: transparent !important;
     transition: background-color 0.2s;
-    background-color: white; /* 基本は白 */
+}
+
+.main-table tr {
+    background-color: white;
 }
     </style>
 </head>
@@ -307,6 +310,7 @@ function deleteAllSubmissions() {
 </script>
 </body>
 </html>
+
 
 
 
