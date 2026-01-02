@@ -146,8 +146,15 @@
         _SHIFT_TYPES.forEach(type => {
             const row = document.createElement('tr');
             row.innerHTML = `<td class="shift-name-col">${type.name}</td>`;
-            _CAL_DATES.forEach(date => {
+           _CAL_DATES.forEach(date => {
                 const td = document.createElement('td');
+
+                // 休みのセルは色を変える判定と処理
+                if (type.name && type.name.includes('休み')) {
+                    td.style.setProperty('background-color', '#e2e8f0', 'important'); // 少し濃いめのグレー
+                }
+                // 休みのセルは色を変える判定と処理はここまで
+
                 td.ondragover = e => e.preventDefault();
                 td.ondrop = e => { 
                     e.preventDefault(); 
@@ -161,14 +168,11 @@
                         tag.className = 'name-tag'; 
                         tag.textContent = staff.staff_name; 
 
-                        // 休みのセルは色を変える判定と処理
-                        const isYasumi = staff.staff_name && staff.staff_name.trim().includes('休み');
-                        if (isYasumi) {
-                            td.style.setProperty('background-color', '#f1f5f9', 'important');
-                            tag.style.setProperty('background-color', '#94a3b8', 'important');
-                            tag.style.color = 'white';
-                        }
-                        // 休みのセルは色を変える判定と処理はここまで
+                        // ここに「配置された名前（タグ）自体の色」を変える処理も入れるとさらに見やすくなります
+            if (type.name && type.name.includes('休み')) {
+                tag.style.backgroundColor = '#4a5568';
+                tag.style.color = 'white';
+            }
 
                         tag.draggable = true;
                         tag.onclick = () => handleDelete(staff.id, date, type.name, staff.staff_name);
@@ -312,6 +316,7 @@ function deleteAllSubmissions() {
 </script>
 </body>
 </html>
+
 
 
 
