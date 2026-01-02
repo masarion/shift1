@@ -597,51 +597,61 @@ async function duplicateProject(sourceId) {
 }
 
     async function editProject(id) {
-        currentId = id;
-        const { data: p } = await client.from('projects').select('*').eq('id', id).single();
-        // 【追加】サイドメニューの<span>に案件名を流し込む
+    currentId = id;
+    const { data: p } = await client.from('projects').select('*').eq('id', id).single();
+    
+    // 【機能維持】サイドメニューの<span>に案件名を流し込む
     document.getElementById('current-editing-name').textContent = p ? `選択中: ${p.title_tag}` : "";
-        document.getElementById('edit-page-title').textContent = `「${p.title_tag}」の編集`;
-        document.getElementById('edit-title-tag').value = p.title_tag || '';
-        // ★スタッフ画面上のパスコード入力欄にデータを表示させる
-    // (HTML側で id="project-passcode" としている場合)
+    document.getElementById('edit-page-title').textContent = `「${p.title_tag}」の編集`;
+    
+    // --- 【新機能】保存された並び順（form_config）があれば反映する ---
+    const fieldContainer = document.getElementById('project-fields-list');
+    if (fieldContainer && p.form_config && Array.isArray(p.form_config)) {
+        p.form_config.forEach(fieldId => {
+            const card = fieldContainer.querySelector(`.field-card[data-id="${fieldId}"]`);
+            if (card) fieldContainer.appendChild(card); 
+        });
+    }
+
+    // 【機能維持】各入力欄にデータを表示
+    document.getElementById('edit-title-tag').value = p.title_tag || '';
     const passcodeEl = document.getElementById('project-passcode');
     if (passcodeEl) passcodeEl.value = p.passcode || '';
-        document.getElementById('edit-h1-title').innerHTML = p.h1_title || '';
-        document.getElementById('edit-msg-top').innerHTML = p.msg_top || '';
-        document.getElementById('edit-msg-calendar').innerHTML = p.msg_calendar || '';
-        document.getElementById('edit-msg-bottom').innerHTML = p.msg_bottom || '';
-        document.getElementById('edit-msg-confirm').innerHTML = p.msg_confirm || '';
-        
-        const { data: shifts } = await client.from('shift_types').select('*').eq('project_id', id).order('display_order');
-        const container = document.getElementById('shift-manager-list');
-        container.innerHTML = '';
-        if(shifts && shifts.length > 0) shifts.forEach(s => addShiftRow(s.name));
-        else addShiftRow('日勤');
-        
-       // --- 【並べ替え設定：右側】シフト枠リストのドラッグ移動 ---
-        if(sortable) sortable.destroy(); // 既存の設定を一度リセット
-        sortable = new Sortable(container, { 
-            handle: '.drag-handle', // シフト枠用のハンドルを指定
-            animation: 150,
-            onEnd: function() {
-                updateShiftNumbers(); // 並べ替え完了後に番号（1, 2, 3...）を更新
-            }
-        });
-
-        // --- 【並べ替え設定：左側】設定項目カードのドラッグ移動 ---
-        const fieldContainer = document.getElementById('project-fields-list');
-        if (fieldContainer) {
-            new Sortable(fieldContainer, {
-                handle: '.field-drag-handle', // 設定カード用のハンドルを指定
-                animation: 150,
-                ghostClass: 'sortable-ghost' // 移動中のカードを半透明にするデザインを適用
-            });
+    document.getElementById('edit-h1-title').innerHTML = p.h1_title || '';
+    document.getElementById('edit-msg-top').innerHTML = p.msg_top || '';
+    document.getElementById('edit-msg-calendar').innerHTML = p.msg_calendar || '';
+    document.getElementById('edit-msg-bottom').innerHTML = p.msg_bottom || '';
+    document.getElementById('edit-msg-confirm').innerHTML = p.msg_confirm || '';
+    
+    // 【機能維持】右側：シフト枠の読み込みと表示
+    const { data: shifts } = await client.from('shift_types').select('*').eq('project_id', id).order('display_order');
+    const container = document.getElementById('shift-manager-list');
+    container.innerHTML = '';
+    if(shifts && shifts.length > 0) shifts.forEach(s => addShiftRow(s.name));
+    else addShiftRow('日勤');
+    
+    // 【機能維持】右側シフト枠のドラッグ移動設定
+    if(sortable) sortable.destroy(); 
+    sortable = new Sortable(container, { 
+        handle: '.drag-handle',
+        animation: 150,
+        onEnd: function() {
+            updateShiftNumbers(); 
         }
+    });
 
-        // 編集画面を表示
-        showSection('edit-all');
+    // 【機能維持】左側設定項目のドラッグ移動設定
+    if (fieldContainer) {
+        new Sortable(fieldContainer, {
+            handle: '.field-drag-handle',
+            animation: 150,
+            ghostClass: 'sortable-ghost'
+        });
     }
+
+    // 【機能維持】編集画面を表示
+    showSection('edit-all');
+}
 
     function updateShiftNumbers() {
     const rows = document.querySelectorAll('.shift-row');
@@ -1112,6 +1122,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
