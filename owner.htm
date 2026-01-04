@@ -46,19 +46,43 @@
         </thead>
         <tbody id="user-list"></tbody>
     </table>
+
+    <hr style="margin-top: 40px; border: 0; border-top: 1px solid #eee;">
+    <div style="margin-top: 20px;">
+        <h3>最高責任者用パスコードの変更</h3>
+        <p style="font-size: 0.9em; color: #666;">このパネル自体にログインするためのパスコードを変更します。</p>
+        <div class="input-group">
+            <input type="text" id="new-pass-input" placeholder="新しいパスコードを入力">
+            <button class="btn-add" onclick="changePasscode()" style="background-color: #333;">パスコードを更新</button>
+        </div>
+    </div>
 </div>
+    
 
 <script>
     const S_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
-    const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m'; // ※本来は管理用Keyが必要ですが一旦公開Keyで構造を作ります
+    const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     const client = supabase.createClient(S_URL, S_KEY);
 
-    // ★ここでパスコードを編集できます
-    const OWNER_PASS = "1234"; 
-
-    function checkPass() {
+    // --- 認証処理（DBのsystem_settingsテーブルを参照） ---
+    async function checkPass() {
         const input = document.getElementById('pass-input').value;
-        if (input === OWNER_PASS) {
+
+        // DBから現在のパスコードを取得
+        const { data, error } = await client
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'owner_pass')
+            .single();
+
+        if (error) {
+            console.error("Error:", error);
+            alert("システムの接続に失敗しました。SQL Editorでの設定を確認してください。");
+            return;
+        }
+
+        // 入力値とDBの値を比較
+        if (data && input === data.value) {
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
             fetchUsers();
@@ -67,6 +91,26 @@
         }
     }
 
+    // --- パスコード変更機能 ---
+    async function changePasscode() {
+        const newPass = document.getElementById('new-pass-input').value;
+        if (!newPass) return alert("新しいパスコードを入力してください。");
+        if (!confirm("パスコードを変更します。よろしいですか？")) return;
+
+        const { error } = await client
+            .from('system_settings')
+            .update({ value: newPass })
+            .eq('key', 'owner_pass');
+
+        if (error) {
+            alert("更新失敗: " + error.message);
+        } else {
+            alert("パスコードを更新しました。次回から新しいパスコードを使用してください。");
+            document.getElementById('new-pass-input').value = '';
+        }
+    }
+
+    // --- 以下、管理者メールアドレスの管理機能（既存のまま） ---
     async function fetchUsers() {
         const { data, error } = await client.from('admin_access_control').select('*');
         if (error) return console.error(error);
@@ -99,4 +143,5 @@
     }
 </script>
 </body>
+
 </html>
