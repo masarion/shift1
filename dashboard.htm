@@ -518,6 +518,37 @@
     const S_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
     const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     const client = supabase.createClient(S_URL, S_KEY);
+    // === ここから【ガードマン機能】を追加 ===
+    async function checkPermission() {
+        // 1. 現在ログインしているユーザー情報を取得
+        const { data: { user } } = await client.auth.getUser();
+
+        // ログインしていない場合はログイン画面へ
+        if (!user) {
+            window.location.href = 'login.htm'; 
+            return;
+        }
+
+        // 2. ホワイトリスト（admin_access_control）にメールアドレスがあるか照合
+        const { data, error } = await client
+            .from('admin_access_control')
+            .select('email')
+            .eq('email', user.email)
+            .maybeSingle(); // データが0件でもエラーにしない設定
+
+        if (error || !data) {
+            // リストに載っていない（権限がない）場合
+            alert("アクセス権限がありません。\n最高責任者に登録を依頼してください。");
+            await client.auth.signOut(); // ログアウトさせる
+            window.location.href = 'login.htm';
+        } else {
+            console.log("アクセス許可を確認しました:", user.email);
+        }
+    }
+
+    // ページ読み込み時に実行
+    checkPermission();
+    // === ここまでを追加 ===
     let currentId = null;
     let sortable = null;
 
@@ -1163,6 +1194,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
