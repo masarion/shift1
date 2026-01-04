@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>最高責任者専用 - 管理者制御</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; background: #f0f4f8; padding: 40px; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        h1 { border-bottom: 2px solid #e53e3e; padding-bottom: 10px; font-size: 1.5rem; color: #c53030; }
+        .input-group { margin: 20px 0; display: flex; gap: 10px; }
+        input { flex: 1; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; }
+        button { padding: 10px 20px; cursor: pointer; border-radius: 6px; font-weight: bold; border: none; }
+        .btn-add { background: #38a169; color: white; }
+        .btn-del { background: #e53e3e; color: white; padding: 5px 10px; font-size: 0.8rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border-bottom: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2d3748; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    </style>
+</head>
+<body>
+
+<div id="login-overlay">
+    <div style="background: white; padding: 30px; border-radius: 8px; text-align: center;">
+        <h2>パスコードを入力してください</h2>
+        <input type="password" id="pass-input" placeholder="パスコード">
+        <button onclick="checkPass()" style="background: #4a5568; color: white; margin-top: 10px;">認証</button>
+    </div>
+</div>
+
+<div class="container" id="main-content" style="display:none;">
+    <h1>最高責任者パネル</h1>
+    <p>管理者のメールアドレスを登録・削除してください。</p>
+    
+    <div class="input-group">
+        <input type="email" id="email-input" placeholder="example@mail.com">
+        <button class="btn-add" onclick="addUser()">新規登録</button>
+    </div>
+
+    <table id="user-table">
+        <thead>
+            <tr>
+                <th>登録済みメールアドレス</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="user-list"></tbody>
+    </table>
+</div>
+
+<script>
+    const S_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
+    const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m'; // ※本来は管理用Keyが必要ですが一旦公開Keyで構造を作ります
+    const client = supabase.createClient(S_URL, S_KEY);
+
+    // ★ここでパスコードを編集できます
+    const OWNER_PASS = "1234"; 
+
+    function checkPass() {
+        const input = document.getElementById('pass-input').value;
+        if (input === OWNER_PASS) {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            fetchUsers();
+        } else {
+            alert("パスコードが違います。");
+        }
+    }
+
+    async function fetchUsers() {
+        const { data, error } = await client.from('admin_access_control').select('*');
+        if (error) return console.error(error);
+        
+        const list = document.getElementById('user-list');
+        list.innerHTML = data.map(u => `
+            <tr>
+                <td>${u.email}</td>
+                <td><button class="btn-del" onclick="deleteUser('${u.id}')">削除</button></td>
+            </tr>
+        `).join('');
+    }
+
+    async function addUser() {
+        const email = document.getElementById('email-input').value;
+        if (!email) return;
+        const { error } = await client.from('admin_access_control').insert([{ email }]);
+        if (error) alert("登録失敗: " + error.message);
+        else {
+            document.getElementById('email-input').value = '';
+            fetchUsers();
+        }
+    }
+
+    async function deleteUser(id) {
+        if (!confirm("この管理者を削除しますか？")) return;
+        const { error } = await client.from('admin_access_control').delete().eq('id', id);
+        if (error) alert("削除失敗: " + error.message);
+        else fetchUsers();
+    }
+</script>
+</body>
+</html>
