@@ -518,6 +518,7 @@
     const S_URL = 'https://vryxvtzrvmtyryugqzlp.supabase.co';
     const S_KEY = 'sb_publishable_RnuLQC0N_wYOrwLFQIf5Gg_O-g_bc2m';
     const client = supabase.createClient(S_URL, S_KEY);
+    
     // === ここから【ガードマン機能】を追加 ===
     async function checkPermission() {
         // 1. 現在ログインしているユーザー情報を取得
@@ -1199,6 +1200,7 @@ async function deleteCurrentProject() {
 </script>
 </body>
 </html>
+
 
 
 
