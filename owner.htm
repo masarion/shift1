@@ -48,14 +48,17 @@
     </table>
 
     <hr style="margin-top: 40px; border: 0; border-top: 1px solid #eee;">
-    <div style="margin-top: 20px;">
-        <h3>最高責任者用パスコードの変更</h3>
-        <p style="font-size: 0.9em; color: #666;">このパネル自体にログインするためのパスコードを変更します。</p>
-        <div class="input-group">
-            <input type="text" id="new-pass-input" placeholder="新しいパスコードを入力">
-            <button class="btn-add" onclick="changePasscode()" style="background-color: #333;">パスコードを更新</button>
-        </div>
+    <div style="margin-top: 20px; border: 2px solid #ff4d4d; padding: 15px; border-radius: 5px; background: #fff5f5;">
+    <h3 style="color: #d32f2f; margin-top: 0;">⚠️ 最高責任者用パスコードの変更</h3>
+    <p style="font-weight: bold; color: #d32f2f;">
+        ※このパスコードは最高責任者以外には絶対に教えないでください。<br>
+        ※忘れた場合、画面上からの復旧はできません。厳重に保管してください。
+    </p>
+    <div class="input-group">
+        <input type="text" id="new-pass-input" placeholder="新しいパスコードを入力">
+        <button class="btn-add" onclick="changePasscode()" style="background-color: #d32f2f;">パスコードを更新</button>
     </div>
+</div>
 </div>
     
 
@@ -145,3 +148,4 @@
 </body>
 
 </html>
+
